@@ -34,26 +34,31 @@ TaskBehavior TaskBehavior::SingleExecutionNoRetry(const Timestamp& startExpirati
 {
     return TaskBehavior(TimeDuration::Min(), // not periodic
                         Timestamp::Min(),    // run immediately
-                        TimeDuration::Max(), TimeDuration::Max(), startExpiration);
+                        TimeDuration::Max(), TimeDuration::Max(), startExpiration,
+                        NumRetries::Fixed(0));
 }
 
 TaskBehavior TaskBehavior::ImmediatePeriodic(const TimeDuration& period,
                                              const TimeDuration& minRetryDelay,
-                                             const TimeDuration& maxRetryDelay)
+                                             const TimeDuration& maxRetryDelay,
+                                             const NumRetries&   retryCount)
 {
     return TaskBehavior(period,
                         Timestamp::Min(), // run immediately
                         minRetryDelay, maxRetryDelay,
-                        Timestamp::Max() // no start expiraion
+                        Timestamp::Max(), // no start expiraion
+                        retryCount
     );
 }
 
 TaskBehavior TaskBehavior::SingleImmediateExecutionWithRetry(const TimeDuration& minRetryDelay,
-                                                             const TimeDuration& maxRetryDelay)
+                                                             const TimeDuration& maxRetryDelay,
+                                                             const NumRetries&   retryCount)
 {
     return TaskBehavior(TimeDuration::Min(), // not periodic
                         Timestamp::Min(),    // run immediatey
-                        minRetryDelay, maxRetryDelay, Timestamp::Max());
+                        minRetryDelay, maxRetryDelay, Timestamp::Max(),
+                        retryCount);
 }
 
 TaskBehavior TaskBehavior::ReactsToIINOnly()
@@ -61,20 +66,23 @@ TaskBehavior TaskBehavior::ReactsToIINOnly()
     return TaskBehavior(TimeDuration::Min(), // not periodic
                         Timestamp::Max(),    // only run when needed
                         TimeDuration::Max(), // never retry
-                        TimeDuration::Max(), Timestamp::Max());
+                        TimeDuration::Max(), Timestamp::Max(),
+                        NumRetries::Fixed(0));
 }
 
 TaskBehavior::TaskBehavior(const TimeDuration& period,
                            const Timestamp& expiration,
                            const TimeDuration& minRetryDelay,
                            const TimeDuration& maxRetryDelay,
-                           const Timestamp& startExpiration)
+                           const Timestamp& startExpiration,
+                           const NumRetries& retryCount)
     : period(period),
       minRetryDelay(minRetryDelay),
       maxRetryDelay(maxRetryDelay),
       startExpiration(startExpiration),
       expiration(expiration),
-      currentRetryDelay(minRetryDelay)
+      currentRetryDelay(minRetryDelay),
+      _retryCount(retryCount)
 {
 }
 
@@ -86,8 +94,15 @@ void TaskBehavior::OnSuccess(const Timestamp& now)
 
 void TaskBehavior::OnResponseTimeout(const Timestamp& now)
 {
-    this->expiration = now + this->currentRetryDelay;
-    this->currentRetryDelay = this->CalcNextRetryTimeout();
+    if (_retryCount.Retry()) {
+        this->expiration = now + this->currentRetryDelay;
+        this->currentRetryDelay = this->CalcNextRetryTimeout();
+    }
+    else {
+        _retryCount.Reset();
+        this->currentRetryDelay = this->minRetryDelay;
+        this->expiration = this->period.IsNegative() ? Timestamp::Max() : now + this->period;
+    }
 }
 
 void TaskBehavior::Reset()
@@ -103,8 +118,11 @@ void TaskBehavior::Disable()
     this->expiration = Timestamp::Max();
 }
 
-TimeDuration TaskBehavior::CalcNextRetryTimeout() const
+TimeDuration TaskBehavior::CalcNextRetryTimeout()
 {
+    if (_retryCount.IsFixed()) {
+        return this->minRetryDelay;
+    }
     const auto doubled = this->currentRetryDelay.Double();
     return (doubled > this->maxRetryDelay) ? this->maxRetryDelay : doubled;
 }

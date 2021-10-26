@@ -21,6 +21,7 @@
 #ifndef OPENDNP3_TASKBEHAVIOR_H
 #define OPENDNP3_TASKBEHAVIOR_H
 
+#include "opendnp3/outstation/NumRetries.h"
 #include "opendnp3/util/TimeDuration.h"
 #include "opendnp3/util/Timestamp.h"
 
@@ -28,7 +29,7 @@ namespace opendnp3
 {
 
 /**
- *   All of the configuration parameters that control how the task wil behave
+ *   All of the configuration parameters that control how the task will behave
  */
 class TaskBehavior
 {
@@ -40,10 +41,12 @@ public:
 
     static TaskBehavior ImmediatePeriodic(const TimeDuration& period,
                                           const TimeDuration& minRetryDelay,
-                                          const TimeDuration& maxRetryDelay);
+                                          const TimeDuration& maxRetryDelay,
+                                          const NumRetries&   retryCount = NumRetries::Infinite());
 
     static TaskBehavior SingleImmediateExecutionWithRetry(const TimeDuration& minRetryDelay,
-                                                          const TimeDuration& maxRetryDelay);
+                                                          const TimeDuration& maxRetryDelay,
+                                                          const NumRetries&   retryCount = NumRetries::Infinite());
 
     static TaskBehavior ReactsToIINOnly();
 
@@ -84,7 +87,7 @@ public:
     void Disable();
 
 private:
-    TimeDuration CalcNextRetryTimeout() const;
+    TimeDuration CalcNextRetryTimeout();
 
     TaskBehavior() = delete;
 
@@ -92,7 +95,8 @@ private:
                  const Timestamp& expiration,
                  const TimeDuration& minRetryDelay,
                  const TimeDuration& maxRetryDelay,
-                 const Timestamp& startExpiration);
+                 const Timestamp& startExpiration,
+                 const NumRetries& retryCount);
 
     const TimeDuration period;
     const TimeDuration minRetryDelay;
@@ -107,6 +111,9 @@ private:
 
     // The current retry delay
     TimeDuration currentRetryDelay;
+
+    // Number of task retries
+    NumRetries _retryCount = NumRetries::Infinite();
 };
 
 } // namespace opendnp3

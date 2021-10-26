@@ -300,7 +300,7 @@ std::shared_ptr<IMasterTask> MContext::AddScan(TimeDuration period,
 {
     auto task = std::make_shared<UserPollTask>(
         this->tasks.context, builder,
-        TaskBehavior::ImmediatePeriodic(period, params.taskRetryPeriod, params.maxTaskRetryPeriod), true, *application,
+        TaskBehavior::ImmediatePeriodic(period, params.taskRetryPeriod, params.maxTaskRetryPeriod, params.retryCount), true, *application,
         soe_handler, logger, config);
     this->ScheduleRecurringPollTask(task);
     return task;

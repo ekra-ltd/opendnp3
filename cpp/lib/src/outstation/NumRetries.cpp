@@ -50,4 +50,9 @@ void NumRetries::Reset()
     this->numRetries = 0;
 }
 
+bool NumRetries::IsFixed() const
+{
+    return !isInfinite;
+}
+
 }; // namespace opendnp3

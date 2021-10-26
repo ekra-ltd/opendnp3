@@ -37,6 +37,8 @@ public:
     bool Retry();
     void Reset();
 
+    bool IsFixed() const;
+
 private:
     NumRetries(std::size_t maxNumRetries, bool isInfinite);
 

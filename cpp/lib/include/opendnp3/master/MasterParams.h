@@ -24,6 +24,7 @@
 #include "opendnp3/app/ClassField.h"
 #include "opendnp3/gen/IndexQualifierMode.h"
 #include "opendnp3/gen/TimeSyncMode.h"
+#include "opendnp3/outstation/NumRetries.h"
 #include "opendnp3/util/TimeDuration.h"
 
 namespace opendnp3
@@ -40,8 +41,14 @@ struct MasterParams
     /// Application layer response timeout
     TimeDuration responseTimeout = TimeDuration::Seconds(5);
 
+    // Tasks retry count
+    NumRetries retryCount = NumRetries::Infinite();
+
     /// If true, the master will do time syncs when it sees the time IIN bit from the outstation
     TimeSyncMode timeSyncMode = TimeSyncMode::None;
+
+    /// Time synchronization task period
+    TimeDuration timeSyncPeriod = TimeDuration::Max();
 
     /// If true, the master will disable unsol on startup for all 3 classes
     bool disableUnsolOnStartup = true;
