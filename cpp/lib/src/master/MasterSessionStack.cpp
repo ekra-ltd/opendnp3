@@ -267,6 +267,32 @@ void MasterSessionStack::DirectOperate(CommandSet&& commands,
     executor->post(action);
 }
 
+void MasterSessionStack::Select(CommandSet&& commands,
+    const CommandResultCallbackT& callback,
+    const TaskConfig& config)
+{
+    // this is required b/c move capture not supported in C++11
+    auto set = std::make_shared<CommandSet>(std::move(commands));
+
+    auto action = [self = shared_from_this(), set, config, callback]() -> void {
+        self->context.Select(std::move(*set), callback, config);
+    };
+    executor->post(action);
+}
+
+void MasterSessionStack::Operate(CommandSet&& commands,
+    const CommandResultCallbackT& callback,
+    const TaskConfig& config)
+{
+    // this is required b/c move capture not supported in C++11
+    auto set = std::make_shared<CommandSet>(std::move(commands));
+
+    auto action = [self = shared_from_this(), set, config, callback]() -> void {
+        self->context.Operate(std::move(*set), callback, config);
+    };
+    executor->post(action);
+}
+
 StackStatistics MasterSessionStack::CreateStatistics() const
 {
     return StackStatistics(this->stack.link->GetStatistics(), this->stack.transport->GetStatistics());

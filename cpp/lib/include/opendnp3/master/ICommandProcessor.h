@@ -58,6 +58,30 @@ public:
         = 0;
 
     /**
+    * Select a set of commands
+    *
+    * @param commands Set of command headers
+    * @param callback callback that will be invoked upon completion or failure
+    * @param config optional configuration that controls normal callbacks and allows the user to be specified for SA
+    */
+    virtual void Select(CommandSet&& commands,
+                        const CommandResultCallbackT& callback,
+                        const TaskConfig& config = TaskConfig::Default())
+        = 0;
+
+    /**
+    * Operate a set of commands
+    *
+    * @param commands Set of command headers
+    * @param callback callback that will be invoked upon completion or failure
+    * @param config optional configuration that controls normal callbacks and allows the user to be specified for SA
+    */
+    virtual void Operate(CommandSet&& commands,
+                         const CommandResultCallbackT& callback,
+                         const TaskConfig& config = TaskConfig::Default())
+                         = 0;
+
+    /**
      * Select/operate a single command
      *
      * @param command Command to operate
@@ -84,6 +108,34 @@ public:
                        uint16_t index,
                        const CommandResultCallbackT& callback,
                        const TaskConfig& config = TaskConfig::Default());
+
+    /**
+    * Select a single command
+    *
+    * @param command Command to select
+    * @param index of the command
+    * @param callback callback that will be invoked upon completion or failure
+    * @param config optional configuration that controls normal callbacks and allows the user to be specified for SA
+    */
+    template<class T>
+    void Select(const T& command,
+                uint16_t index,
+                const CommandResultCallbackT& callback,
+                const TaskConfig& config = TaskConfig::Default());
+
+    /**
+    * Operate a single command
+    *
+    * @param command Command to operate
+    * @param index of the command
+    * @param callback callback that will be invoked upon completion or failure
+    * @param config optional configuration that controls normal callbacks and allows the user to be specified for SA
+    */
+    template<class T>
+    void Operate(const T& command,
+                 uint16_t index,
+                 const CommandResultCallbackT& callback,
+                 const TaskConfig& config = TaskConfig::Default());
 };
 
 template<class T>
@@ -104,6 +156,26 @@ void ICommandProcessor::DirectOperate(const T& command,
 {
     CommandSet commands({WithIndex(command, index)});
     this->DirectOperate(std::move(commands), callback, config);
+}
+
+template<class T>
+void ICommandProcessor::Select(const T& command,
+                               uint16_t index,
+                               const CommandResultCallbackT& callback,
+                               const TaskConfig& config)
+{
+    CommandSet commands({ WithIndex(command, index) });
+    this->Select(std::move(commands), callback, config);
+}
+
+template<class T>
+void ICommandProcessor::Operate(const T& command,
+    uint16_t index,
+    const CommandResultCallbackT& callback,
+    const TaskConfig& config)
+{
+    CommandSet commands({ WithIndex(command, index) });
+    this->Operate(std::move(commands), callback, config);
 }
 
 } // namespace opendnp3

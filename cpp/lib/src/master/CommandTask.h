@@ -68,6 +68,24 @@ public:
                                                                const Timestamp& startExpiration,
                                                                const TaskConfig& config,
                                                                Logger logger);
+    static std::shared_ptr<IMasterTask> CreateSelect(const std::shared_ptr<TaskContext>& context,
+                                                     CommandSet&& set,
+                                                     IndexQualifierMode mode,
+                                                     IMasterApplication& app,
+                                                     const CommandResultCallbackT& callback,
+                                                     const Timestamp& startExpiration,
+                                                     const TaskConfig& config,
+                                                     Logger logger);
+
+    static std::shared_ptr<IMasterTask> CreateOperate(const std::shared_ptr<TaskContext>& context,
+                                                      CommandSet&& set,
+                                                      IndexQualifierMode mode,
+                                                      IMasterApplication& app,
+                                                      const CommandResultCallbackT& callback,
+                                                      const Timestamp& startExpiration,
+                                                      const TaskConfig& config,
+                                                      Logger logger);
+
 
     virtual char const* Name() const override final
     {
@@ -113,6 +131,8 @@ private:
 
     void LoadSelectAndOperate();
     void LoadDirectOperate();
+    void LoadSelect();
+    void LoadOperate();
 
     std::deque<FunctionCode> functionCodes;
 
@@ -120,6 +140,8 @@ private:
     const CommandResultCallbackT commandCallback;
     CommandSet commands;
     const IndexQualifierMode mode;
+
+    bool isSelect = false;
 };
 
 } // namespace opendnp3

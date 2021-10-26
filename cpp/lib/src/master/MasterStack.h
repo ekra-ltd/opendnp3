@@ -163,6 +163,14 @@ public:
                        const CommandResultCallbackT& callback,
                        const TaskConfig& config) override;
 
+    void Select(CommandSet&& commands,
+                const CommandResultCallbackT& callback,
+                const TaskConfig& config) override;
+
+    void Operate(CommandSet&& commands,
+                 const CommandResultCallbackT& callback,
+                 const TaskConfig& config) override;
+
     bool DemandTimeSyncronization() override;
 
 protected:

@@ -61,6 +61,36 @@ std::shared_ptr<IMasterTask> CommandTask::CreateSelectAndOperate(const std::shar
     return task;
 }
 
+std::shared_ptr<IMasterTask> CommandTask::CreateSelect(const std::shared_ptr<TaskContext>& context,
+                                                       CommandSet&& set,
+                                                       IndexQualifierMode mode,
+                                                       IMasterApplication& app,
+                                                       const CommandResultCallbackT& callback,
+                                                       const Timestamp& startExpiration,
+                                                       const TaskConfig& config,
+                                                       Logger logger)
+{
+    auto task
+        = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, startExpiration, config, logger);
+    task->LoadSelect();
+    return task;
+}
+
+std::shared_ptr<IMasterTask> CommandTask::CreateOperate(const std::shared_ptr<TaskContext>& context,
+                                                        CommandSet&& set,
+                                                        IndexQualifierMode mode,
+                                                        IMasterApplication& app,
+                                                        const CommandResultCallbackT& callback,
+                                                        const Timestamp& startExpiration,
+                                                        const TaskConfig& config,
+                                                        Logger logger)
+{
+    auto task
+        = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, startExpiration, config, logger);
+    task->LoadOperate();
+    return task;
+}
+
 CommandTask::CommandTask(const std::shared_ptr<TaskContext>& context,
                          CommandSet&& commands,
                          IndexQualifierMode mode,
@@ -88,6 +118,19 @@ void CommandTask::LoadDirectOperate()
 {
     functionCodes.clear();
     functionCodes.push_back(FunctionCode::DIRECT_OPERATE);
+}
+
+void CommandTask::LoadSelect()
+{
+    functionCodes.clear();
+    functionCodes.push_back(FunctionCode::SELECT);
+    isSelect = true;
+}
+
+void CommandTask::LoadOperate()
+{
+    functionCodes.clear();
+    functionCodes.push_back(FunctionCode::OPERATE);
 }
 
 bool CommandTask::BuildRequest(APDURequest& request, uint8_t seq)
@@ -122,7 +165,7 @@ void CommandTask::Initialize()
 
 IMasterTask::ResponseResult CommandTask::ProcessResponse(const ser4cpp::rseq_t& objects)
 {
-    if (functionCodes.empty())
+    if (functionCodes.empty() && !isSelect)
     {
         auto result = CommandSetOps::ProcessOperateResponse(commands, objects, &logger);
         return (result == CommandSetOps::OperateResult::FAIL_PARSE) ? ResponseResult::ERROR_BAD_RESPONSE
@@ -134,7 +177,7 @@ IMasterTask::ResponseResult CommandTask::ProcessResponse(const ser4cpp::rseq_t& 
     switch (result)
     {
     case (CommandSetOps::SelectResult::OK):
-        return ResponseResult::OK_REPEAT; // proceed to OPERATE
+        return isSelect ? ResponseResult::OK_FINAL : ResponseResult::OK_REPEAT; // proceed to OPERATE if not solo select
     case (CommandSetOps::SelectResult::FAIL_SELECT):
         return ResponseResult::OK_FINAL; // end the task, let the user examine each command point
     default:

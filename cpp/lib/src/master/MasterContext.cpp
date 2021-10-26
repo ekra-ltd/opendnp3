@@ -185,6 +185,22 @@ void MContext::SelectAndOperate(CommandSet&& commands, const CommandResultCallba
                                                                 callback, timeout, config, logger));
 }
 
+void MContext::Select(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
+{
+    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
+    this->ScheduleAdhocTask(CommandTask::CreateSelect(this->tasks.context, std::move(commands),
+                                                      this->params.controlQualifierMode, *application, callback,
+                                                      timeout, config, logger));
+}
+
+void MContext::Operate(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
+{
+    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
+    this->ScheduleAdhocTask(CommandTask::CreateOperate(this->tasks.context, std::move(commands),
+                                                      this->params.controlQualifierMode, *application, callback,
+                                                      timeout, config, logger));
+}
+
 void MContext::ProcessAPDU(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects)
 {
     switch (header.function)

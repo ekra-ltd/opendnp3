@@ -114,6 +114,10 @@ public:
 
     void SelectAndOperate(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config);
 
+    void Select(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config);
+
+    void Operate(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config);
+
     // -----  public methods used to add tasks -----
 
     std::shared_ptr<IMasterTask> AddScan(TimeDuration period,
