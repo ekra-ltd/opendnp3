@@ -75,7 +75,7 @@ public:
 private:
     virtual MasterTaskType GetTaskType() const override
     {
-        return MasterTaskType::USER_TASK;
+        return MasterTaskType::USER_POLL;
     }
 
     HeaderBuilderT builder;

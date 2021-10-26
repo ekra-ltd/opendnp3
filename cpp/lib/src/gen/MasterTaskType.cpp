@@ -71,6 +71,8 @@ MasterTaskType MasterTaskTypeSpec::from_type(uint8_t arg)
       return MasterTaskType::GET_FILE_INFO_TASK;
     case(13):
       return MasterTaskType::DELETE_FILE_TASK;
+    case(14):
+      return MasterTaskType::USER_POLL;
     default:
       throw new std::invalid_argument("Unknown value");
   }
@@ -108,6 +110,8 @@ char const* MasterTaskTypeSpec::to_string(MasterTaskType arg)
       return "GET_FILE_INFO_TASK";
     case MasterTaskType::DELETE_FILE_TASK:
       return "DELETE_FILE_TASK";
+    case MasterTaskType::USER_POLL:
+      return "USER_POLL";
     default:
       return "UNDEFINED";
   }
@@ -145,6 +149,8 @@ char const* MasterTaskTypeSpec::to_human_string(MasterTaskType arg)
       return "GET_FILE_INFO_TASK";
     case MasterTaskType::DELETE_FILE_TASK:
       return "DELETE_FILE_TASK";
+    case MasterTaskType::USER_POLL:
+      return "USER_POLL";
     default:
       return "UNDEFINED";
   }
@@ -193,6 +199,9 @@ MasterTaskType MasterTaskTypeSpec::from_string(const std::string& arg)
   }
   if (arg == "DELETE_FILE_TASK") {
       return MasterTaskType::DELETE_FILE_TASK;
+  }
+  if (arg == "USER_POLL") {
+      return MasterTaskType::USER_POLL;
   }
   throw std::invalid_argument(std::string("Unknown value: ") + arg);
 }

@@ -55,7 +55,8 @@ enum class MasterTaskType : uint8_t
   WRITE_FILE_TASK = 10,
   GET_DIRECTORY_FILES_TASK = 11,
   GET_FILE_INFO_TASK = 12,
-  DELETE_FILE_TASK = 13
+  DELETE_FILE_TASK = 13,
+  USER_POLL = 14
 };
 
 struct MasterTaskTypeSpec
