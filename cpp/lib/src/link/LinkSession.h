@@ -49,9 +49,10 @@ public:
                                                uint64_t sessionid,
                                                const std::shared_ptr<IResourceManager>& manager,
                                                const std::shared_ptr<IListenCallbacks>& callbacks,
-                                               const std::shared_ptr<IAsyncChannel>& channel)
+                                               const std::shared_ptr<IAsyncChannel>& channel,
+                                               const StatisticsChangeHandler_t& statisticsChangeHandler)
     {
-        auto session = std::make_shared<LinkSession>(logger, sessionid, manager, callbacks, channel);
+        auto session = std::make_shared<LinkSession>(logger, sessionid, manager, callbacks, channel, statisticsChangeHandler);
 
         session->Start();
 
@@ -62,7 +63,8 @@ public:
                 uint64_t sessionid,
                 std::shared_ptr<IResourceManager> manager,
                 std::shared_ptr<IListenCallbacks> callbacks,
-                const std::shared_ptr<IAsyncChannel>& channel);
+                const std::shared_ptr<IAsyncChannel>& channel,
+                const StatisticsChangeHandler_t& statisticsChangeHandler);
 
     // override IResource
     void Shutdown() final;
@@ -105,6 +107,7 @@ private:
     exe4cpp::Timer first_frame_timer;
 
     std::shared_ptr<MasterSessionStack> stack; // initialized to null
+    StatisticsChangeHandler_t statisticsChangeHandler;
 };
 } // namespace opendnp3
 

@@ -29,8 +29,8 @@
 namespace opendnp3
 {
 
-IOHandler::IOHandler(const Logger& logger, bool close_existing, std::shared_ptr<IChannelListener> listener)
-    : close_existing(close_existing), logger(logger), listener(std::move(listener)), parser(logger)
+IOHandler::IOHandler(const Logger& logger, bool close_existing, std::shared_ptr<IChannelListener> listener, const StatisticsChangeHandler_t& statisticsChangeHandler)
+    : close_existing(close_existing), logger(logger), listener(std::move(listener)), statistics(statisticsChangeHandler), parser(logger, statisticsChangeHandler)
 {
 }
 

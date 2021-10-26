@@ -6,6 +6,7 @@ set(opendnp3_public_headers
     ./include/opendnp3/IResource.h
     ./include/opendnp3/IStack.h
     ./include/opendnp3/StackStatistics.h
+    ./include/opendnp3/StatisticsTypes.h
 
     ./include/opendnp3/app/AnalogCommandEvent.h
     ./include/opendnp3/app/AnalogOutput.h

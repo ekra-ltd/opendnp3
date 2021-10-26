@@ -71,9 +71,10 @@ public:
                                                       const std::shared_ptr<IChannelListener>& listener,
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       const IPEndpoint& endpoint,
-                                                      std::error_code& ec)
+                                                      std::error_code& ec,
+                                                      const StatisticsChangeHandler_t& statisticsChangeHandler)
     {
-        return std::make_shared<TCPServerIOHandler>(logger, accept_mode, listener, executor, endpoint, ec);
+        return std::make_shared<TCPServerIOHandler>(logger, accept_mode, listener, executor, endpoint, ec, statisticsChangeHandler);
     }
 
     TCPServerIOHandler(const Logger& logger,
@@ -81,7 +82,8 @@ public:
                        const std::shared_ptr<IChannelListener>& listener,
                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                        IPEndpoint endpoint,
-                       std::error_code& ec);
+                       std::error_code& ec,
+                       const StatisticsChangeHandler_t& statisticsChangeHandler);
 
 protected:
     void ShutdownImpl() final;
@@ -93,6 +95,7 @@ private:
     const std::shared_ptr<exe4cpp::StrandExecutor> executor;
     const IPEndpoint endpoint;
     std::shared_ptr<Server> server;
+    StatisticsChangeHandler_t statisticsChangeHandler;
 };
 
 } // namespace opendnp3

@@ -43,7 +43,7 @@ class IOHandler : private IFrameSink, public IChannelCallbacks, public std::enab
 {
 
 public:
-    IOHandler(const Logger& logger, bool close_existing, std::shared_ptr<IChannelListener> listener);
+    IOHandler(const Logger& logger, bool close_existing, std::shared_ptr<IChannelListener> listener, const StatisticsChangeHandler_t& statisticsChangeHandler);
 
     virtual ~IOHandler() = default;
 

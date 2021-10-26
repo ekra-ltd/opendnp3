@@ -109,7 +109,7 @@ std::shared_ptr<IMaster> DNP3Channel::AddMaster(const std::string& id,
                                                 const MasterStackConfig& config)
 {
     auto stack = MasterStack::Create(this->logger.detach(id), this->executor, SOEHandler, application, this->scheduler,
-                                     this->iohandler, this->resources, config);
+                                     this->iohandler, this->resources, config, config.link.StatisticsChangeEventHandler);
 
     return this->AddStack(config.link, stack);
 }

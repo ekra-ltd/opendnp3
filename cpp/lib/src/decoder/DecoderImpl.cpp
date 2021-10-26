@@ -30,8 +30,8 @@
 namespace opendnp3
 {
 
-DecoderImpl::DecoderImpl(IDecoderCallbacks& callbacks, const Logger& logger)
-    : callbacks(&callbacks), logger(logger), link(logger), transportRx(logger, 2048)
+DecoderImpl::DecoderImpl(IDecoderCallbacks& callbacks, const Logger& logger, const StatisticsChangeHandler_t& statisticsChangeHandler)
+    : callbacks(&callbacks), logger(logger), link(logger, statisticsChangeHandler), transportRx(logger, 2048)
 {
 }
 

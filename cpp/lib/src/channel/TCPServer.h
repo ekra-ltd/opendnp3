@@ -20,6 +20,7 @@
 #ifndef OPENDNP3_TCPSERVER_H
 #define OPENDNP3_TCPSERVER_H
 
+#include "opendnp3/StatisticsTypes.h"
 #include "opendnp3/channel/IListener.h"
 #include "opendnp3/channel/IPEndpoint.h"
 #include "opendnp3/logging/Logger.h"

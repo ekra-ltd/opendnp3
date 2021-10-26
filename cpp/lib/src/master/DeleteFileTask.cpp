@@ -28,7 +28,7 @@ namespace opendnp3
     }
 
     bool DeleteFileTask::BuildRequest(APDURequest& request, uint8_t seq) {
-        logger.log(flags::DBG, __FILE__, "Attempting to delete the file");
+        logger.log(flags::DBG, __FILE__, "Attempting delete file");
         Group70Var3 file;
         file.filename = filename;
         file.operationMode = FileOpeningMode::DELETING;

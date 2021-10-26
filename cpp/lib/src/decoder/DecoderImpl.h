@@ -38,7 +38,7 @@ class DecoderImpl;
 class DecoderImpl final : private IFrameSink
 {
 public:
-    DecoderImpl(IDecoderCallbacks& callbacks, const Logger& logger);
+    DecoderImpl(IDecoderCallbacks& callbacks, const Logger& logger, const StatisticsChangeHandler_t& statisticsChangeHandler);
 
     void DecodeLPDU(const ser4cpp::rseq_t& data);
     void DecodeTPDU(const ser4cpp::rseq_t& data);

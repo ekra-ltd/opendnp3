@@ -22,9 +22,9 @@
 
 #include "opendnp3/gen/FlowControl.h"
 #include "opendnp3/gen/Parity.h"
+#include "opendnp3/StatisticsTypes.h"
 #include "opendnp3/gen/StopBits.h"
 #include "opendnp3/util/TimeDuration.h"
-
 #include <string>
 
 namespace opendnp3
@@ -65,6 +65,8 @@ struct SerialSettings
 
     /// Some physical layers need time to "settle" so that the first tx isn't lost
     TimeDuration asyncOpenDelay;
+
+    StatisticsChangeHandler_t statisticsChangeHandler;
 };
 
 } // namespace opendnp3

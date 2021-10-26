@@ -42,11 +42,13 @@ TCPServerIOHandler::TCPServerIOHandler(const Logger& logger,
                                        const std::shared_ptr<IChannelListener>& listener,
                                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                                        IPEndpoint endpoint,
-                                       std::error_code& ec)
-    : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener),
+                                       std::error_code& ec,
+                                       const StatisticsChangeHandler_t& statisticsChangeHandler)
+    : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener, statisticsChangeHandler),
       executor(std::move(executor)),
       endpoint(std::move(endpoint)),
-      server(std::make_shared<Server>(this->logger, this->executor, this->endpoint, ec))
+      server(std::make_shared<Server>(this->logger, this->executor, this->endpoint, ec)),
+      statisticsChangeHandler(statisticsChangeHandler)
 {
 }
 

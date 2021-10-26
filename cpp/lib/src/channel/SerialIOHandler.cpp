@@ -34,7 +34,7 @@ SerialIOHandler::SerialIOHandler(const Logger& logger,
                                  const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                  const ChannelRetry& retry,
                                  SerialSettings settings)
-    : IOHandler(logger, false, listener), executor(executor), retry(retry), settings(std::move(settings))
+    : IOHandler(logger, false, listener, settings.statisticsChangeHandler), executor(executor), retry(retry), settings(std::move(settings))
 {
 }
 

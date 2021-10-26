@@ -20,6 +20,7 @@
 #ifndef OPENDNP3_DECODER_H
 #define OPENDNP3_DECODER_H
 
+#include "opendnp3/StatisticsTypes.h"
 #include "opendnp3/decoder/IDecoderCallbacks.h"
 #include "opendnp3/logging/Logger.h"
 #include "opendnp3/util/Buffer.h"
@@ -33,7 +34,7 @@ class DecoderImpl;
 class Decoder
 {
 public:
-    Decoder(IDecoderCallbacks& callbacks, const Logger& logger);
+    Decoder(IDecoderCallbacks& callbacks, const Logger& logger, const StatisticsChangeHandler_t& statisticsChangeHandler);
     ~Decoder();
 
     void DecodeLPDU(const Buffer& data);

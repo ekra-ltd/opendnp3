@@ -20,8 +20,12 @@
 #ifndef OPENDNP3_LINKCONFIG_H
 #define OPENDNP3_LINKCONFIG_H
 
+#include "opendnp3/StatisticsTypes.h"
 #include "opendnp3/link/Addresses.h"
 #include "opendnp3/util/TimeDuration.h"
+
+#include <cstdint>
+#include <utility>
 
 namespace opendnp3
 {
@@ -34,14 +38,15 @@ struct LinkConfig
     LinkConfig() = delete;
 
     LinkConfig(
-        bool isMaster, uint16_t localAddr, uint16_t remoteAddr, TimeDuration timeout, TimeDuration keepAliveTimeout)
+        bool isMaster, uint16_t localAddr, uint16_t remoteAddr, TimeDuration timeout, TimeDuration keepAliveTimeout, const StatisticsChangeHandler_t& statisticsChangeHandler)
         :
 
           IsMaster(isMaster),
           LocalAddr(localAddr),
           RemoteAddr(remoteAddr),
           Timeout(timeout),
-          KeepAliveTimeout(keepAliveTimeout)
+          KeepAliveTimeout(keepAliveTimeout),
+          StatisticsChangeEventHandler(std::move(statisticsChangeHandler))
     {
     }
 
@@ -52,7 +57,8 @@ struct LinkConfig
           LocalAddr(isMaster ? 1 : 1024),
           RemoteAddr(isMaster ? 1024 : 1),
           Timeout(TimeDuration::Seconds(1)),
-          KeepAliveTimeout(TimeDuration::Minutes(1))
+          KeepAliveTimeout(TimeDuration::Minutes(1)),
+          StatisticsChangeEventHandler(nullptr)
     {
     }
 
@@ -76,6 +82,8 @@ struct LinkConfig
     /// the interval for keep-alive messages (link status requests)
     /// if set to TimeDuration::Max(), the keep-alive is disabled
     TimeDuration KeepAliveTimeout;
+
+    StatisticsChangeHandler_t StatisticsChangeEventHandler;
 };
 
 } // namespace opendnp3

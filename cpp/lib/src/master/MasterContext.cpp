@@ -50,7 +50,8 @@ MContext::MContext(const Addresses& addresses,
                    const std::shared_ptr<ISOEHandler>& SOEHandler,
                    const std::shared_ptr<IMasterApplication>& application,
                    std::shared_ptr<IMasterScheduler> scheduler,
-                   const MasterParams& params)
+                   const MasterParams& params,
+                   const StatisticsChangeHandler_t& statisticsChangeHandler)
     : logger(logger),
       executor(executor),
       lower(std::move(lower)),
@@ -61,7 +62,8 @@ MContext::MContext(const Addresses& addresses,
       scheduler(std::move(scheduler)),
       tasks(params, logger, *application, SOEHandler),
       txBuffer(params.maxTxFragSize),
-      tstate(TaskState::IDLE)
+      tstate(TaskState::IDLE),
+      statisticsChangeHandler(statisticsChangeHandler)
 {
 }
 
@@ -292,10 +294,13 @@ bool MContext::CheckConfirmTransmit()
         return false;
     }
 
-    auto confirm = this->confirmQueue.front();
+    const auto confirm = this->confirmQueue.front();
     APDUWrapper wrapper(this->txBuffer.as_wslice());
     wrapper.SetFunction(confirm.function);
     wrapper.SetControl(confirm.control);
+    if (statisticsChangeHandler) {
+        statisticsChangeHandler(StatisticsValueType::ConfirmationsSent, 1);
+    }
     this->Transmit(wrapper.ToRSeq());
     this->confirmQueue.pop_front();
     return true;
@@ -597,7 +602,11 @@ MContext::TaskState MContext::OnResponse_WaitForResponse(const APDUResponseHeade
 
     auto now = Timestamp(this->executor->get_time());
 
-    auto result = this->activeTask->OnResponse(header, objects, now);
+    if (header.function == FunctionCode::CONFIRM && statisticsChangeHandler) {
+        statisticsChangeHandler(StatisticsValueType::ConfirmationsReceived, 1);
+    }
+
+    const auto result = this->activeTask->OnResponse(header, objects, now);
 
     if (header.control.CON)
     {

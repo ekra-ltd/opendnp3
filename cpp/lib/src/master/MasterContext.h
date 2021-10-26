@@ -25,6 +25,7 @@
 #include "master/HeaderBuilder.h"
 #include "master/IMasterScheduler.h"
 #include "master/MasterTasks.h"
+#include "opendnp3/StatisticsTypes.h"
 
 #include "opendnp3/app/MeasurementTypes.h"
 #include "opendnp3/gen/RestartType.h"
@@ -65,7 +66,8 @@ public:
              const std::shared_ptr<ISOEHandler>& SOEHandler,
              const std::shared_ptr<IMasterApplication>& application,
              std::shared_ptr<IMasterScheduler> scheduler,
-             const MasterParams& params);
+             const MasterParams& params,
+             const StatisticsChangeHandler_t& statisticsChangeHandler);
 
     Logger logger;
     const std::shared_ptr<exe4cpp::IExecutor> executor;
@@ -226,6 +228,9 @@ protected:
     TaskState StartTask_TaskReady();
     TaskState OnResponse_WaitForResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
     TaskState OnResponseTimeout_WaitForResponse();
+
+private:
+    StatisticsChangeHandler_t statisticsChangeHandler;
 };
 
 } // namespace opendnp3

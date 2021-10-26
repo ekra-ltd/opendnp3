@@ -34,10 +34,11 @@ std::shared_ptr<MasterSessionStack> MasterSessionStack::Create(const Logger& log
                                                                const std::shared_ptr<IMasterScheduler>& scheduler,
                                                                const std::shared_ptr<LinkSession>& session,
                                                                ILinkTx& linktx,
-                                                               const MasterStackConfig& config)
+                                                               const MasterStackConfig& config,
+                                                               const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
     return std::make_shared<MasterSessionStack>(logger, executor, SOEHandler, application, scheduler, session, linktx,
-                                                config);
+                                                config, statisticsChangeHandler);
 }
 
 MasterSessionStack::MasterSessionStack(const Logger& logger,
@@ -47,7 +48,8 @@ MasterSessionStack::MasterSessionStack(const Logger& logger,
                                        const std::shared_ptr<IMasterScheduler>& scheduler,
                                        std::shared_ptr<LinkSession> session,
                                        ILinkTx& linktx,
-                                       const MasterStackConfig& config)
+                                       const MasterStackConfig& config,
+                                       const StatisticsChangeHandler_t& statisticsChangeHandler)
     : executor(executor),
       scheduler(scheduler),
       session(std::move(session)),
@@ -59,7 +61,8 @@ MasterSessionStack::MasterSessionStack(const Logger& logger,
               SOEHandler,
               application,
               scheduler,
-              config.master)
+              config.master,
+              statisticsChangeHandler)
 {
     stack.link->SetRouter(linktx);
     stack.transport->SetAppLayer(context);

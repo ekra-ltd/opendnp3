@@ -71,12 +71,13 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddTCPClient(const std::string& id,
                                                         const ChannelRetry& retry,
                                                         const std::vector<IPEndpoint>& hosts,
                                                         const std::string& local,
-                                                        std::shared_ptr<IChannelListener> listener)
+                                                        std::shared_ptr<IChannelListener> listener,
+                                                        const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
     auto create = [&]() -> std::shared_ptr<IChannel> {
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = TCPClientIOHandler::Create(clogger, listener, executor, retry, IPEndpointsList(hosts), local);
+        auto iohandler = TCPClientIOHandler::Create(clogger, listener, executor, retry, IPEndpointsList(hosts), local, statisticsChangeHandler);
         return DNP3Channel::Create(clogger, executor, iohandler, this->resources);
     };
 
@@ -94,13 +95,14 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddTCPServer(const std::string& id,
                                                         const LogLevels& levels,
                                                         ServerAcceptMode mode,
                                                         const IPEndpoint& endpoint,
-                                                        std::shared_ptr<IChannelListener> listener)
+                                                        std::shared_ptr<IChannelListener> listener,
+                                                        const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
     auto create = [&]() -> std::shared_ptr<IChannel> {
         std::error_code ec;
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = TCPServerIOHandler::Create(clogger, mode, listener, executor, endpoint, ec);
+        auto iohandler = TCPServerIOHandler::Create(clogger, mode, listener, executor, endpoint, ec, statisticsChangeHandler);
         if (ec)
         {
             throw DNP3Error(Error::UNABLE_TO_BIND_SERVER, ec);
@@ -123,12 +125,13 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddUDPChannel(const std::string& id,
                                                          const ChannelRetry& retry,
                                                          const IPEndpoint& localEndpoint,
                                                          const IPEndpoint& remoteEndpoint,
-                                                         std::shared_ptr<IChannelListener> listener)
+                                                         std::shared_ptr<IChannelListener> listener,
+                                                         const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
     auto create = [&]() -> std::shared_ptr<IChannel> {
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = UDPClientIOHandler::Create(clogger, listener, executor, retry, localEndpoint, remoteEndpoint);
+        auto iohandler = UDPClientIOHandler::Create(clogger, listener, executor, retry, localEndpoint, remoteEndpoint, statisticsChangeHandler);
         return DNP3Channel::Create(clogger, executor, iohandler, this->resources);
     };
 
@@ -233,13 +236,14 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddTLSServer(const std::string& id,
 std::shared_ptr<IListener> DNP3ManagerImpl::CreateListener(std::string loggerid,
                                                            const LogLevels& levels,
                                                            const IPEndpoint& endpoint,
-                                                           const std::shared_ptr<IListenCallbacks>& callbacks)
+                                                           const std::shared_ptr<IListenCallbacks>& callbacks,
+                                                           const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
     auto create = [&]() -> std::shared_ptr<IListener> {
         std::error_code ec;
         auto server
             = MasterTCPServer::Create(this->logger.detach(loggerid, levels), exe4cpp::StrandExecutor::create(this->io),
-                                      endpoint, callbacks, this->resources, ec);
+                                      endpoint, callbacks, this->resources, ec, statisticsChangeHandler);
         if (ec)
         {
             throw DNP3Error(Error::UNABLE_TO_BIND_SERVER, ec);

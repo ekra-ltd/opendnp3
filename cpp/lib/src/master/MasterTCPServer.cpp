@@ -37,8 +37,10 @@ MasterTCPServer::MasterTCPServer(const Logger& logger,
                                  const IPEndpoint& endpoint,
                                  std::shared_ptr<IListenCallbacks> callbacks,
                                  std::shared_ptr<ResourceManager> manager,
-                                 std::error_code& ec)
-    : TCPServer(logger, executor, endpoint, ec), callbacks(std::move(callbacks)), manager(std::move(manager))
+                                 std::error_code& ec,
+                                 const StatisticsChangeHandler_t& statisticsChangeHandler)
+    : TCPServer(logger, executor, endpoint, ec), callbacks(std::move(callbacks)), manager(std::move(manager)),
+      statisticsChangeHandler(statisticsChangeHandler)
 {
 }
 
@@ -63,7 +65,7 @@ void MasterTCPServer::AcceptConnection(uint64_t sessionid,
 
         auto create = [&]() -> std::shared_ptr<LinkSession> {
             return LinkSession::Create(this->logger.detach(SessionIdToString(sessionid)), sessionid, this->manager,
-                                       this->callbacks, channel);
+                                       this->callbacks, channel, statisticsChangeHandler);
         };
 
         if (!this->manager->Bind<LinkSession>(create))

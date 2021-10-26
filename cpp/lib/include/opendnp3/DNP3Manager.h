@@ -81,6 +81,7 @@ public:
      * @param hosts List of host addresses to use to connect to the remote outstation (i.e. 127.0.0.1 or www.google.com)
      * @param local adapter address on which to attempt the connection (use 0.0.0.0 for all adapters)
      * @param listener optional callback interface (can be nullptr) for info about the running channel
+     * @param statisticsChangeHandler optional link layer change event handler
      * @return shared_ptr to a channel interface
      */
     std::shared_ptr<IChannel> AddTCPClient(const std::string& id,
@@ -88,7 +89,8 @@ public:
                                            const ChannelRetry& retry,
                                            const std::vector<IPEndpoint>& hosts,
                                            const std::string& local,
-                                           std::shared_ptr<IChannelListener> listener);
+                                           std::shared_ptr<IChannelListener> listener,
+                                           const StatisticsChangeHandler_t& statisticsChangeHandler = nullptr);
 
     /**
      * Add a persistent TCP server channel. Only accepts a single connection at a time.
@@ -98,6 +100,7 @@ public:
      * @param mode Describes how new connections are treated when another session already exists
      * @param endpoint Network adapter to listen on (i.e. 127.0.0.1 or 0.0.0.0) and port
      * @param listener optional callback interface (can be nullptr) for info about the running channel
+     * @param statisticsChangeHandler optional link layer change event handler
      * @throw DNP3Error if the manager was already shutdown or if the server could not be binded properly
      * @return shared_ptr to a channel interface
      */
@@ -105,7 +108,8 @@ public:
                                            const opendnp3::LogLevels& levels,
                                            ServerAcceptMode mode,
                                            const IPEndpoint& endpoint,
-                                           std::shared_ptr<IChannelListener> listener);
+                                           std::shared_ptr<IChannelListener> listener,
+                                           const StatisticsChangeHandler_t& statisticsChangeHandler = nullptr);
 
     /**
      * Add a persistent UDP channel.
@@ -116,6 +120,7 @@ public:
      * @param localEndpoint Local endpoint from which datagrams will be received
      * @param remoteEndpoint Remote endpoint where datagrams will be sent to
      * @param listener optional callback interface (can be nullptr) for info about the running channel
+     * @param statisticsChangeHandler optional link layer change event handler
      * @throw DNP3Error if the manager was already shutdown
      * @return shared_ptr to a channel interface
      */
@@ -124,7 +129,8 @@ public:
                                             const ChannelRetry& retry,
                                             const IPEndpoint& localEndpoint,
                                             const IPEndpoint& remoteEndpoint,
-                                            std::shared_ptr<IChannelListener> listener);
+                                            std::shared_ptr<IChannelListener> listener,
+                                            const StatisticsChangeHandler_t& statisticsChangeHandler = nullptr);
 
     /**
      * Add a persistent serial channel
@@ -195,7 +201,8 @@ public:
     std::shared_ptr<IListener> CreateListener(std::string loggerid,
                                               const opendnp3::LogLevels& loglevel,
                                               const IPEndpoint& endpoint,
-                                              const std::shared_ptr<IListenCallbacks>& callbacks);
+                                              const std::shared_ptr<IListenCallbacks>& callbacks,
+                                              const StatisticsChangeHandler_t& statisticsChangeHandler = nullptr);
 
     /**
      * Create a TLS listener that will be used to accept incoming connections
