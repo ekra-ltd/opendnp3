@@ -46,9 +46,8 @@ namespace opendnp3
                 auto writer = request.GetWriter();
                 return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var3>(QualifierCode::FREE_FORMAT, file);
             }
-            case READING: {
+            case WORKING: {
                 fileTransportObject.fileId = fileCommandStatus.fileId;
-                fileTransportObject.blockNumber += 1;
                 request.SetFunction(FunctionCode::READ);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
@@ -70,7 +69,7 @@ namespace opendnp3
             case OPENING:
             case CLOSING:
                 return OnResponseStatusObject(response, objects);
-            case READING:
+            case WORKING:
                 return OnResponseReadFile(response, objects);
         }
         return ResponseResult::ERROR_BAD_RESPONSE;
@@ -87,40 +86,40 @@ namespace opendnp3
             fileCommandStatus = handler.GetFileStatusObject();
 
             switch (fileCommandStatus.status) {
-                case SUCCESS:
+                case FileCommandStatus::SUCCESS:
                     if (taskState == OPENING) {
                         logger.log(flags::DBG, __FILE__, "Success opening file");
                         logger.log(flags::DBG, __FILE__, "Starting file reading...");
-                        taskState = READING;
+                        taskState = WORKING;
                         return ResponseResult::OK_REPEAT;
                     }
                     logger.log(flags::DBG, __FILE__, "Successfully closed file");
                     return ResponseResult::OK_FINAL;
-                case PERMISSION_DENIED:
+                case FileCommandStatus::PERMISSION_DENIED:
                     logger.log(flags::DBG, __FILE__, "Permission denied");
                     break;
-                case INVALID_MODE:
+                case FileCommandStatus::INVALID_MODE:
                     logger.log(flags::DBG, __FILE__, "Invalid mode");
                     break;
-                case NOT_FOUND:
+                case FileCommandStatus::NOT_FOUND:
                     logger.log(flags::DBG, __FILE__, "File not found");
                     break;
-                case FILE_LOCKED:
+                case FileCommandStatus::FILE_LOCKED:
                     logger.log(flags::DBG, __FILE__, "File locked by another user");
                     break;
-                case OPEN_COUNT_EXCEEDED:
+                case FileCommandStatus::OPEN_COUNT_EXCEEDED:
                     logger.log(flags::DBG, __FILE__, "Maximum amount of files opened");
                     break;
-                case FILE_NOT_OPEN:
+                case FileCommandStatus::FILE_NOT_OPEN:
                     logger.log(flags::DBG, __FILE__, "Failed closing the file which is not opened");
                     break;
-                case INVALID_BLOCK_SIZE:
+                case FileCommandStatus::INVALID_BLOCK_SIZE:
                     logger.log(flags::DBG, __FILE__, "Cannot write this block size");
                     break;
-                case LOST_COM:
+                case FileCommandStatus::LOST_COM:
                     logger.log(flags::DBG, __FILE__, "Communication lost");
                     break;
-                case FAILED_ABORT:
+                case FileCommandStatus::FAILED_ABORT:
                     logger.log(flags::DBG, __FILE__, "Abort action failed");
                     break;
                 default:
@@ -145,6 +144,7 @@ namespace opendnp3
             const auto *data = static_cast<const uint8_t*>(fileTransportObject.data);
             output_file.write(reinterpret_cast<const char *>(data), fileTransportObject.data.length());
             fileTransportObject.data.make_empty();
+            fileTransportObject.blockNumber += 1;
             if (fileTransportObject.isLastBlock) {
                 taskState = CLOSING;
             }

@@ -211,6 +211,15 @@ bool MasterStack::ReadFile(const std::string& sourceFilename, const std::string&
     return true;
 }
 
+bool MasterStack::WriteFile(const std::string& sourceFilename, const std::string& destFilename)
+{
+    auto add = [self = this->shared_from_this(), sourceFilename, destFilename]() {
+        return self->mcontext.WriteFile(sourceFilename, destFilename);
+    };
+    this->executor->post(add);
+    return true;
+}
+
 void MasterStack::SelectAndOperate(CommandSet&& commands,
                                    const CommandResultCallbackT& callback,
                                    const TaskConfig& config)

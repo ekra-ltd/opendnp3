@@ -103,6 +103,7 @@ public:
 
     void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values);
     void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values);
+    void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var6>& values);
 
 protected:
     void Reset();
@@ -169,6 +170,7 @@ protected:
 
     virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values);
     virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values);
+    virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var6>& values);
 
 protected:
     // overridable to receive post processing events for every header

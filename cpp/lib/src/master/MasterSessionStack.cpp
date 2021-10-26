@@ -249,6 +249,16 @@ bool MasterSessionStack::ReadFile(const std::string& sourceFilename, const std::
     return true;
 }
 
+bool MasterSessionStack::WriteFile(const std::string& sourceFilename, const std::string& destFilename)
+{
+    auto builder = ConvertToLambda({ Header::AllObjects(70, 3) });
+    auto action = [self = shared_from_this(), sourceFilename, destFilename]() -> void {
+        self->context.WriteFile(sourceFilename, destFilename);
+    };
+    executor->post(action);
+    return true;
+}
+
 /// --- ICommandProcessor ---
 
 void MasterSessionStack::SelectAndOperate(CommandSet&& commands,

@@ -153,7 +153,10 @@ public:
                          const std::vector<Header>& headers,
                          const TaskConfig& config) override;
 
+    /// --- File Operations ---
+
     bool ReadFile(const std::string& sourceFilename, const std::string& destFilename) override;
+    bool WriteFile(const std::string& sourceFilename, const std::string& destFilename) override;
 
     // ------- implement ICommandProcessor ---------
 

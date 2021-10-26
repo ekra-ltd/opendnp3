@@ -43,7 +43,7 @@
 
 namespace opendnp3 {
 
-enum FileCommandStatus {
+enum class FileCommandStatus : uint8_t {
     SUCCESS = 0x0,
     PERMISSION_DENIED = 0x1,
     INVALID_MODE = 0x2,
@@ -56,16 +56,50 @@ enum FileCommandStatus {
     FAILED_ABORT = 0x9
 };
 
+enum class FileTransportStatus : uint8_t {
+    SUCCESS = 0x0,
+    LOST_COM = 0x8,
+    FILE_NOT_OPENED = 0x10,
+    HANDLE_TIMEOUT = 0x11,
+    BUFFER_OVERFLOW = 0x12,
+    FATAL_ERROR = 0x13,
+    OUT_OF_SEQUENCE = 0x14
+};
+
+enum class FileOpeningMode : uint8_t
+{
+    READ = 0x1,
+    WRITE = 0x2
+};
+
+enum class FileOperationPermission : uint16_t
+{
+    OWNER_READ_ALLOWED = 0x0100,
+    OWNER_WRITE_ALLOWED = 0x0080,
+    OWNER_EXECUTE_ALLOWED = 0x0040,
+    GROUP_READ_ALLOWED = 0x0020,
+    GROUP_WRITE_ALLOWED = 0x0010,
+    GROUP_EXECUTE_ALLOWED = 0x0008,
+    WORLD_READ_ALLOWED = 0x0004,
+    WORLD_WRITE_ALLOWED = 0x0002,
+    WORLD_EXECUTE_ALLOWED = 0x0001
+};
+
+inline FileOperationPermission operator|(FileOperationPermission a, FileOperationPermission b)
+{
+    return static_cast<FileOperationPermission>(static_cast<int>(a) | static_cast<int>(b));
+}
+
 // File-control - File identifier
 struct Group70Var1 // obsolete
 {
-  static GroupVariationID ID() { return GroupVariationID(70,1); }
+    static GroupVariationID ID() { return GroupVariationID(70,1); }
 };
 
 // File-control - Authentication
 struct Group70Var2
 {
-  static GroupVariationID ID() { return GroupVariationID(70,2); }
+    static GroupVariationID ID() { return GroupVariationID(70,2); }
 };
 
 // File-control - File command
@@ -99,13 +133,16 @@ struct Group70Var3
     +---------------------+-------+
     */
 
+    Group70Var3(FileOpeningMode mode = FileOpeningMode::READ) : operationMode(mode) {}
+
     static GroupVariationID ID() { return GroupVariationID(70,3); }
-    
     static size_t Size() { return 26; }
     static bool Read(ser4cpp::rseq_t& /*buffer*/, Group70Var3& /*arg*/) { return false; }
     static bool Write(const Group70Var3& arg, ser4cpp::wseq_t& buffer);
 
+    FileOpeningMode operationMode{ FileOpeningMode::READ };
     std::string filename;
+    uint32_t filesize = 0;
 };
 
 // File-control - File command status
@@ -129,7 +166,6 @@ struct Group70Var4
     */
 
     static GroupVariationID ID() { return GroupVariationID(70,4); }
-
     static size_t Size() { return 13; }
     static bool Read(ser4cpp::rseq_t& buffer, Group70Var4& arg);
     static bool Write(const Group70Var4& arg, ser4cpp::wseq_t& buffer);
@@ -140,7 +176,7 @@ struct Group70Var4
     uint32_t fileSize{ 0 };
     uint16_t blockSize{ 0 };
     uint16_t requestId{ 0 };
-    FileCommandStatus status{SUCCESS};
+    FileCommandStatus status{ FileCommandStatus::FILE_NOT_OPEN };
 };
 
 // File-control - File transport
@@ -159,20 +195,17 @@ struct Group70Var5
     +---------------+-------------+
     */
 
+    Group70Var5(FileOpeningMode mode = FileOpeningMode::READ) : operationMode(mode) {}
+
     static GroupVariationID ID() { return GroupVariationID(70,5); }
-
-    Group70Var5(bool isReading = true) : isReading(isReading) {}
-
     static size_t Size() { return 8; }
     static bool Read(ser4cpp::rseq_t& buffer, Group70Var5& arg);
     static bool Write(const Group70Var5& /*arg*/, ser4cpp::wseq_t& /*buffer*/);
 
     uint16_t objectSize{ 0 };
-
-    bool isReading = true;
-    uint16_t dataSize{ 0 };
+    FileOpeningMode operationMode{ FileOpeningMode::READ };
     uint32_t fileId{ 0 };
-    int32_t blockNumber{ -1 };
+    uint32_t blockNumber{ 0 };
     bool isLastBlock = false;
     ser4cpp::rseq_t data;
 };
@@ -180,19 +213,40 @@ struct Group70Var5
 // File-control - File transport status
 struct Group70Var6
 {
-  static GroupVariationID ID() { return GroupVariationID(70,6); }
+    /*
+    +===============+=======+
+    |     Name      | Bytes |
+    +===============+=======+
+    | File Handle   |   4   |
+    +---------------+-------+
+    | Block Number  |   4   |
+    +---------------+-------+
+    | Status        |   1   |
+    +---------------+-------+
+    */
+
+    static GroupVariationID ID() { return GroupVariationID(70,6); }
+    static size_t Size() { return 9; }
+    static bool Read(ser4cpp::rseq_t& buffer, Group70Var6& arg);
+    static bool Write(const Group70Var6& /*arg*/, ser4cpp::wseq_t& /*buffer*/);
+
+    uint16_t objectSize{ 0 };
+    uint32_t fileId{ 0 };
+    uint32_t blockNumber{ 0 };
+    FileTransportStatus status{ FileTransportStatus::FILE_NOT_OPENED };
+    std::string additionalInformation;
 };
 
 // File-control - File descriptor
 struct Group70Var7
 {
-  static GroupVariationID ID() { return GroupVariationID(70,7); }
+    static GroupVariationID ID() { return GroupVariationID(70,7); }
 };
 
 // File-control - File specification string
 struct Group70Var8
 {
-  static GroupVariationID ID() { return GroupVariationID(70,8); }
+    static GroupVariationID ID() { return GroupVariationID(70,8); }
 };
 
 

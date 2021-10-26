@@ -51,7 +51,8 @@ enum class MasterTaskType : uint8_t
   ENABLE_UNSOLICITED = 6,
   AUTO_EVENT_SCAN = 7,
   USER_TASK = 8,
-  READ_FILE_TASK = 9
+  READ_FILE_TASK = 9,
+  WRITE_FILE_TASK = 10
 };
 
 struct MasterTaskTypeSpec

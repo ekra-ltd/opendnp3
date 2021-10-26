@@ -174,7 +174,7 @@ ParseResult APDUParser::HandleFreeFormatHeader(
                             IAPDUHandler* pHandler) {
     FORMAT_LOGGER_BLOCK(pLogger, settings.LoggingLevel(), "%03u,%03u - %s - %s", record.group, record.variation,
         GroupVariationSpec::to_human_string(record.enumeration),
-        QualifierCodeSpec::to_human_string(QualifierCode::FREE_FORMAT));
+        QualifierCodeSpec::to_human_string(QualifierCode::FREE_FORMAT))
 
     if (pHandler)
     {
@@ -184,6 +184,9 @@ ParseResult APDUParser::HandleFreeFormatHeader(
                 break;
             case GroupVariation::Group70Var5:
                 ParseFileObjects<Group70Var5>(buffer, pLogger, record, pHandler);
+                break;
+            case GroupVariation::Group70Var6:
+                ParseFileObjects<Group70Var6>(buffer, pLogger, record, pHandler);
                 break;
             default: 
                 buffer.make_empty();

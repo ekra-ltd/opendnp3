@@ -10,16 +10,16 @@
 
 namespace opendnp3
 {
-    class ReadFileTask : public IMasterTask
+    class WriteFileTask : public IMasterTask
     {
 
     public:
-        ReadFileTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-                     std::string sourceFilename, const std::string& destFilename);
+        WriteFileTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
+                     const std::string& sourceFilename, std::string destFilename);
 
         char const* Name() const final
         {
-            return "read file task";
+            return "write file task";
         }
 
         int Priority() const final
@@ -54,7 +54,7 @@ namespace opendnp3
             const ser4cpp::rseq_t& objects) final;
 
         ResponseResult OnResponseStatusObject(const APDUResponseHeader& response, const ser4cpp::rseq_t& objects);
-        ResponseResult OnResponseReadFile(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
+        ResponseResult OnResponseWriteFile(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
 
         void Initialize() final;
 
@@ -63,10 +63,12 @@ namespace opendnp3
 
     private:
         FileOperationTaskState taskState{ OPENING };
-        std::string sourceFilename;
-        std::ofstream output_file;
+        std::ifstream input_file;
+        uint32_t inputFileSize;
+        std::string destFilename;
         Group70Var4 fileCommandStatus;
         Group70Var5 fileTransportObject;
+        Group70Var6 fileTransportStatusObject;
     };
 
 } // namespace opendnp3

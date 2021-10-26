@@ -346,7 +346,9 @@ set(opendnp3_private_headers
     ./src/master/TypedCommandHeader.h
     ./src/master/UserPollTask.h
     ./src/master/ReadFileTask.h
+    ./src/master/WriteFileTask.h
     ./src/master/FileOperationHandler.h
+    ./src/master/FileOperationTaskState.h
 
     ./src/outstation/AssignClassHandler.h
     ./src/outstation/StaticDataCell.h
@@ -596,6 +598,7 @@ set(opendnp3_src
     ./src/master/TaskContext.cpp
     ./src/master/UserPollTask.cpp
     ./src/master/ReadFileTask.cpp
+    ./src/master/WriteFileTask.cpp
     ./src/master/FileOperationHandler.cpp
 
     ./src/outstation/ApplicationIIN.cpp

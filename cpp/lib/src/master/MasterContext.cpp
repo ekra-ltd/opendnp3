@@ -21,6 +21,7 @@
 
 
 #include "ReadFileTask.h"
+#include "WriteFileTask.h"
 #include "app/APDUBuilders.h"
 #include "app/APDULogging.h"
 #include "app/parsing/APDUHeaderParser.h"
@@ -318,6 +319,14 @@ bool MContext::ReadFile(const std::string& sourceFile, const std::string& destFi
 {
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
+    this->ScheduleAdhocTask(task);
+    return false;
+}
+
+bool MContext::WriteFile(const std::string& sourceFile, const std::string& destFilename)
+{
+    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
+    auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
     this->ScheduleAdhocTask(task);
     return false;
 }

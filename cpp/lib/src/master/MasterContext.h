@@ -196,6 +196,7 @@ public:
     bool DemandTimeSyncronization();
 
     bool ReadFile(const std::string& sourceFile, const std::string& destFilename);
+    bool WriteFile(const std::string& sourceFile, const std::string& destFilename);
 
 private:
     // --- implement  IMasterTaskRunner ------
