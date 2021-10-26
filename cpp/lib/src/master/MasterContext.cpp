@@ -21,6 +21,8 @@
 
 
 
+#include "DeleteFileTask.h"
+#include "GetFileInfoTask.h"
 #include "GetFilesInDirectoryTask.h"
 #include "ReadFileTask.h"
 #include "WriteFileTask.h"
@@ -28,7 +30,6 @@
 #include "app/APDULogging.h"
 #include "app/parsing/APDUHeaderParser.h"
 #include "gen/objects/Group12.h"
-#include "gen/objects/Group41.h"
 #include "logging/LogMacros.h"
 #include "master/CommandTask.h"
 #include "master/EmptyResponseTask.h"
@@ -333,10 +334,24 @@ bool MContext::WriteFile(const std::string& sourceFile, const std::string& destF
     return true;
 }
 
-void MContext::ReadDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback)
+void MContext::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     const auto task = std::make_shared<GetFilesInDirectoryTask>(this->tasks.context, *this->application, this->logger, sourceDirectory, callback);
+    return this->ScheduleAdhocTask(task);
+}
+
+void MContext::GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback)
+{
+    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
+    const auto task = std::make_shared<GetFileInfoTask>(this->tasks.context, *this->application, this->logger, sourceFile, callback);
+    return this->ScheduleAdhocTask(task);
+}
+
+void MContext::DeleteFileFunction(const std::string& filename)
+{
+    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
+    const auto task = std::make_shared<DeleteFileTask>(this->tasks.context, *this->application, this->logger, filename);
     return this->ScheduleAdhocTask(task);
 }
 

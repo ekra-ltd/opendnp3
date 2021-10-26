@@ -11,15 +11,18 @@ namespace opendnp3
         Group70Var4 GetFileStatusObject() const;
         Group70Var5 GetFileTransferObject() const;
         Group70Var6 GetFileTransferStatusObject() const;
+        Group70Var7 GetFileDescriptorObject() const;
 
     protected:
         IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values) override;
         IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values) override;
         IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var6>& values) override;
+        IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var7>& values) override;
 
     private:
         Group70Var4 fileStatusObject;
         Group70Var5 fileTransferObject;
         Group70Var6 fileTransferStatusObject;
+        Group70Var7 fileDescriptorObject;
     };
 }

@@ -53,7 +53,9 @@ enum class MasterTaskType : uint8_t
   USER_TASK = 8,
   READ_FILE_TASK = 9,
   WRITE_FILE_TASK = 10,
-  READ_DIRECTORY_TASK = 11
+  GET_DIRECTORY_FILES_TASK = 11,
+  GET_FILE_INFO_TASK = 12,
+  DELETE_FILE_TASK = 13
 };
 
 struct MasterTaskTypeSpec

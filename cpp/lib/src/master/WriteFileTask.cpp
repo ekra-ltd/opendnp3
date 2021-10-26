@@ -133,7 +133,7 @@ namespace opendnp3
                 logger.log(flags::DBG, __FILE__, "Maximum amount of files opened");
                 break;
             case FileCommandStatus::FILE_NOT_OPEN:
-                s = "Failed closing the file - \"" + destFilename + "\", which is not opened";
+                s = "File - \"" + destFilename + "\" not opened";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::INVALID_BLOCK_SIZE:
@@ -170,11 +170,11 @@ namespace opendnp3
                         const std::string s = "File - \"" + destFilename +"\"  had been written successfully";
                         logger.log(flags::DBG, __FILE__, s.c_str());
                         taskState = CLOSING;
-                    }
-                    else {
-                        fileTransportObject.blockNumber = fileTransportStatusObject.blockNumber + 1;
                         return ResponseResult::OK_REPEAT;
                     }
+
+                    fileTransportObject.blockNumber = fileTransportStatusObject.blockNumber + 1;
+                    return ResponseResult::OK_REPEAT;
                     break;
                 case FileTransportStatus::LOST_COM:
                     logger.log(flags::DBG, __FILE__, "Communication lost");

@@ -255,11 +255,26 @@ void MasterSessionStack::WriteFile(const std::string& sourceFilename, const std:
     return executor->post(action);
 }
 
-void MasterSessionStack::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback)
+void MasterSessionStack::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
-    auto builder = ConvertToLambda({ Header::AllObjects(70, 3) });
     auto action = [self = shared_from_this(), sourceDirectory, callback]() -> void {
-        self->context.ReadDirectory(sourceDirectory, callback);
+        self->context.GetFilesInDirectory(sourceDirectory, callback);
+    };
+    return executor->post(action);
+}
+
+void MasterSessionStack::GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback)
+{
+    auto action = [self = shared_from_this(), sourceFile, callback]() -> void {
+        self->context.GetFileInfo(sourceFile, callback);
+    };
+    return executor->post(action);
+}
+
+void MasterSessionStack::DeleteFileFunction(const std::string& filename)
+{
+    auto action = [self = shared_from_this(), filename]() -> void {
+        self->context.DeleteFileFunction(filename);
     };
     return executor->post(action);
 }

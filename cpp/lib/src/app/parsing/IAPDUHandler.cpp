@@ -235,6 +235,11 @@ void IAPDUHandler::OnHeader(const FreeFormatHeader& header, const ICollection<Gr
     Record(header, this->ProcessHeader(header, values));
 }
 
+void IAPDUHandler::OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var7>& values)
+{
+    Record(header, this->ProcessHeader(header, values));
+}
+
 IINField IAPDUHandler::ProcessHeader(const AllObjectsHeader& /*record*/)
 {
     return ProcessUnsupportedHeader();
@@ -452,6 +457,11 @@ IINField IAPDUHandler::ProcessHeader(const FreeFormatHeader& /*header*/, const I
 }
 
 IINField IAPDUHandler::ProcessHeader(const FreeFormatHeader& /*header*/, const ICollection<Group70Var6>& /*values*/)
+{
+    return ProcessUnsupportedHeader();
+}
+
+IINField IAPDUHandler::ProcessHeader(const FreeFormatHeader& /*header*/, const ICollection<Group70Var7>& /*values*/)
 {
     return ProcessUnsupportedHeader();
 }

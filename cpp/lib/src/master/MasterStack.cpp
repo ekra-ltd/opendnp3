@@ -218,10 +218,26 @@ void MasterStack::WriteFile(const std::string& sourceFilename, const std::string
     return this->executor->post(add);
 }
 
-void MasterStack::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback)
+void MasterStack::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
     auto add = [self = this->shared_from_this(), sourceDirectory, callback]() {
-        return self->mcontext.ReadDirectory(sourceDirectory, callback);
+        return self->mcontext.GetFilesInDirectory(sourceDirectory, callback);
+    };
+    return this->executor->post(add);
+}
+
+void MasterStack::GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback)
+{
+    auto add = [self = this->shared_from_this(), sourceFile, callback]() {
+        return self->mcontext.GetFileInfo(sourceFile, callback);
+    };
+    return this->executor->post(add);
+}
+
+void MasterStack::DeleteFileFunction(const std::string& filename)
+{
+    auto add = [self = this->shared_from_this(), filename]() {
+        return self->mcontext.DeleteFileFunction(filename);
     };
     return this->executor->post(add);
 }

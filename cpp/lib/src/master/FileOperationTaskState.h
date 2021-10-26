@@ -9,6 +9,8 @@ namespace opendnp3
         READING,
         WRITING,
         READING_DIRECTORY,
+        GETTING_FILE_INFO,
+        DELETING,
         CLOSING
     };
 

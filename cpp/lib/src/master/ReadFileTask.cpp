@@ -116,7 +116,7 @@ namespace opendnp3
                     logger.log(flags::DBG, __FILE__, "Maximum amount of files opened");
                     break;
                 case FileCommandStatus::FILE_NOT_OPEN:
-                    s = "Failed closing the file - \"" + sourceFilename + "\", which is not opened";
+                    s = "File - \"" + sourceFilename + "\" not opened";
                     logger.log(flags::DBG, __FILE__, s.c_str());
                     break;
                 case FileCommandStatus::INVALID_BLOCK_SIZE:

@@ -20,7 +20,7 @@
 #ifndef OPENDNP3_IMASTEROPERATIONS_H
 #define OPENDNP3_IMASTEROPERATIONS_H
 
-#include "GetFilesInDirectoryTaskResult.h"
+#include "GetFilesInfoTaskResult.h"
 #include "opendnp3/StackStatistics.h"
 #include "opendnp3/app/ClassField.h"
 #include "opendnp3/app/MeasurementTypes.h"
@@ -160,7 +160,11 @@ public:
 
     virtual void WriteFile(const std::string& sourceFilename, const std::string& destFilename) = 0;
 
-    virtual void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback) = 0;
+    virtual void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback) = 0;
+
+    virtual void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback) = 0;
+
+    virtual void DeleteFileFunction(const std::string& filename) = 0;
 };
 
 } // namespace opendnp3

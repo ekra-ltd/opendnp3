@@ -5,7 +5,8 @@ namespace opendnp3
     bool FileOperationHandler::IsAllowed(uint32_t /*headerCount*/, GroupVariation gv, QualifierCode qc) {
         return (gv == GroupVariation::Group70Var4 || 
                 gv == GroupVariation::Group70Var5 ||
-                gv == GroupVariation::Group70Var6) && 
+                gv == GroupVariation::Group70Var6 ||
+                gv == GroupVariation::Group70Var7) &&
                 qc == QualifierCode::FREE_FORMAT;
     }
 
@@ -24,6 +25,11 @@ namespace opendnp3
         return fileTransferStatusObject;
     }
 
+    Group70Var7 FileOperationHandler::GetFileDescriptorObject() const
+    {
+        return fileDescriptorObject;
+    }
+
     IINField FileOperationHandler::ProcessHeader(const FreeFormatHeader& /*header*/, const ICollection<Group70Var4>& values)
     {
         values.ReadOnlyValue(fileStatusObject);
@@ -39,6 +45,12 @@ namespace opendnp3
     IINField FileOperationHandler::ProcessHeader(const FreeFormatHeader& /*header*/, const ICollection<Group70Var6>& values)
     {
         values.ReadOnlyValue(fileTransferStatusObject);
+        return IINField::Empty();
+    }
+
+    IINField FileOperationHandler::ProcessHeader(const FreeFormatHeader& /*header*/, const ICollection<Group70Var7>& values)
+    {
+        values.ReadOnlyValue(fileDescriptorObject);
         return IINField::Empty();
     }
 }

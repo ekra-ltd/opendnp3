@@ -175,10 +175,14 @@ namespace opendnp3 {
         if (ser4cpp::UInt16::read_from(buffer, permissions)) {
             arg.fileInfo.permissions = static_cast<DNPFileOperationPermission>(permissions);
         }
-        buffer.advance(2); // request id
+        uint16_t requestId;
+        if (ser4cpp::UInt16::read_from(buffer, requestId)) {
+            arg.requestId = requestId;
+        }
         const auto* filename = static_cast<const uint8_t*>(buffer.take(filenameSize));
         buffer.advance(filenameSize);
         arg.fileInfo.filename = std::string(reinterpret_cast<char const*>(filename), filenameSize);
+        arg.isInitialized = true;
 
         return true;
     }
@@ -190,14 +194,8 @@ namespace opendnp3 {
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(size)); // object size
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(Size())); // filename offset
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(length)); // filename size
-        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(arg.fileInfo.fileType)); // file type
-        write_zeros(buffer, 6);
-        const auto perm = static_cast<uint16_t>(DNPFileOperationPermission::OWNER_READ_ALLOWED |
-            DNPFileOperationPermission::GROUP_READ_ALLOWED |
-            DNPFileOperationPermission::WORLD_READ_ALLOWED);
-        ser4cpp::UInt16::write_to(buffer, perm); // permissions - Access in read mode
-        write_zeros(buffer, 2); // request id
-
+        write_zeros(buffer, 14);
+        ser4cpp::UInt16::write_to(buffer, arg.requestId);
         for (size_t i = 0; i < length; ++i) { // filename
             buffer.put(static_cast<uint8_t>(arg.fileInfo.filename[i]));
         }

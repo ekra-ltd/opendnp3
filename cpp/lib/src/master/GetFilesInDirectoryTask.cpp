@@ -18,7 +18,7 @@ namespace opendnp3
         IMasterApplication& app,
         const Logger& logger,
         std::string sourceDirectory,
-        GetFilesInDirectoryTaskCallbackT taskCallback)
+        GetFilesInfoTaskCallbackT taskCallback)
         : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
         sourceDirectory(std::move(sourceDirectory)),
         callback(std::move(taskCallback))
@@ -29,13 +29,13 @@ namespace opendnp3
         currentTaskState = OPENING;
         fileCommandStatus = Group70Var4();
         fileTransportObject = Group70Var5();
-        filesInDirectory.clear();
+        filesInfo.clear();
     }
 
     bool GetFilesInDirectoryTask::BuildRequest(APDURequest& request, uint8_t seq) {
         switch (currentTaskState) {
             case OPENING: {
-                logger.log(flags::DBG, __FILE__, "Attempting opening file");
+                logger.log(flags::DBG, __FILE__, "Attempting opening directory");
                 Group70Var3 file;
                 file.filename = sourceDirectory;
                 request.SetFunction(FunctionCode::OPEN_FILE);
@@ -50,11 +50,12 @@ namespace opendnp3
                 auto writer = request.GetWriter();
                 return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var5>(QualifierCode::FREE_FORMAT, fileTransportObject);
             }
-            case CLOSING:
+            case CLOSING: {
                 request.SetFunction(FunctionCode::CLOSE_FILE);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
                 return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var4>(QualifierCode::FREE_FORMAT, fileCommandStatus);
+            }
         }
 
         return false;
@@ -99,7 +100,7 @@ namespace opendnp3
                         case CLOSING:
                             s = "Successfully closed directory - \"" + sourceDirectory + "\"";
                             logger.log(flags::DBG, __FILE__, s.c_str());
-                            callback(GetFilesInDirectoryTaskResult(TaskCompletion::SUCCESS, filesInDirectory));
+                            callback(GetFilesInfoTaskResult(TaskCompletion::SUCCESS, filesInfo));
                             return ResponseResult::OK_FINAL;
                         default: 
                             return ResponseResult::ERROR_BAD_RESPONSE;
@@ -112,7 +113,8 @@ namespace opendnp3
                     logger.log(flags::DBG, __FILE__, "Invalid mode");
                     break;
                 case FileCommandStatus::NOT_FOUND:
-                    logger.log(flags::DBG, __FILE__, "File not found");
+                    s = "Directory - \"" + sourceDirectory + "\" not found";
+                    logger.log(flags::DBG, __FILE__, s.c_str());
                     break;
                 case FileCommandStatus::FILE_LOCKED:
                     s = "Directory - \"" + sourceDirectory + "\" locked by another user";
@@ -122,7 +124,7 @@ namespace opendnp3
                     logger.log(flags::DBG, __FILE__, "Maximum amount of files opened");
                     break;
                 case FileCommandStatus::FILE_NOT_OPEN:
-                    s = "Failed closing the directory - \"" + sourceDirectory + "\", which is not opened";
+                    s = "Directory - \"" + sourceDirectory + "\" not opened";
                     logger.log(flags::DBG, __FILE__, s.c_str());
                     break;
                 case FileCommandStatus::INVALID_BLOCK_SIZE:
@@ -130,7 +132,7 @@ namespace opendnp3
                     break;
                 case FileCommandStatus::LOST_COM:
                     logger.log(flags::DBG, __FILE__, "Communication lost");
-                    callback(GetFilesInDirectoryTaskResult(TaskCompletion::FAILURE_NO_COMMS));
+                    callback(GetFilesInfoTaskResult(TaskCompletion::FAILURE_NO_COMMS));
                     break;
                 case FileCommandStatus::FAILED_ABORT:
                     logger.log(flags::DBG, __FILE__, "Abort action failed");
@@ -141,7 +143,7 @@ namespace opendnp3
             }
         }
 
-        callback(GetFilesInDirectoryTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
+        callback(GetFilesInfoTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
         return ResponseResult::ERROR_BAD_RESPONSE;
     }
 
@@ -151,7 +153,7 @@ namespace opendnp3
             FileOperationHandler handler;
             const auto result = APDUParser::Parse(objects, handler, &logger);
             if (result != ParseResult::OK) {
-                callback(GetFilesInDirectoryTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
+                callback(GetFilesInfoTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
                 return ResponseResult::ERROR_BAD_RESPONSE;
             }
 
@@ -160,7 +162,7 @@ namespace opendnp3
             {
                 Group70Var7 info;
                 Group70Var7::Read(fileTransportObject.data, info);
-                filesInDirectory.push_back(info.fileInfo);
+                filesInfo.push_back(info.fileInfo);
             }
 
             currentTaskState = CLOSING;
@@ -168,4 +170,5 @@ namespace opendnp3
         }
         return ResponseResult::ERROR_BAD_RESPONSE;
     }
+
 } // namespace opendnp3

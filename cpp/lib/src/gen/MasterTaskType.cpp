@@ -66,7 +66,11 @@ MasterTaskType MasterTaskTypeSpec::from_type(uint8_t arg)
     case(10):
       return MasterTaskType::WRITE_FILE_TASK;
     case(11):
-      return MasterTaskType::READ_DIRECTORY_TASK;
+      return MasterTaskType::GET_DIRECTORY_FILES_TASK;
+    case(12):
+      return MasterTaskType::GET_FILE_INFO_TASK;
+    case(13):
+      return MasterTaskType::DELETE_FILE_TASK;
     default:
       throw new std::invalid_argument("Unknown value");
   }
@@ -98,8 +102,12 @@ char const* MasterTaskTypeSpec::to_string(MasterTaskType arg)
       return "READ_FILE_TASK";
     case MasterTaskType::WRITE_FILE_TASK:
       return "WRITE_FILE_TASK";
-    case MasterTaskType::READ_DIRECTORY_TASK:
-      return "READ_DIRECTORY_TASK";
+    case MasterTaskType::GET_DIRECTORY_FILES_TASK:
+      return "GET_DIRECTORY_FILES_TASK";
+    case MasterTaskType::GET_FILE_INFO_TASK:
+      return "GET_FILE_INFO_TASK";
+    case MasterTaskType::DELETE_FILE_TASK:
+      return "DELETE_FILE_TASK";
     default:
       return "UNDEFINED";
   }
@@ -131,8 +139,12 @@ char const* MasterTaskTypeSpec::to_human_string(MasterTaskType arg)
       return "READ_FILE_TASK";
     case MasterTaskType::WRITE_FILE_TASK:
       return "WRITE_FILE_TASK";
-    case MasterTaskType::READ_DIRECTORY_TASK:
-      return "READ_DIRECTORY_TASK";
+    case MasterTaskType::GET_DIRECTORY_FILES_TASK:
+      return "GET_DIRECTORY_FILES_TASK";
+    case MasterTaskType::GET_FILE_INFO_TASK:
+      return "GET_FILE_INFO_TASK";
+    case MasterTaskType::DELETE_FILE_TASK:
+      return "DELETE_FILE_TASK";
     default:
       return "UNDEFINED";
   }
@@ -173,8 +185,14 @@ MasterTaskType MasterTaskTypeSpec::from_string(const std::string& arg)
   if (arg == "WRITE_FILE_TASK") {
       return MasterTaskType::WRITE_FILE_TASK;
   }
-  if (arg == "READ_DIRECTORY_TASK") {
-      return MasterTaskType::READ_DIRECTORY_TASK;
+  if (arg == "GET_DIRECTORY_FILES_TASK") {
+      return MasterTaskType::GET_DIRECTORY_FILES_TASK;
+  }
+  if (arg == "GET_FILE_INFO_TASK") {
+      return MasterTaskType::GET_FILE_INFO_TASK;
+  }
+  if (arg == "DELETE_FILE_TASK") {
+      return MasterTaskType::DELETE_FILE_TASK;
   }
   throw std::invalid_argument(std::string("Unknown value: ") + arg);
 }

@@ -6,21 +6,19 @@
 #include "FileOperationTaskState.h"
 #include "opendnp3/master/GetFilesInfoTaskResult.h"
 
-
-#include <deque>
 #include <string>
 
 namespace opendnp3
 {
-    class GetFilesInDirectoryTask : public IMasterTask {
+    class GetFileInfoTask : public IMasterTask {
 
     public:
-        GetFilesInDirectoryTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-            std::string sourceDirectory, GetFilesInfoTaskCallbackT taskCallback);
+        GetFileInfoTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
+            std::string sourceFile, GetFilesInfoTaskCallbackT taskCallback);
 
         char const* Name() const final
         {
-            return "get files in directory task";
+            return "get file info task";
         }
 
         int Priority() const final
@@ -43,7 +41,7 @@ namespace opendnp3
     private:
         MasterTaskType GetTaskType() const final
         {
-            return MasterTaskType::GET_DIRECTORY_FILES_TASK;
+            return MasterTaskType::GET_FILE_INFO_TASK;
         }
 
         bool IsEnabled() const final
@@ -55,16 +53,17 @@ namespace opendnp3
             const ser4cpp::rseq_t& objects) final;
 
         ResponseResult OnResponseStatusObject(const APDUResponseHeader& response, const ser4cpp::rseq_t& objects);
-        ResponseResult OnResponseReadDirectory(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
+        ResponseResult OnResponseGetInfo(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
 
         void Initialize() final;
 
+        ResponseResult HandleCommandStatus();
+
     private:
         FileOperationTaskState currentTaskState{ OPENING };
-        std::string sourceDirectory;
+        std::string sourceFile;
         Group70Var4 fileCommandStatus;
-        Group70Var5 fileTransportObject;
-        std::deque<DNPFileInfo> filesInfo;
+        DNPFileInfo fileInfo;
         GetFilesInfoTaskCallbackT callback;
     };
 

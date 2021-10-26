@@ -31,7 +31,7 @@
 #include "opendnp3/logging/Logger.h"
 #include "opendnp3/master/CommandResultCallbackT.h"
 #include "opendnp3/master/CommandSet.h"
-#include "opendnp3/master/GetFilesInDirectoryTaskResult.h"
+#include "opendnp3/master/GetFilesInfoTaskResult.h"
 #include "opendnp3/master/IMasterApplication.h"
 #include "opendnp3/master/RestartOperationResult.h"
 
@@ -198,7 +198,9 @@ public:
 
     bool ReadFile(const std::string& sourceFile, const std::string& destFilename);
     bool WriteFile(const std::string& sourceFile, const std::string& destFilename);
-    void ReadDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback);
+    void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback);
+    void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback);
+    void DeleteFileFunction(const std::string& filename);
 
 private:
     // --- implement  IMasterTaskRunner ------

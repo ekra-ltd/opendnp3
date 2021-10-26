@@ -188,6 +188,9 @@ ParseResult APDUParser::HandleFreeFormatHeader(
             case GroupVariation::Group70Var6:
                 ParseFileObjects<Group70Var6>(buffer, pLogger, record, pHandler);
                 break;
+            case GroupVariation::Group70Var7:
+                ParseFileObjects<Group70Var7>(buffer, pLogger, record, pHandler);
+                break;
             default: 
                 buffer.make_empty();
         }

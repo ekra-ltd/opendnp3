@@ -157,7 +157,9 @@ public:
 
     void ReadFile(const std::string& sourceFilename, const std::string& destFilename) override;
     void WriteFile(const std::string& sourceFilename, const std::string& destFilename) override;
-    void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback) override;
+    void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback) override;
+    void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback) override;
+    void DeleteFileFunction(const std::string& filename) override;
 
     // ------- implement ICommandProcessor ---------
 

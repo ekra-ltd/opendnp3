@@ -69,6 +69,7 @@ enum class FileTransportStatus : uint8_t {
 
 enum class FileOpeningMode : uint8_t
 {
+    DELETING = 0x0,
     READ = 0x1,
     WRITE = 0x2
 };
@@ -152,7 +153,6 @@ struct Group70Var4
     static bool Write(const Group70Var4& arg, ser4cpp::wseq_t& buffer);
 
     uint16_t objectSize{ 0 };
-
     uint32_t fileId{ 0 };
     uint32_t fileSize{ 0 };
     uint16_t blockSize{ 0 };
@@ -164,16 +164,15 @@ struct Group70Var4
 struct Group70Var5
 {
     /*
-    +===============+=============+
-    |     Name      |    Bytes    |
-    +===============+=============+
-    | File Handle   | 4           |
-    +---------------+-------------+
-    | Block Number  | 4           |
-    +---------------+-------------+
-    | Block Data    | n,          |
-    |               | 0- read req |
-    +---------------+-------------+
+    +===============+=======+
+    |     Name      | Bytes |
+    +===============+=======+
+    | File Handle   |   4   |
+    +---------------+-------+
+    | Block Number  |   4   |
+    +---------------+-------+
+    | Block Data    |   n   |
+    +---------------+-------+
     */
 
     Group70Var5(FileOpeningMode mode = FileOpeningMode::READ) : operationMode(mode) {}
@@ -248,7 +247,10 @@ struct Group70Var7
     static bool Read(ser4cpp::rseq_t& buffer, Group70Var7& arg);
     static bool Write(const Group70Var7& arg, ser4cpp::wseq_t& buffer);
 
+    uint16_t objectSize{ 0 };
+    bool isInitialized{ false };
     DNPFileInfo fileInfo;
+    uint16_t requestId{ 0 };
 };
 
 // File-control - File specification string
