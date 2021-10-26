@@ -154,6 +154,8 @@ public:
         = 0;
 
     virtual bool DemandTimeSyncronization() = 0;
+
+    virtual bool ReadFile(const std::string& sourceFilename, const std::string& destFilename = "") = 0;
 };
 
 } // namespace opendnp3

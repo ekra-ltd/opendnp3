@@ -157,11 +157,11 @@ set(opendnp3_public_headers
     ./include/opendnp3/outstation/UpdateBuilder.h
     ./include/opendnp3/outstation/Updates.h
 
-	./include/opendnp3/util/Buffer.h
-	./include/opendnp3/util/StaticOnly.h
-	./include/opendnp3/util/TimeDuration.h
+    ./include/opendnp3/util/Buffer.h
+    ./include/opendnp3/util/StaticOnly.h
+    ./include/opendnp3/util/TimeDuration.h
     ./include/opendnp3/util/Timestamp.h
-	./include/opendnp3/util/Uncopyable.h	
+    ./include/opendnp3/util/Uncopyable.h    
     ./include/opendnp3/util/UTCTimestamp.h
 )
 
@@ -191,14 +191,14 @@ set(opendnp3_private_headers
     ./src/app/IINValue.h
     ./src/app/IVariableLength.h
     ./src/app/MeasurementFactory.h
-	./src/app/MeasurementTypeSpecs.h
+    ./src/app/MeasurementTypeSpecs.h
     ./src/app/Message.h
     ./src/app/PrefixedWriteIterator.h
     ./src/app/QualityFlags.h
     ./src/app/Range.h
     ./src/app/RangeWriteIterator.h
     ./src/app/SequenceInfo.h
-	./src/app/Serializer.h
+    ./src/app/Serializer.h
     ./src/app/TxBuffer.h
     ./src/app/WriteConversions.h
     ./src/app/WriteConversionTemplates.h
@@ -345,9 +345,11 @@ set(opendnp3_private_headers
     ./src/master/TimeSyncHandler.h
     ./src/master/TypedCommandHeader.h
     ./src/master/UserPollTask.h
+    ./src/master/ReadFileTask.h
+    ./src/master/FileOperationHandler.h
 
     ./src/outstation/AssignClassHandler.h
-	./src/outstation/StaticDataCell.h
+    ./src/outstation/StaticDataCell.h
     ./src/outstation/ClassBasedRequestHandler.h
     ./src/outstation/CommandActionAdapter.h
     ./src/outstation/CommandResponseHandler.h
@@ -375,7 +377,7 @@ set(opendnp3_private_headers
     ./src/outstation/ReadHandler.h
     ./src/outstation/RequestHistory.h
     ./src/outstation/ResponseContext.h
-	./src/outstation/StaticDataMap.h	
+    ./src/outstation/StaticDataMap.h    
     ./src/outstation/StaticWriters.h
     ./src/outstation/TimeSyncState.h
     ./src/outstation/WriteHandler.h
@@ -431,8 +433,8 @@ set(opendnp3_src
     ./src/app/GroupVariationRecord.cpp
     ./src/app/HeaderWriter.cpp
     ./src/app/IINField.cpp
-	./src/app/MeasurementInfo.cpp
-	./src/app/MeasurementTypes.cpp
+    ./src/app/MeasurementInfo.cpp
+    ./src/app/MeasurementTypes.cpp
     ./src/app/OctetData.cpp
     ./src/app/QualityFlags.cpp    
 
@@ -542,7 +544,8 @@ set(opendnp3_src
     ./src/gen/objects/Group43.cpp
     ./src/gen/objects/Group50.cpp
     ./src/gen/objects/Group51.cpp
-    ./src/gen/objects/Group52.cpp    
+    ./src/gen/objects/Group52.cpp
+    ./src/gen/objects/Group70.cpp
 
     ./src/link/Addresses.cpp
     ./src/link/CRC.cpp
@@ -592,6 +595,8 @@ set(opendnp3_src
     ./src/master/TaskBehavior.cpp
     ./src/master/TaskContext.cpp
     ./src/master/UserPollTask.cpp
+    ./src/master/ReadFileTask.cpp
+    ./src/master/FileOperationHandler.cpp
 
     ./src/outstation/ApplicationIIN.cpp
     ./src/outstation/AssignClassHandler.cpp

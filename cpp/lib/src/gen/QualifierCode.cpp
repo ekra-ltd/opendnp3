@@ -53,6 +53,8 @@ QualifierCode QualifierCodeSpec::from_type(uint8_t arg)
       return QualifierCode::UINT8_CNT;
     case(0x8):
       return QualifierCode::UINT16_CNT;
+    case(0x5B):
+        return QualifierCode::FREE_FORMAT;
     case(0x17):
       return QualifierCode::UINT8_CNT_UINT8_INDEX;
     case(0x28):
@@ -80,6 +82,8 @@ char const* QualifierCodeSpec::to_string(QualifierCode arg)
       return "UINT8_CNT_UINT8_INDEX";
     case(QualifierCode::UINT16_CNT_UINT16_INDEX):
       return "UINT16_CNT_UINT16_INDEX";
+    case (QualifierCode::FREE_FORMAT):
+      return "FREE_FORMAT";
     default:
       return "UNDEFINED";
   }
@@ -103,6 +107,8 @@ char const* QualifierCodeSpec::to_human_string(QualifierCode arg)
       return "8-bit count and prefix";
     case(QualifierCode::UINT16_CNT_UINT16_INDEX):
       return "16-bit count and prefix";
+    case (QualifierCode::FREE_FORMAT):
+      return "free format";
     default:
       return "unknown";
   }

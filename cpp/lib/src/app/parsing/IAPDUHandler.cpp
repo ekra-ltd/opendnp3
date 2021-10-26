@@ -220,6 +220,16 @@ void IAPDUHandler::OnHeader(const PrefixHeader& header, const ICollection<Indexe
     Record(header, this->ProcessHeader(header, values));
 }
 
+void IAPDUHandler::OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values)
+{
+    Record(header, this->ProcessHeader(header, values));
+}
+
+void IAPDUHandler::OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values)
+{
+    Record(header, this->ProcessHeader(header, values));
+}
+
 IINField IAPDUHandler::ProcessHeader(const AllObjectsHeader& /*record*/)
 {
     return ProcessUnsupportedHeader();
@@ -422,6 +432,16 @@ IINField IAPDUHandler::ProcessHeader(const PrefixHeader& /*header*/,
 
 IINField IAPDUHandler::ProcessHeader(const PrefixHeader& /*header*/,
                                      const ICollection<Indexed<AnalogOutputDouble64>>& /*values*/)
+{
+    return ProcessUnsupportedHeader();
+}
+
+IINField IAPDUHandler::ProcessHeader(const FreeFormatHeader& /*header*/, const ICollection<Group70Var4>& /*values*/)
+{
+    return ProcessUnsupportedHeader();
+}
+
+IINField IAPDUHandler::ProcessHeader(const FreeFormatHeader& /*header*/, const ICollection<Group70Var5>& /*values*/)
 {
     return ProcessUnsupportedHeader();
 }

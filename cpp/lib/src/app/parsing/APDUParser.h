@@ -90,6 +90,33 @@ private:
                                            uint16_t count,
                                            Logger* pLogger,
                                            IAPDUHandler* pHandler);
+
+    static ParseResult HandleFreeFormatHeader(ser4cpp::rseq_t& buffer,
+                                              Logger* pLogger,
+                                              const HeaderRecord& record,
+                                              const ParserSettings& settings,
+                                              IAPDUHandler* pHandler);
+
+    template<class ReadType>
+    static void ParseFileObjects(ser4cpp::rseq_t& buffer,
+                                 Logger* pLogger,
+                                 const HeaderRecord& record,
+                                 IAPDUHandler* pHandler) {
+        uint16_t count;
+        NumParser::OneByte().ParseCount(buffer, count, pLogger);
+        const auto size = NumParser::TwoByte().ReadNum(buffer);
+        auto read = [size](ser4cpp::rseq_t& buffer, uint32_t /*pos*/) -> ReadType {
+            ReadType res;
+            res.objectSize = size;
+            ReadType::Read(buffer, res);
+            buffer.advance(size);
+            return res;
+        };
+
+        const auto collection = CreateBufferedCollection<ReadType>(buffer, count, read);
+        pHandler->OnHeader(FreeFormatHeader(record, count), collection);
+        buffer.advance(size);
+    }
 };
 
 } // namespace opendnp3

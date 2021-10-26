@@ -105,6 +105,8 @@ public:
 
     bool DemandTimeSyncronization() override;
 
+    bool ReadFile(const std::string& sourceFilename, const std::string& destFilename) override;
+
     /// --- ICommandProcessor ---
 
     void SelectAndOperate(CommandSet&& commands,

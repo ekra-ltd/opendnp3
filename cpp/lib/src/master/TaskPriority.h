@@ -49,6 +49,8 @@ namespace priority
     const int EVENT_SCAN = 180;
 
     const int USER_POLL = 190;
+
+    const int FILE_OPERATION = 200;
 } // namespace priority
 
 } // namespace opendnp3

@@ -19,6 +19,8 @@
  */
 #include "MasterContext.h"
 
+
+#include "ReadFileTask.h"
 #include "app/APDUBuilders.h"
 #include "app/APDULogging.h"
 #include "app/parsing/APDUHeaderParser.h"
@@ -306,9 +308,18 @@ void MContext::Transmit(const ser4cpp::rseq_t& data)
 bool MContext::DemandTimeSyncronization()
 {
     const bool result = this->tasks.DemandTimeSync();
-    if (result)
+    if (result) {
         this->scheduler->Evaluate();
+    }
     return result;
+}
+
+bool MContext::ReadFile(const std::string& sourceFile, const std::string& destFilename)
+{
+    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
+    auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
+    this->ScheduleAdhocTask(task);
+    return false;
 }
 
 void MContext::StartResponseTimer()

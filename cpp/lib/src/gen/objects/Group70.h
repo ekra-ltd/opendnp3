@@ -33,11 +33,31 @@
 #define OPENDNP3_GROUP70_H
 
 #include "opendnp3/app/GroupVariationID.h"
+#include "opendnp3/app/OctetData.h"
+#include "opendnp3/util/Buffer.h"
+
+#include <ser4cpp/serialization/LittleEndian.h>
+
+#include <string>
+#include <vector>
 
 namespace opendnp3 {
 
+enum FileCommandStatus {
+    SUCCESS = 0x0,
+    PERMISSION_DENIED = 0x1,
+    INVALID_MODE = 0x2,
+    NOT_FOUND = 0x3,
+    FILE_LOCKED = 0x4,
+    OPEN_COUNT_EXCEEDED = 0x5,
+    FILE_NOT_OPEN = 0x6,
+    INVALID_BLOCK_SIZE = 0x7,
+    LOST_COM = 0x8,
+    FAILED_ABORT = 0x9
+};
+
 // File-control - File identifier
-struct Group70Var1
+struct Group70Var1 // obsolete
 {
   static GroupVariationID ID() { return GroupVariationID(70,1); }
 };
@@ -51,19 +71,110 @@ struct Group70Var2
 // File-control - File command
 struct Group70Var3
 {
-  static GroupVariationID ID() { return GroupVariationID(70,3); }
+    /*     File Command Object
+    +=====================+=======+
+    |        Field        | Bytes |
+    +=====================+=======+
+    | File Name Offset    |   2   |
+    +---------------------+-------+
+    | File Name Offset    |   2   |
+    +---------------------+-------+
+    | File Name Size      |   2   |
+    +---------------------+-------+
+    | Time of creation    |   6   |
+    +---------------------+-------+
+    | Permissions         |   2   |
+    +---------------------+-------+
+    | Authentication Key  |   4   |
+    +---------------------+-------+
+    | File Size           |   4   |
+    +---------------------+-------+
+    | Operational Mode    |   2   |
+    +---------------------+-------+
+    | Maximum Block Size  |   2   |
+    +---------------------+-------+
+    | Request ID          |   2   |
+    +---------------------+-------+
+    | File Name           |   n   |
+    +---------------------+-------+
+    */
+
+    static GroupVariationID ID() { return GroupVariationID(70,3); }
+    
+    static size_t Size() { return 26; }
+    static bool Read(ser4cpp::rseq_t& /*buffer*/, Group70Var3& /*arg*/) { return false; }
+    static bool Write(const Group70Var3& arg, ser4cpp::wseq_t& buffer);
+
+    std::string filename;
 };
 
 // File-control - File command status
+// Used as a response to Open, Close, Delete and Abort commands (group 70 var 3)
 struct Group70Var4
 {
-  static GroupVariationID ID() { return GroupVariationID(70,4); }
+    /* File Command Status Object
+    +=====================+=======+
+    |        Name         | Bytes |
+    +=====================+=======+
+    | File Handle         |   4   |
+    +---------------------+-------+
+    | File Size           |   4   |
+    +---------------------+-------+
+    | Maximum Block Size  |   2   |
+    +---------------------+-------+
+    | Request ID          |   2   |
+    +---------------------+-------+
+    | Status              |   1   |
+    +---------------------+-------+ 
+    */
+
+    static GroupVariationID ID() { return GroupVariationID(70,4); }
+
+    static size_t Size() { return 13; }
+    static bool Read(ser4cpp::rseq_t& buffer, Group70Var4& arg);
+    static bool Write(const Group70Var4& arg, ser4cpp::wseq_t& buffer);
+
+    uint16_t objectSize{ 0 };
+
+    uint32_t fileId{ 0 };
+    uint32_t fileSize{ 0 };
+    uint16_t blockSize{ 0 };
+    uint16_t requestId{ 0 };
+    FileCommandStatus status{SUCCESS};
 };
 
 // File-control - File transport
 struct Group70Var5
 {
-  static GroupVariationID ID() { return GroupVariationID(70,5); }
+    /*
+    +===============+=============+
+    |     Name      |    Bytes    |
+    +===============+=============+
+    | File Handle   | 4           |
+    +---------------+-------------+
+    | Block Number  | 4           |
+    +---------------+-------------+
+    | Block Data    | n,          |
+    |               | 0- read req |
+    +---------------+-------------+
+    */
+
+    static GroupVariationID ID() { return GroupVariationID(70,5); }
+
+    Group70Var5(bool isReading = true) : isReading(isReading) {}
+
+    static size_t Size() { return 8; }
+    static bool Read(ser4cpp::rseq_t& buffer, Group70Var5& arg);
+    static bool Write(const Group70Var5& /*arg*/, ser4cpp::wseq_t& /*buffer*/);
+
+    uint16_t objectSize{ 0 };
+
+    bool isReading = true;
+    uint16_t dataSize{ 0 };
+    uint32_t fileId{ 0 };
+    int32_t blockNumber{ -1 };
+    bool isLastBlock = false;
+    ser4cpp::rseq_t data;
 };
 
 // File-control - File transport status

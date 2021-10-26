@@ -47,6 +47,7 @@ enum class QualifierCode : uint8_t
   ALL_OBJECTS = 0x6,
   UINT8_CNT = 0x7,
   UINT16_CNT = 0x8,
+  FREE_FORMAT = 0x5B,
   UINT8_CNT_UINT8_INDEX = 0x17,
   UINT16_CNT_UINT16_INDEX = 0x28,
   UNDEFINED = 0xFF

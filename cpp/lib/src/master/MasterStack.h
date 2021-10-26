@@ -153,6 +153,8 @@ public:
                          const std::vector<Header>& headers,
                          const TaskConfig& config) override;
 
+    bool ReadFile(const std::string& sourceFilename, const std::string& destFilename) override;
+
     // ------- implement ICommandProcessor ---------
 
     void SelectAndOperate(CommandSet&& commands,

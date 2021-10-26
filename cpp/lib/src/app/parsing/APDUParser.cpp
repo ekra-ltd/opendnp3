@@ -140,6 +140,9 @@ ParseResult APDUParser::ParseQualifier(ser4cpp::rseq_t& buffer,
     case (QualifierCode::UINT16_CNT_UINT16_INDEX):
         return CountIndexParser::ParseHeader(buffer, NumParser::TwoByte(), settings, record, pLogger, pHandler);
 
+    case (QualifierCode::FREE_FORMAT):
+        return HandleFreeFormatHeader(buffer, pLogger, record, settings, pHandler);
+
     default:
         FORMAT_LOGGER_BLOCK(pLogger, flags::WARN, "Unknown qualifier %x", record.qualifier);
         return ParseResult::UNKNOWN_QUALIFIER;
@@ -158,6 +161,37 @@ ParseResult APDUParser::HandleAllObjectsHeader(Logger* pLogger,
     if (pHandler)
     {
         pHandler->OnHeader(AllObjectsHeader(record));
+    }
+
+    return ParseResult::OK;
+}
+
+ParseResult APDUParser::HandleFreeFormatHeader(
+                            ser4cpp::rseq_t& buffer,
+                            Logger* pLogger,
+                            const HeaderRecord& record,
+                            const ParserSettings& settings,
+                            IAPDUHandler* pHandler) {
+    FORMAT_LOGGER_BLOCK(pLogger, settings.LoggingLevel(), "%03u,%03u - %s - %s", record.group, record.variation,
+        GroupVariationSpec::to_human_string(record.enumeration),
+        QualifierCodeSpec::to_human_string(QualifierCode::FREE_FORMAT));
+
+    if (pHandler)
+    {
+        switch (record.enumeration) {
+            case GroupVariation::Group70Var4:
+                ParseFileObjects<Group70Var4>(buffer, pLogger, record, pHandler);
+                break;
+            case GroupVariation::Group70Var5:
+                ParseFileObjects<Group70Var5>(buffer, pLogger, record, pHandler);
+                break;
+            default: 
+                buffer.make_empty();
+        }
+    }
+    else
+    {
+        buffer.make_empty();
     }
 
     return ParseResult::OK;

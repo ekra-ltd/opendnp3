@@ -27,6 +27,7 @@
 #include "gen/objects/Group50.h"
 #include "gen/objects/Group51.h"
 #include "gen/objects/Group52.h"
+#include "gen/objects/Group70.h"
 
 #include "opendnp3/app/AnalogCommandEvent.h"
 #include "opendnp3/app/AnalogOutput.h"
@@ -100,6 +101,9 @@ public:
     void OnHeader(const PrefixHeader& header, const ICollection<Indexed<AnalogOutputFloat32>>& values);
     void OnHeader(const PrefixHeader& header, const ICollection<Indexed<AnalogOutputDouble64>>& values);
 
+    void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values);
+    void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values);
+
 protected:
     void Reset();
 
@@ -163,9 +167,12 @@ protected:
     virtual IINField ProcessHeader(const PrefixHeader& header,
                                    const ICollection<Indexed<AnalogOutputDouble64>>& values);
 
+    virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values);
+    virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values);
+
 protected:
     // overridable to receive post processing events for every header
-    virtual void OnHeaderResult(const HeaderRecord& record, const IINField& result) {}
+    virtual void OnHeaderResult(const HeaderRecord& /*record*/, const IINField& /*result*/) {}
 
 private:
     inline void Record(const HeaderRecord& record, const IINField& result)
