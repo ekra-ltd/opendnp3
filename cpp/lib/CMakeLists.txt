@@ -137,6 +137,8 @@ set(opendnp3_public_headers
     ./include/opendnp3/master/TaskId.h
     ./include/opendnp3/master/TaskInfo.h
     ./include/opendnp3/master/X509Info.h
+    ./include/opendnp3/master/GetFilesInDirectoryTaskResult.h
+    ./include/opendnp3/master/DNPFileInfo.h
 
     ./include/opendnp3/outstation/ApplicationIIN.h
     ./include/opendnp3/outstation/DatabaseConfig.h
@@ -349,6 +351,7 @@ set(opendnp3_private_headers
     ./src/master/WriteFileTask.h
     ./src/master/FileOperationHandler.h
     ./src/master/FileOperationTaskState.h
+    ./src/master/GetFilesInDirectoryTask.h
 
     ./src/outstation/AssignClassHandler.h
     ./src/outstation/StaticDataCell.h
@@ -600,6 +603,7 @@ set(opendnp3_src
     ./src/master/ReadFileTask.cpp
     ./src/master/WriteFileTask.cpp
     ./src/master/FileOperationHandler.cpp
+    ./src/master/GetFilesInDirectoryTask.cpp
 
     ./src/outstation/ApplicationIIN.cpp
     ./src/outstation/AssignClassHandler.cpp

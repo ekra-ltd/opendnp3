@@ -239,24 +239,29 @@ bool MasterSessionStack::DemandTimeSyncronization()
     return context.DemandTimeSyncronization();
 }
 
-bool MasterSessionStack::ReadFile(const std::string& sourceFilename, const std::string& destFilename)
+void MasterSessionStack::ReadFile(const std::string& sourceFilename, const std::string& destFilename)
 {
-    auto builder = ConvertToLambda({ Header::AllObjects(70, 3) });
     auto action = [self = shared_from_this(), sourceFilename, destFilename]() -> void {
         self->context.ReadFile(sourceFilename, destFilename);
     };
-    executor->post(action);
-    return true;
+    return executor->post(action);
 }
 
-bool MasterSessionStack::WriteFile(const std::string& sourceFilename, const std::string& destFilename)
+void MasterSessionStack::WriteFile(const std::string& sourceFilename, const std::string& destFilename)
 {
-    auto builder = ConvertToLambda({ Header::AllObjects(70, 3) });
     auto action = [self = shared_from_this(), sourceFilename, destFilename]() -> void {
         self->context.WriteFile(sourceFilename, destFilename);
     };
-    executor->post(action);
-    return true;
+    return executor->post(action);
+}
+
+void MasterSessionStack::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback)
+{
+    auto builder = ConvertToLambda({ Header::AllObjects(70, 3) });
+    auto action = [self = shared_from_this(), sourceDirectory, callback]() -> void {
+        self->context.ReadDirectory(sourceDirectory, callback);
+    };
+    return executor->post(action);
 }
 
 /// --- ICommandProcessor ---

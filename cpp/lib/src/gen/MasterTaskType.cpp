@@ -61,6 +61,12 @@ MasterTaskType MasterTaskTypeSpec::from_type(uint8_t arg)
       return MasterTaskType::AUTO_EVENT_SCAN;
     case(8):
       return MasterTaskType::USER_TASK;
+    case(9):
+      return MasterTaskType::READ_FILE_TASK;
+    case(10):
+      return MasterTaskType::WRITE_FILE_TASK;
+    case(11):
+      return MasterTaskType::READ_DIRECTORY_TASK;
     default:
       throw new std::invalid_argument("Unknown value");
   }
@@ -88,6 +94,12 @@ char const* MasterTaskTypeSpec::to_string(MasterTaskType arg)
       return "AUTO_EVENT_SCAN";
     case(MasterTaskType::USER_TASK):
       return "USER_TASK";
+    case MasterTaskType::READ_FILE_TASK:
+      return "READ_FILE_TASK";
+    case MasterTaskType::WRITE_FILE_TASK:
+      return "WRITE_FILE_TASK";
+    case MasterTaskType::READ_DIRECTORY_TASK:
+      return "READ_DIRECTORY_TASK";
     default:
       return "UNDEFINED";
   }
@@ -115,6 +127,12 @@ char const* MasterTaskTypeSpec::to_human_string(MasterTaskType arg)
       return "AUTO_EVENT_SCAN";
     case(MasterTaskType::USER_TASK):
       return "USER_TASK";
+    case MasterTaskType::READ_FILE_TASK:
+      return "READ_FILE_TASK";
+    case MasterTaskType::WRITE_FILE_TASK:
+      return "WRITE_FILE_TASK";
+    case MasterTaskType::READ_DIRECTORY_TASK:
+      return "READ_DIRECTORY_TASK";
     default:
       return "UNDEFINED";
   }
@@ -122,16 +140,43 @@ char const* MasterTaskTypeSpec::to_human_string(MasterTaskType arg)
 
 MasterTaskType MasterTaskTypeSpec::from_string(const std::string& arg)
 {
-  if(arg == "CLEAR_RESTART") return MasterTaskType::CLEAR_RESTART;
-  if(arg == "DISABLE_UNSOLICITED") return MasterTaskType::DISABLE_UNSOLICITED;
-  if(arg == "ASSIGN_CLASS") return MasterTaskType::ASSIGN_CLASS;
-  if(arg == "STARTUP_INTEGRITY_POLL") return MasterTaskType::STARTUP_INTEGRITY_POLL;
-  if(arg == "NON_LAN_TIME_SYNC") return MasterTaskType::NON_LAN_TIME_SYNC;
-  if(arg == "LAN_TIME_SYNC") return MasterTaskType::LAN_TIME_SYNC;
-  if(arg == "ENABLE_UNSOLICITED") return MasterTaskType::ENABLE_UNSOLICITED;
-  if(arg == "AUTO_EVENT_SCAN") return MasterTaskType::AUTO_EVENT_SCAN;
-  if(arg == "USER_TASK") return MasterTaskType::USER_TASK;
-  else throw std::invalid_argument(std::string("Unknown value: ") + arg);
+  if(arg == "CLEAR_RESTART") {
+      return MasterTaskType::CLEAR_RESTART;
+  }
+  if(arg == "DISABLE_UNSOLICITED") {
+      return MasterTaskType::DISABLE_UNSOLICITED;
+  }
+  if(arg == "ASSIGN_CLASS") {
+      return MasterTaskType::ASSIGN_CLASS;
+  }
+  if(arg == "STARTUP_INTEGRITY_POLL") {
+      return MasterTaskType::STARTUP_INTEGRITY_POLL;
+  }
+  if(arg == "NON_LAN_TIME_SYNC") {
+      return MasterTaskType::NON_LAN_TIME_SYNC;
+  }
+  if(arg == "LAN_TIME_SYNC") {
+      return MasterTaskType::LAN_TIME_SYNC;
+  }
+  if(arg == "ENABLE_UNSOLICITED") {
+      return MasterTaskType::ENABLE_UNSOLICITED;
+  }
+  if(arg == "AUTO_EVENT_SCAN") {
+      return MasterTaskType::AUTO_EVENT_SCAN;
+  }
+  if(arg == "USER_TASK") {
+      return MasterTaskType::USER_TASK;
+  }
+  if (arg == "READ_FILE_TASK") {
+      return MasterTaskType::READ_FILE_TASK;
+  }
+  if (arg == "WRITE_FILE_TASK") {
+      return MasterTaskType::WRITE_FILE_TASK;
+  }
+  if (arg == "READ_DIRECTORY_TASK") {
+      return MasterTaskType::READ_DIRECTORY_TASK;
+  }
+  throw std::invalid_argument(std::string("Unknown value: ") + arg);
 }
 
 

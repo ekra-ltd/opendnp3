@@ -202,22 +202,28 @@ void MasterStack::PerformFunction(const std::string& name,
     return this->executor->post(add);
 }
 
-bool MasterStack::ReadFile(const std::string& sourceFilename, const std::string& destFilename)
+void MasterStack::ReadFile(const std::string& sourceFilename, const std::string& destFilename)
 {
     auto add = [self = this->shared_from_this(), sourceFilename, destFilename]() {
         return self->mcontext.ReadFile(sourceFilename, destFilename);
     };
-    this->executor->post(add);
-    return true;
+    return this->executor->post(add);
 }
 
-bool MasterStack::WriteFile(const std::string& sourceFilename, const std::string& destFilename)
+void MasterStack::WriteFile(const std::string& sourceFilename, const std::string& destFilename)
 {
     auto add = [self = this->shared_from_this(), sourceFilename, destFilename]() {
         return self->mcontext.WriteFile(sourceFilename, destFilename);
     };
-    this->executor->post(add);
-    return true;
+    return this->executor->post(add);
+}
+
+void MasterStack::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback)
+{
+    auto add = [self = this->shared_from_this(), sourceDirectory, callback]() {
+        return self->mcontext.ReadDirectory(sourceDirectory, callback);
+    };
+    return this->executor->post(add);
 }
 
 void MasterStack::SelectAndOperate(CommandSet&& commands,

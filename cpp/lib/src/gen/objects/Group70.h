@@ -34,6 +34,7 @@
 
 #include "opendnp3/app/GroupVariationID.h"
 #include "opendnp3/app/OctetData.h"
+#include "opendnp3/master/DNPFileInfo.h"
 #include "opendnp3/util/Buffer.h"
 
 #include <ser4cpp/serialization/LittleEndian.h>
@@ -72,24 +73,6 @@ enum class FileOpeningMode : uint8_t
     WRITE = 0x2
 };
 
-enum class FileOperationPermission : uint16_t
-{
-    OWNER_READ_ALLOWED = 0x0100,
-    OWNER_WRITE_ALLOWED = 0x0080,
-    OWNER_EXECUTE_ALLOWED = 0x0040,
-    GROUP_READ_ALLOWED = 0x0020,
-    GROUP_WRITE_ALLOWED = 0x0010,
-    GROUP_EXECUTE_ALLOWED = 0x0008,
-    WORLD_READ_ALLOWED = 0x0004,
-    WORLD_WRITE_ALLOWED = 0x0002,
-    WORLD_EXECUTE_ALLOWED = 0x0001
-};
-
-inline FileOperationPermission operator|(FileOperationPermission a, FileOperationPermission b)
-{
-    return static_cast<FileOperationPermission>(static_cast<int>(a) | static_cast<int>(b));
-}
-
 // File-control - File identifier
 struct Group70Var1 // obsolete
 {
@@ -109,8 +92,6 @@ struct Group70Var3
     +=====================+=======+
     |        Field        | Bytes |
     +=====================+=======+
-    | File Name Offset    |   2   |
-    +---------------------+-------+
     | File Name Offset    |   2   |
     +---------------------+-------+
     | File Name Size      |   2   |
@@ -228,7 +209,7 @@ struct Group70Var6
     static GroupVariationID ID() { return GroupVariationID(70,6); }
     static size_t Size() { return 9; }
     static bool Read(ser4cpp::rseq_t& buffer, Group70Var6& arg);
-    static bool Write(const Group70Var6& /*arg*/, ser4cpp::wseq_t& /*buffer*/);
+    static bool Write(const Group70Var6& /*arg*/, ser4cpp::wseq_t& /*buffer*/) { return false; }
 
     uint16_t objectSize{ 0 };
     uint32_t fileId{ 0 };
@@ -240,7 +221,34 @@ struct Group70Var6
 // File-control - File descriptor
 struct Group70Var7
 {
+    /*
+    +===================+=======+
+    |       Name        | Bytes |
+    +===================+=======+
+    | File Name Offset  |   2   |
+    +-------------------+-------+
+    | File Name Size    |   2   |
+    +-------------------+-------+
+    | File Type         |   2   |
+    +-------------------+-------+
+    | File Size         |   4   |
+    +-------------------+-------+
+    | Time of creation  |   6   |
+    +-------------------+-------+
+    | Permissions       |   2   |
+    +-------------------+-------+
+    | Request ID        |   2   |
+    +-------------------+-------+
+    | File Name         |   n   |
+    +-------------------+-------+
+    */
+
     static GroupVariationID ID() { return GroupVariationID(70,7); }
+    static size_t Size() { return 20; }
+    static bool Read(ser4cpp::rseq_t& buffer, Group70Var7& arg);
+    static bool Write(const Group70Var7& arg, ser4cpp::wseq_t& buffer);
+
+    DNPFileInfo fileInfo;
 };
 
 // File-control - File specification string

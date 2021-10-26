@@ -4,22 +4,23 @@
 #include "master/IMasterTask.h"
 #include "master/TaskPriority.h"
 #include "FileOperationTaskState.h"
+#include "opendnp3/master/GetFilesInDirectoryTaskResult.h"
 
-#include <fstream>
+
+#include <deque>
 #include <string>
 
 namespace opendnp3
 {
-    class WriteFileTask : public IMasterTask
-    {
+    class GetFilesInDirectoryTask : public IMasterTask {
 
     public:
-        WriteFileTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-                     const std::string& sourceFilename, std::string destFilename);
+        GetFilesInDirectoryTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
+            std::string sourceDirectory, GetFilesInDirectoryTaskCallbackT taskCallback);
 
         char const* Name() const final
         {
-            return "write file task";
+            return "read directory task";
         }
 
         int Priority() const final
@@ -42,7 +43,7 @@ namespace opendnp3
     private:
         MasterTaskType GetTaskType() const final
         {
-            return MasterTaskType::WRITE_FILE_TASK;
+            return MasterTaskType::READ_DIRECTORY_TASK;
         }
 
         bool IsEnabled() const final
@@ -54,21 +55,18 @@ namespace opendnp3
             const ser4cpp::rseq_t& objects) final;
 
         ResponseResult OnResponseStatusObject(const APDUResponseHeader& response, const ser4cpp::rseq_t& objects);
-        ResponseResult OnResponseWriteFile(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
+        ResponseResult OnResponseReadDirectory(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
 
         void Initialize() final;
 
-    protected:
-        void OnTaskComplete(TaskCompletion result, Timestamp now) override;
-
     private:
-        FileOperationTaskState taskState{ OPENING };
-        std::ifstream input_file;
-        uint32_t inputFileSize;
-        std::string destFilename;
+        FileOperationTaskState currentTaskState{ OPENING };
+        std::string sourceDirectory;
         Group70Var4 fileCommandStatus;
         Group70Var5 fileTransportObject;
-        Group70Var6 fileTransportStatusObject;
+        std::deque<DNPFileInfo> filesInDirectory;
+
+        GetFilesInDirectoryTaskCallbackT callback;
     };
 
 } // namespace opendnp3

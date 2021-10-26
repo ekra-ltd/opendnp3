@@ -19,10 +19,10 @@ namespace opendnp3 {
 
     bool Group70Var3::Write(const Group70Var3& arg, ser4cpp::wseq_t& buffer)
     {
-        const auto length = strlen(arg.filename.c_str());
+        const auto length = arg.filename.size();
         const auto size = Size() + length;
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(size)); // object size
-        ser4cpp::UInt16::write_to(buffer, 26); // filename offset
+        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(Size())); // filename offset
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(length)); // filename size
         if (arg.operationMode == FileOpeningMode::READ) {
             write_zeros(buffer, 6); // time of creation
@@ -36,17 +36,16 @@ namespace opendnp3 {
 
         uint16_t perm;
         if (arg.operationMode == FileOpeningMode::READ) {
-            perm = static_cast<uint16_t>(FileOperationPermission::OWNER_READ_ALLOWED |
-                                         FileOperationPermission::GROUP_READ_ALLOWED |
-                                         FileOperationPermission::WORLD_READ_ALLOWED );
-            ser4cpp::UInt16::write_to(buffer, perm); // permissions - Access in read mode
+            perm = static_cast<uint16_t>(DNPFileOperationPermission::OWNER_READ_ALLOWED |
+                                         DNPFileOperationPermission::GROUP_READ_ALLOWED |
+                                         DNPFileOperationPermission::WORLD_READ_ALLOWED );
         }
         else {
-            perm = static_cast<uint16_t>(FileOperationPermission::OWNER_WRITE_ALLOWED |
-                                         FileOperationPermission::GROUP_WRITE_ALLOWED |
-                                         FileOperationPermission::WORLD_WRITE_ALLOWED );
-            ser4cpp::UInt16::write_to(buffer, perm); // permissions - Access in write mode
+            perm = static_cast<uint16_t>(DNPFileOperationPermission::OWNER_WRITE_ALLOWED |
+                                         DNPFileOperationPermission::GROUP_WRITE_ALLOWED |
+                                         DNPFileOperationPermission::WORLD_WRITE_ALLOWED );
         }
+        ser4cpp::UInt16::write_to(buffer, perm); // permissions
         write_zeros(buffer, 4); // auth key
         ser4cpp::UInt32::write_to(buffer, arg.filesize); // file size
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(arg.operationMode)); // operation mode - read/write
@@ -151,6 +150,57 @@ namespace opendnp3 {
 
         const auto* additionalData = static_cast<const uint8_t*>(buffer);
         arg.additionalInformation = std::string(reinterpret_cast<char const*>(additionalData), buffer.length());
+
+        return true;
+    }
+
+    bool Group70Var7::Read(ser4cpp::rseq_t& buffer, Group70Var7& arg)
+    {
+        buffer.advance(2); // filename offset
+        uint16_t filenameSize;
+        ser4cpp::UInt16::read_from(buffer, filenameSize);
+        uint16_t fileType;
+        if (ser4cpp::UInt16::read_from(buffer, fileType)) {
+            arg.fileInfo.fileType = static_cast<DNPFileType>(fileType);
+        }
+        uint32_t fileSize;
+        if (ser4cpp::UInt32::read_from(buffer, fileSize)) {
+            arg.fileInfo.fileSize = fileSize;
+        }
+        ser4cpp::UInt48Type ms;
+        if (ser4cpp::UInt48::read_from(buffer, ms)) {
+            arg.fileInfo.timeOfCreation = DNPTime(ms);
+        }
+        uint16_t permissions;
+        if (ser4cpp::UInt16::read_from(buffer, permissions)) {
+            arg.fileInfo.permissions = static_cast<DNPFileOperationPermission>(permissions);
+        }
+        buffer.advance(2); // request id
+        const auto* filename = static_cast<const uint8_t*>(buffer.take(filenameSize));
+        buffer.advance(filenameSize);
+        arg.fileInfo.filename = std::string(reinterpret_cast<char const*>(filename), filenameSize);
+
+        return true;
+    }
+
+    bool Group70Var7::Write(const Group70Var7& arg, ser4cpp::wseq_t& buffer)
+    {
+        const auto length = arg.fileInfo.filename.size();
+        const auto size = Size() + length;
+        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(size)); // object size
+        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(Size())); // filename offset
+        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(length)); // filename size
+        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(arg.fileInfo.fileType)); // file type
+        write_zeros(buffer, 6);
+        const auto perm = static_cast<uint16_t>(DNPFileOperationPermission::OWNER_READ_ALLOWED |
+            DNPFileOperationPermission::GROUP_READ_ALLOWED |
+            DNPFileOperationPermission::WORLD_READ_ALLOWED);
+        ser4cpp::UInt16::write_to(buffer, perm); // permissions - Access in read mode
+        write_zeros(buffer, 2); // request id
+
+        for (size_t i = 0; i < length; ++i) { // filename
+            buffer.put(static_cast<uint8_t>(arg.fileInfo.filename[i]));
+        }
 
         return true;
     }

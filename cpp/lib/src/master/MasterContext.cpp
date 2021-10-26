@@ -20,6 +20,8 @@
 #include "MasterContext.h"
 
 
+
+#include "GetFilesInDirectoryTask.h"
 #include "ReadFileTask.h"
 #include "WriteFileTask.h"
 #include "app/APDUBuilders.h"
@@ -318,17 +320,24 @@ bool MContext::DemandTimeSyncronization()
 bool MContext::ReadFile(const std::string& sourceFile, const std::string& destFilename)
 {
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
+    const auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
     this->ScheduleAdhocTask(task);
-    return false;
+    return true;
 }
 
 bool MContext::WriteFile(const std::string& sourceFile, const std::string& destFilename)
 {
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
+    const auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
     this->ScheduleAdhocTask(task);
-    return false;
+    return true;
+}
+
+void MContext::ReadDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback)
+{
+    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
+    const auto task = std::make_shared<GetFilesInDirectoryTask>(this->tasks.context, *this->application, this->logger, sourceDirectory, callback);
+    return this->ScheduleAdhocTask(task);
 }
 
 void MContext::StartResponseTimer()

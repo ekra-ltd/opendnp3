@@ -1,4 +1,4 @@
-#include "ReadFileTask.h"
+#include "GetFilesInDirectoryTask.h"
 
 #include "app/APDUBuilders.h"
 #include "app/parsing/APDUParser.h"
@@ -14,70 +14,66 @@
 namespace opendnp3
 {
 
-    ReadFileTask::ReadFileTask(const std::shared_ptr<TaskContext>& context,
+    GetFilesInDirectoryTask::GetFilesInDirectoryTask(const std::shared_ptr<TaskContext>& context,
         IMasterApplication& app,
         const Logger& logger,
-        std::string sourceFilename,
-        const std::string& destFilename)
+        std::string sourceDirectory,
+        GetFilesInDirectoryTaskCallbackT taskCallback)
         : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
-        sourceFilename(std::move(sourceFilename)),
-        output_file(destFilename, std::ios::binary | std::ios::out)
+        sourceDirectory(std::move(sourceDirectory)),
+        callback(std::move(taskCallback))
     { }
 
-    void ReadFileTask::Initialize()
+    void GetFilesInDirectoryTask::Initialize()
     {
+        currentTaskState = OPENING;
         fileCommandStatus = Group70Var4();
         fileTransportObject = Group70Var5();
+        filesInDirectory.clear();
     }
 
-    void ReadFileTask::OnTaskComplete(TaskCompletion /*result*/, Timestamp /*now*/)
-    {
-        output_file.close();
-    }
-
-    bool ReadFileTask::BuildRequest(APDURequest& request, uint8_t seq) {
-        switch (taskState) {
+    bool GetFilesInDirectoryTask::BuildRequest(APDURequest& request, uint8_t seq) {
+        switch (currentTaskState) {
             case OPENING: {
                 logger.log(flags::DBG, __FILE__, "Attempting opening file");
                 Group70Var3 file;
-                file.filename = sourceFilename;
+                file.filename = sourceDirectory;
                 request.SetFunction(FunctionCode::OPEN_FILE);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
                 return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var3>(QualifierCode::FREE_FORMAT, file);
             }
-            case READING: {
+            case READING_DIRECTORY: {
                 fileTransportObject.fileId = fileCommandStatus.fileId;
                 request.SetFunction(FunctionCode::READ);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
                 return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var5>(QualifierCode::FREE_FORMAT, fileTransportObject);
             }
-            case CLOSING: {
+            case CLOSING:
                 request.SetFunction(FunctionCode::CLOSE_FILE);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
                 return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var4>(QualifierCode::FREE_FORMAT, fileCommandStatus);
-            }
-            default:
-                return false;
         }
+
+        return false;
     }
 
-    IMasterTask::ResponseResult ReadFileTask::ProcessResponse(const APDUResponseHeader& response,
+    IMasterTask::ResponseResult GetFilesInDirectoryTask::ProcessResponse(const APDUResponseHeader& response,
                                                               const ser4cpp::rseq_t& objects) {
-        switch (taskState) {
+        switch (currentTaskState) {
             case OPENING:
             case CLOSING:
                 return OnResponseStatusObject(response, objects);
-            case READING:
-                return OnResponseReadFile(response, objects);
+            case READING_DIRECTORY:
+                return OnResponseReadDirectory(response, objects);
             default:
                 return ResponseResult::ERROR_BAD_RESPONSE;
         }
     }
 
-    IMasterTask::ResponseResult ReadFileTask::OnResponseStatusObject(const APDUResponseHeader& response,
+    IMasterTask::ResponseResult GetFilesInDirectoryTask::OnResponseStatusObject(const APDUResponseHeader& response,
                                                                  const ser4cpp::rseq_t& objects) {
         if (ValidateSingleResponse(response)) {
             FileOperationHandler handler;
@@ -88,16 +84,27 @@ namespace opendnp3
             fileCommandStatus = handler.GetFileStatusObject();
             std::string s;
             switch (fileCommandStatus.status) {
-                case FileCommandStatus::SUCCESS:
-                    if (taskState == OPENING) {
-                        s = "Success opening file - \"" + sourceFilename + "\"";
-                        logger.log(flags::DBG, __FILE__, s.c_str());
-                        logger.log(flags::DBG, __FILE__, "Starting file reading...");
-                        taskState = READING;
-                        return ResponseResult::OK_REPEAT;
+                case FileCommandStatus::SUCCESS: {
+                    switch (currentTaskState) {
+                        case OPENING:
+                            s = "Reading files in directory - \"" + sourceDirectory + "\"";
+                            logger.log(flags::DBG, __FILE__, s.c_str());
+                            currentTaskState = READING_DIRECTORY;
+                            return ResponseResult::OK_REPEAT;
+                        case READING_DIRECTORY:
+                            logger.log(flags::DBG, __FILE__, "Successfully received file names");
+                            logger.log(flags::DBG, __FILE__, "Reading each file...");
+                            currentTaskState = CLOSING;
+                            return ResponseResult::OK_REPEAT;
+                        case CLOSING:
+                            s = "Successfully closed directory - \"" + sourceDirectory + "\"";
+                            logger.log(flags::DBG, __FILE__, s.c_str());
+                            callback(GetFilesInDirectoryTaskResult(TaskCompletion::SUCCESS, filesInDirectory));
+                            return ResponseResult::OK_FINAL;
+                        default: 
+                            return ResponseResult::ERROR_BAD_RESPONSE;
                     }
-                    logger.log(flags::DBG, __FILE__, "Successfully closed file");
-                    return ResponseResult::OK_FINAL;
+                }
                 case FileCommandStatus::PERMISSION_DENIED:
                     logger.log(flags::DBG, __FILE__, "Permission denied");
                     break;
@@ -105,18 +112,17 @@ namespace opendnp3
                     logger.log(flags::DBG, __FILE__, "Invalid mode");
                     break;
                 case FileCommandStatus::NOT_FOUND:
-                    s = "File - \"" + sourceFilename + "\" not found";
-                    logger.log(flags::DBG, __FILE__, s.c_str());
+                    logger.log(flags::DBG, __FILE__, "File not found");
                     break;
                 case FileCommandStatus::FILE_LOCKED:
-                    s = "File - \"" + sourceFilename + "\" locked by another user";
+                    s = "Directory - \"" + sourceDirectory + "\" locked by another user";
                     logger.log(flags::DBG, __FILE__, s.c_str());
                     break;
                 case FileCommandStatus::OPEN_COUNT_EXCEEDED:
                     logger.log(flags::DBG, __FILE__, "Maximum amount of files opened");
                     break;
                 case FileCommandStatus::FILE_NOT_OPEN:
-                    s = "Failed closing the file - \"" + sourceFilename + "\", which is not opened";
+                    s = "Failed closing the directory - \"" + sourceDirectory + "\", which is not opened";
                     logger.log(flags::DBG, __FILE__, s.c_str());
                     break;
                 case FileCommandStatus::INVALID_BLOCK_SIZE:
@@ -124,6 +130,7 @@ namespace opendnp3
                     break;
                 case FileCommandStatus::LOST_COM:
                     logger.log(flags::DBG, __FILE__, "Communication lost");
+                    callback(GetFilesInDirectoryTaskResult(TaskCompletion::FAILURE_NO_COMMS));
                     break;
                 case FileCommandStatus::FAILED_ABORT:
                     logger.log(flags::DBG, __FILE__, "Abort action failed");
@@ -134,29 +141,29 @@ namespace opendnp3
             }
         }
 
+        callback(GetFilesInDirectoryTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
         return ResponseResult::ERROR_BAD_RESPONSE;
     }
 
-    IMasterTask::ResponseResult ReadFileTask::OnResponseReadFile(const APDUResponseHeader& header,
-                                                                 const ser4cpp::rseq_t& objects) {
+    IMasterTask::ResponseResult GetFilesInDirectoryTask::OnResponseReadDirectory(const APDUResponseHeader& header,
+                                                                           const ser4cpp::rseq_t& objects) {
         if (ValidateSingleResponse(header)) {
             FileOperationHandler handler;
             const auto result = APDUParser::Parse(objects, handler, &logger);
             if (result != ParseResult::OK) {
+                callback(GetFilesInDirectoryTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
                 return ResponseResult::ERROR_BAD_RESPONSE;
             }
 
             fileTransportObject = handler.GetFileTransferObject();
-            const auto *data = static_cast<const uint8_t*>(fileTransportObject.data);
-            output_file.write(reinterpret_cast<const char *>(data), fileTransportObject.data.length());
-            fileTransportObject.data.make_empty();
-            fileTransportObject.blockNumber += 1;
-            if (fileTransportObject.isLastBlock) {
-                const std::string s = "File - \"" + sourceFilename +"\" successfully received";
-                logger.log(flags::DBG, __FILE__, s.c_str());
-                taskState = CLOSING;
+            while (fileTransportObject.data.length() != 0)
+            {
+                Group70Var7 info;
+                Group70Var7::Read(fileTransportObject.data, info);
+                filesInDirectory.push_back(info.fileInfo);
             }
 
+            currentTaskState = CLOSING;
             return ResponseResult::OK_REPEAT;
         }
         return ResponseResult::ERROR_BAD_RESPONSE;

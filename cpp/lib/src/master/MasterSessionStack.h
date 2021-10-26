@@ -107,8 +107,9 @@ public:
 
     /// --- File Operations ---
 
-    bool ReadFile(const std::string& sourceFilename, const std::string& destFilename) override;
-    bool WriteFile(const std::string& sourceFilename, const std::string& destFilename) override;
+    void ReadFile(const std::string& sourceFilename, const std::string& destFilename) override;
+    void WriteFile(const std::string& sourceFilename, const std::string& destFilename) override;
+    void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInDirectoryTaskCallbackT& callback) override;
 
     /// --- ICommandProcessor ---
 
