@@ -45,7 +45,7 @@ MasterTasks::MasterTasks(const MasterParams& params,
       // optional tasks
       disableUnsol(GetDisableUnsolTask(context, params, logger, app)),
       enableUnsol(GetEnableUnsolTask(context, params, logger, app)),
-      timeSynchronization(GetTimeSyncTask(context, params.timeSyncMode, logger, app))
+      timeSynchronization(GetTimeSyncTask(context, params, logger, app))
 {
 }
 
@@ -93,16 +93,24 @@ void MasterTasks::OnRestartDetected()
 }
 
 std::shared_ptr<IMasterTask> MasterTasks::GetTimeSyncTask(const std::shared_ptr<TaskContext>& context,
-                                                          TimeSyncMode mode,
+                                                          MasterParams params,
                                                           const Logger& logger,
                                                           IMasterApplication& application)
 {
-    switch (mode)
+    switch (params.timeSyncMode)
     {
-    case (TimeSyncMode::NonLAN):
-        return std::make_shared<SerialTimeSyncTask>(context, application, logger);
-    case (TimeSyncMode::LAN):
-        return std::make_shared<LANTimeSyncTask>(context, application, logger);
+    case (TimeSyncMode::NonLAN): {
+        if (params.timeSyncPeriod == TimeDuration::Max()) {
+            return std::make_shared<SerialTimeSyncTask>(context, application, logger);
+        }
+        return std::make_shared<SerialTimeSyncTask>(context, application, logger, params.timeSyncPeriod, params.taskRetryPeriod, params.maxTaskRetryPeriod);
+    }
+    case (TimeSyncMode::LAN): {
+        if (params.timeSyncPeriod == TimeDuration::Max()) {
+            return std::make_shared<LANTimeSyncTask>(context, application, logger);
+        }
+        return std::make_shared<LANTimeSyncTask>(context, application, logger, params.timeSyncPeriod, params.taskRetryPeriod, params.maxTaskRetryPeriod);
+    }
     default:
         return nullptr;
     }

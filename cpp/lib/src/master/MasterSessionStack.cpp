@@ -234,6 +234,11 @@ void MasterSessionStack::PerformFunction(const std::string& name,
     return executor->post(action);
 }
 
+bool MasterSessionStack::DemandTimeSyncronization()
+{
+    return context.DemandTimeSyncronization();
+}
+
 /// --- ICommandProcessor ---
 
 void MasterSessionStack::SelectAndOperate(CommandSet&& commands,

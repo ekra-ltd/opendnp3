@@ -152,6 +152,8 @@ public:
                                  const std::vector<Header>& headers,
                                  const TaskConfig& config = TaskConfig::Default())
         = 0;
+
+    virtual bool DemandTimeSyncronization() = 0;
 };
 
 } // namespace opendnp3

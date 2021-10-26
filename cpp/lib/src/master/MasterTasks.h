@@ -80,7 +80,7 @@ private:
     const std::shared_ptr<IMasterTask> timeSynchronization;
 
     static std::shared_ptr<IMasterTask> GetTimeSyncTask(const std::shared_ptr<TaskContext>& context,
-                                                        TimeSyncMode mode,
+                                                        MasterParams params,
                                                         const Logger& logger,
                                                         IMasterApplication& application);
     static std::shared_ptr<IMasterTask> GetEnableUnsolTask(const std::shared_ptr<TaskContext>& context,

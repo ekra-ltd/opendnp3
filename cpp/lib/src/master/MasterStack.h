@@ -163,6 +163,8 @@ public:
                        const CommandResultCallbackT& callback,
                        const TaskConfig& config) override;
 
+    bool DemandTimeSyncronization() override;
+
 protected:
     MContext mcontext;
 };

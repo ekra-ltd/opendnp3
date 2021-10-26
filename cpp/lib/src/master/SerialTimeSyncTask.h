@@ -32,6 +32,8 @@ class SerialTimeSyncTask : public IMasterTask
 
 public:
     SerialTimeSyncTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger);
+    SerialTimeSyncTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
+                       TimeDuration period, TimeDuration mixRetryTimeout, TimeDuration maxRetryTimeout);
 
     virtual char const* Name() const override final
     {

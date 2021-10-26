@@ -287,6 +287,14 @@ void MContext::Transmit(const ser4cpp::rseq_t& data)
     this->lower->BeginTransmit(Message(this->addresses, data));
 }
 
+bool MContext::DemandTimeSyncronization()
+{
+    const bool result = this->tasks.DemandTimeSync();
+    if (result)
+        this->scheduler->Evaluate();
+    return result;
+}
+
 void MContext::StartResponseTimer()
 {
     auto timeout = [this]() { this->OnResponseTimeout(); };

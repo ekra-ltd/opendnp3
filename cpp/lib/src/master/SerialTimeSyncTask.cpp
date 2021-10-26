@@ -36,6 +36,15 @@ SerialTimeSyncTask::SerialTimeSyncTask(const std::shared_ptr<TaskContext>& conte
 {
 }
 
+SerialTimeSyncTask::SerialTimeSyncTask(const std::shared_ptr<TaskContext>& context,
+                                       IMasterApplication& app,
+                                       const Logger& logger,
+                                       TimeDuration period,
+                                       TimeDuration mixRetryTimeout,
+                                       TimeDuration maxRetryTimeout)
+    : IMasterTask(context, app, TaskBehavior::ImmediatePeriodic(period, mixRetryTimeout, maxRetryTimeout), logger, TaskConfig::Default()), delay(-1)
+{ }
+
 void SerialTimeSyncTask::Initialize()
 {
     delay = -1;

@@ -228,4 +228,9 @@ void MasterStack::DirectOperate(CommandSet&& commands, const CommandResultCallba
     this->executor->post(action);
 }
 
+bool MasterStack::DemandTimeSyncronization()
+{
+    return mcontext.DemandTimeSyncronization();
+}
+
 } // namespace opendnp3

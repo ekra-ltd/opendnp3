@@ -34,6 +34,15 @@ LANTimeSyncTask::LANTimeSyncTask(const std::shared_ptr<TaskContext>& context,
 {
 }
 
+LANTimeSyncTask::LANTimeSyncTask(const std::shared_ptr<TaskContext>& context,
+                                 IMasterApplication& app,
+                                 const Logger& logger,
+                                 TimeDuration period,
+                                 TimeDuration mixRetryTimeout,
+                                 TimeDuration maxRetryTimeout)
+    : IMasterTask(context, app, TaskBehavior::ImmediatePeriodic(period, mixRetryTimeout, maxRetryTimeout), logger, TaskConfig::Default())
+{ }
+
 void LANTimeSyncTask::Initialize()
 {
     this->state = State::RECORD_CURRENT_TIME;

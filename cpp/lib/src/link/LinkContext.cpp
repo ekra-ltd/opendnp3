@@ -66,7 +66,7 @@ bool LinkContext::OnLowerLayerUp()
 
     this->StartKeepAliveTimer(now + config.KeepAliveTimeout);
 
-    listener->OnStateChange(LinkStatus::UNRESET);
+    listener->OnStateChange(LinkStatus::RESET);
     upper->OnLowerLayerUp();
 
     return true;

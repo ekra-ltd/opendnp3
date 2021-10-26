@@ -189,6 +189,8 @@ public:
 
     void Transmit(const ser4cpp::rseq_t& data);
 
+    bool DemandTimeSyncronization();
+
 private:
     // --- implement  IMasterTaskRunner ------
 

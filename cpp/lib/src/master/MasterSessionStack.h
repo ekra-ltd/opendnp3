@@ -103,6 +103,8 @@ public:
                          const std::vector<Header>& headers,
                          const TaskConfig& config) final;
 
+    bool DemandTimeSyncronization() override;
+
     /// --- ICommandProcessor ---
 
     void SelectAndOperate(CommandSet&& commands,
