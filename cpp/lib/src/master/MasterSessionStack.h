@@ -47,8 +47,7 @@ public:
                                                       const std::shared_ptr<IMasterScheduler>& scheduler,
                                                       const std::shared_ptr<LinkSession>& session,
                                                       ILinkTx& linktx,
-                                                      const MasterStackConfig& config,
-                                                      const StatisticsChangeHandler_t& statisticsChangeHandler);
+                                                      const MasterStackConfig& config);
 
     void OnLowerLayerUp();
 
@@ -132,9 +131,11 @@ public:
                        const std::shared_ptr<IMasterScheduler>& scheduler,
                        std::shared_ptr<LinkSession> session,
                        ILinkTx& linktx,
-                       const MasterStackConfig& config,
-                       const StatisticsChangeHandler_t& statisticsChangeHandler);
+                       const MasterStackConfig& config);
 
+
+    void AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler) override;
+    void RemoveStatisticsHandler() override;
 private:
     StackStatistics CreateStatistics() const;
 

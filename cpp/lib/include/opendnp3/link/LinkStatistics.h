@@ -32,8 +32,14 @@ struct LinkStatistics
 {
     struct Parser
     {
-        Parser(const StatisticsChangeHandler_t& handler = nullptr)
+        Parser()
         {
+            auto handler = [&](StatisticsValueType type, uint64_t value) {
+                if (changeHandler) {
+                    changeHandler(type, value);
+                }
+            };
+
             numHeaderCrcError  = { 0, StatisticsValueType::ChecksumErrors,    handler };
             numBodyCrcError    = { 0, StatisticsValueType::ChecksumErrors,    handler };
             numLinkFrameRx     = { 0, StatisticsValueType::FramesReceived,    handler };
@@ -42,6 +48,8 @@ struct LinkStatistics
             numBadFCV          = { 0, StatisticsValueType::FrameFormatErrors, handler };
             numBadFCB          = { 0, StatisticsValueType::FrameFormatErrors, handler };
         }
+
+        StatisticsChangeHandler_t changeHandler = nullptr;
 
         /// Number of frames discarded due to header CRC errors
         StatisticValueWithEvent numHeaderCrcError;
@@ -67,8 +75,13 @@ struct LinkStatistics
 
     struct Channel
     {
-        Channel(const StatisticsChangeHandler_t& handler = nullptr)
+        Channel()
         {
+            auto handler = [&](StatisticsValueType type, uint64_t value) {
+                if (changeHandler) {
+                    changeHandler(type, value);
+                }
+            };
             numOpen        = { 0, StatisticsValueType::SucceededConnections, handler };
             numOpenFail    = { 0, StatisticsValueType::FailedConnections,    handler };
             numClose       = { 0, StatisticsValueType::LostConnections,      handler };
@@ -76,6 +89,8 @@ struct LinkStatistics
             numBytesTx     = { 0, StatisticsValueType::BytesSent,            handler };
             numLinkFrameTx = { 0, StatisticsValueType::FramesSent,           handler };
         }
+
+        StatisticsChangeHandler_t changeHandler = nullptr;
 
         /// The number of times the channel has successfully opened
         StatisticValueWithEvent numOpen;

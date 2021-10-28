@@ -109,7 +109,7 @@ std::shared_ptr<IMaster> DNP3Channel::AddMaster(const std::string& id,
                                                 const MasterStackConfig& config)
 {
     auto stack = MasterStack::Create(this->logger.detach(id), this->executor, SOEHandler, application, this->scheduler,
-                                     this->iohandler, this->resources, config, config.link.StatisticsChangeEventHandler);
+                                     this->iohandler, this->resources, config);
 
     return this->AddStack(config.link, stack);
 }
@@ -123,6 +123,16 @@ std::shared_ptr<IOutstation> DNP3Channel::AddOutstation(const std::string& id,
                                          this->iohandler, this->resources, config);
 
     return this->AddStack(config.link, stack);
+}
+
+void DNP3Channel::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
+{
+    this->iohandler->AddStatisticsHandler(statisticsChangeHandler);
+}
+
+void DNP3Channel::RemoveStatisticsHandler()
+{
+    this->iohandler->RemoveStatisticsHandler();
 }
 
 template<class T> std::shared_ptr<T> DNP3Channel::AddStack(const LinkConfig& link, const std::shared_ptr<T>& stack)

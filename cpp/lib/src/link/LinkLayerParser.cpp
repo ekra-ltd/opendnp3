@@ -28,8 +28,8 @@
 namespace opendnp3
 {
 
-LinkLayerParser::LinkLayerParser(const Logger& logger, const StatisticsChangeHandler_t& changeHandler)
-    : logger(logger), statistics(changeHandler), state(State::FindSync), frameSize(0), buffer(rxBuffer, LPDU_MAX_FRAME_SIZE)
+LinkLayerParser::LinkLayerParser(const Logger& logger)
+    : logger(logger), state(State::FindSync), frameSize(0), buffer(rxBuffer, LPDU_MAX_FRAME_SIZE)
 {
 }
 

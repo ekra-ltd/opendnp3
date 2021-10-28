@@ -71,10 +71,9 @@ public:
                                                       const std::shared_ptr<IChannelListener>& listener,
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       const IPEndpoint& endpoint,
-                                                      std::error_code& ec,
-                                                      const StatisticsChangeHandler_t& statisticsChangeHandler)
+                                                      std::error_code& ec)
     {
-        return std::make_shared<TCPServerIOHandler>(logger, accept_mode, listener, executor, endpoint, ec, statisticsChangeHandler);
+        return std::make_shared<TCPServerIOHandler>(logger, accept_mode, listener, executor, endpoint, ec);
     }
 
     TCPServerIOHandler(const Logger& logger,
@@ -82,8 +81,7 @@ public:
                        const std::shared_ptr<IChannelListener>& listener,
                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                        IPEndpoint endpoint,
-                       std::error_code& ec,
-                       const StatisticsChangeHandler_t& statisticsChangeHandler);
+                       std::error_code& ec);
 
 protected:
     void ShutdownImpl() final;

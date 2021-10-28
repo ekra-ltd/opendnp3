@@ -91,6 +91,9 @@ public:
                                                        std::shared_ptr<IOutstationApplication> application,
                                                        const OutstationStackConfig& config)
         = 0;
+
+    virtual void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler) = 0;
+    virtual void RemoveStatisticsHandler() = 0;
 };
 
 } // namespace opendnp3

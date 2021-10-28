@@ -32,9 +32,8 @@ TCPClientIOHandler::TCPClientIOHandler(const Logger& logger,
                                        const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                        const ChannelRetry& retry,
                                        const IPEndpointsList& remotes,
-                                       std::string adapter,
-                                       const StatisticsChangeHandler_t& statisticsChangeHandler)
-    : IOHandler(logger, false, listener, statisticsChangeHandler),
+                                       std::string adapter)
+    : IOHandler(logger, false, listener),
       executor(executor),
       retry(retry),
       remotes(remotes),

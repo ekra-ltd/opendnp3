@@ -43,18 +43,16 @@ public:
                     const IPEndpoint& endpoint,
                     std::shared_ptr<IListenCallbacks> callbacks,
                     std::shared_ptr<ResourceManager> manager,
-                    std::error_code& ec,
-                    const StatisticsChangeHandler_t& statisticsChangeHandler);
+                    std::error_code& ec);
 
     static std::shared_ptr<MasterTCPServer> Create(const Logger& logger,
                                                    const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                    const IPEndpoint& endpoint,
                                                    const std::shared_ptr<IListenCallbacks>& callbacks,
                                                    const std::shared_ptr<ResourceManager>& manager,
-                                                   std::error_code& ec,
-                                                   const StatisticsChangeHandler_t& statisticsChangeHandler)
+                                                   std::error_code& ec)
     {
-        auto server = std::make_shared<MasterTCPServer>(logger, executor, endpoint, callbacks, manager, ec, statisticsChangeHandler);
+        auto server = std::make_shared<MasterTCPServer>(logger, executor, endpoint, callbacks, manager, ec);
 
         if (!ec)
         {

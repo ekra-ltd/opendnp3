@@ -34,15 +34,13 @@ LinkSession::LinkSession(const Logger& logger,
                          uint64_t sessionid,
                          std::shared_ptr<IResourceManager> manager,
                          std::shared_ptr<IListenCallbacks> callbacks,
-                         const std::shared_ptr<IAsyncChannel>& channel,
-                         const StatisticsChangeHandler_t& statisticsChangeHandler)
+                         const std::shared_ptr<IAsyncChannel>& channel)
     : logger(logger),
       session_id(sessionid),
       manager(std::move(manager)),
       callbacks(std::move(callbacks)),
       channel(channel),
-      parser(logger, statisticsChangeHandler),
-      statisticsChangeHandler(statisticsChangeHandler)
+      parser(logger)
 {
 }
 
@@ -159,7 +157,7 @@ std::shared_ptr<IMasterSession> LinkSession::AcceptSession(const std::string& lo
 
     this->stack = MasterSessionStack::Create(this->logger, this->channel->executor, SOEHandler, application,
                                              std::make_shared<MasterSchedulerBackend>(this->channel->executor),
-                                             shared_from_this(), *this, config, statisticsChangeHandler);
+                                             shared_from_this(), *this, config);
 
     return stack;
 }

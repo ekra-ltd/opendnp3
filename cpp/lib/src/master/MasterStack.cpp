@@ -33,8 +33,7 @@ MasterStack::MasterStack(const Logger& logger,
                          const std::shared_ptr<IMasterScheduler>& scheduler,
                          const std::shared_ptr<IOHandler>& iohandler,
                          const std::shared_ptr<IResourceManager>& manager,
-                         const MasterStackConfig& config,
-                         const StatisticsChangeHandler_t& statisticsChangeHandler)
+                         const MasterStackConfig& config)
     : StackBase(logger,
                 executor,
                 application,
@@ -49,8 +48,7 @@ MasterStack::MasterStack(const Logger& logger,
                SOEHandler,
                application,
                scheduler,
-               config.master,
-               statisticsChangeHandler)
+               config.master)
 {
     tstack.transport->SetAppLayer(mcontext);
 }
@@ -297,6 +295,16 @@ void MasterStack::Operate(CommandSet&& commands, const CommandResultCallbackT& c
 bool MasterStack::DemandTimeSyncronization()
 {
     return mcontext.DemandTimeSyncronization();
+}
+
+void MasterStack::AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler)
+{
+    mcontext.AddStatisticsHandler(changeHandler);
+}
+
+void MasterStack::RemoveStatisticsHandler()
+{
+    mcontext.RemoveStatisticsHandler();
 }
 
 } // namespace opendnp3

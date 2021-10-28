@@ -34,7 +34,7 @@ class DecoderImpl;
 class Decoder
 {
 public:
-    Decoder(IDecoderCallbacks& callbacks, const Logger& logger, const StatisticsChangeHandler_t& statisticsChangeHandler);
+    Decoder(IDecoderCallbacks& callbacks, const Logger& logger);
     ~Decoder();
 
     void DecodeLPDU(const Buffer& data);

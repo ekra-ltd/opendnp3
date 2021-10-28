@@ -68,6 +68,9 @@ public:
                                                std::shared_ptr<IOutstationApplication> application,
                                                const OutstationStackConfig& config) final;
 
+
+    void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler) override;
+    void RemoveStatisticsHandler() override;
 private:
     void ShutdownImpl();
 

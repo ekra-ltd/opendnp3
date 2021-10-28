@@ -32,9 +32,8 @@ UDPClientIOHandler::UDPClientIOHandler(const Logger& logger,
                                        const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                        const ChannelRetry& retry,
                                        const IPEndpoint& localEndpoint,
-                                       const IPEndpoint& remoteEndpoint,
-                                       const StatisticsChangeHandler_t& statisticsChangeHandler)
-    : IOHandler(logger, false, listener, statisticsChangeHandler),
+                                       const IPEndpoint& remoteEndpoint)
+    : IOHandler(logger, false, listener),
       executor(executor),
       retry(retry),
       localEndpoint(localEndpoint),

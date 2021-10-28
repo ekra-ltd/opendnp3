@@ -66,8 +66,7 @@ public:
              const std::shared_ptr<ISOEHandler>& SOEHandler,
              const std::shared_ptr<IMasterApplication>& application,
              std::shared_ptr<IMasterScheduler> scheduler,
-             const MasterParams& params,
-             const StatisticsChangeHandler_t& statisticsChangeHandler);
+             const MasterParams& params);
 
     Logger logger;
     const std::shared_ptr<exe4cpp::IExecutor> executor;
@@ -203,6 +202,9 @@ public:
     void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback);
     void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback);
     void DeleteFileFunction(const std::string& filename);
+
+    void AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler);
+    void RemoveStatisticsHandler();
 
 private:
     // --- implement  IMasterTaskRunner ------

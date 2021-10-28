@@ -29,8 +29,8 @@
 namespace opendnp3
 {
 
-IOHandler::IOHandler(const Logger& logger, bool close_existing, std::shared_ptr<IChannelListener> listener, const StatisticsChangeHandler_t& statisticsChangeHandler)
-    : close_existing(close_existing), logger(logger), listener(std::move(listener)), statistics(statisticsChangeHandler), parser(logger, statisticsChangeHandler)
+IOHandler::IOHandler(const Logger& logger, bool close_existing, std::shared_ptr<IChannelListener> listener)
+    : close_existing(close_existing), logger(logger), listener(std::move(listener)), parser(logger)
 {
 }
 
@@ -285,6 +285,18 @@ bool IOHandler::IsRouteInUse(const Addresses& addresses) const
     auto matches = [addresses](const Session& record) { return record.Matches(addresses); };
 
     return std::find_if(sessions.begin(), sessions.end(), matches) != sessions.end();
+}
+
+void IOHandler::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
+{
+    statistics.changeHandler = statisticsChangeHandler;
+    this->parser.AddStatisticsHandler(statisticsChangeHandler);
+}
+
+void IOHandler::RemoveStatisticsHandler()
+{
+    statistics.changeHandler = nullptr;
+    this->parser.AddStatisticsHandler(nullptr);
 }
 
 bool IOHandler::IsSessionInUse(const std::shared_ptr<ILinkSession>& session) const

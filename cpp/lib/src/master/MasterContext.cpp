@@ -50,8 +50,7 @@ MContext::MContext(const Addresses& addresses,
                    const std::shared_ptr<ISOEHandler>& SOEHandler,
                    const std::shared_ptr<IMasterApplication>& application,
                    std::shared_ptr<IMasterScheduler> scheduler,
-                   const MasterParams& params,
-                   const StatisticsChangeHandler_t& statisticsChangeHandler)
+                   const MasterParams& params)
     : logger(logger),
       executor(executor),
       lower(std::move(lower)),
@@ -62,8 +61,7 @@ MContext::MContext(const Addresses& addresses,
       scheduler(std::move(scheduler)),
       tasks(params, logger, *application, SOEHandler),
       txBuffer(params.maxTxFragSize),
-      tstate(TaskState::IDLE),
-      statisticsChangeHandler(statisticsChangeHandler)
+      tstate(TaskState::IDLE)
 {
 }
 
@@ -358,6 +356,16 @@ void MContext::DeleteFileFunction(const std::string& filename)
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     const auto task = std::make_shared<DeleteFileTask>(this->tasks.context, *this->application, this->logger, filename);
     return this->ScheduleAdhocTask(task);
+}
+
+void MContext::AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler)
+{
+    statisticsChangeHandler = changeHandler;
+}
+
+void MContext::RemoveStatisticsHandler()
+{
+    statisticsChangeHandler = nullptr;
 }
 
 void MContext::StartResponseTimer()

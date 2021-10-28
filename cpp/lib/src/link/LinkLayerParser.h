@@ -47,7 +47,7 @@ class LinkLayerParser
 public:
     /// @param logger_ Logger that the receiver is to use.
     /// @param pSink_ Completely parsed frames are sent to this interface
-    LinkLayerParser(const Logger& logger, const StatisticsChangeHandler_t& changeHandler);
+    LinkLayerParser(const Logger& logger);
 
     /// Called when valid data has been written to the current buffer write position
     /// Parses the new data and calls the specified frame sink
@@ -63,6 +63,16 @@ public:
     const LinkStatistics::Parser& Statistics() const
     {
         return this->statistics;
+    }
+
+    void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
+    {
+        this->statistics.changeHandler = statisticsChangeHandler;
+    }
+
+    void RemoveStatisticsHandler()
+    {
+        this->statistics.changeHandler = nullptr;
     }
 
 private:

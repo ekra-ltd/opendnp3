@@ -58,23 +58,20 @@ public:
                                            const ChannelRetry& retry,
                                            const std::vector<IPEndpoint>& hosts,
                                            const std::string& local,
-                                           std::shared_ptr<IChannelListener> listener,
-                                           const StatisticsChangeHandler_t& statisticsChangeHandler);
+                                           std::shared_ptr<IChannelListener> listener);
 
     std::shared_ptr<IChannel> AddTCPServer(const std::string& id,
                                            const opendnp3::LogLevels& levels,
                                            ServerAcceptMode mode,
                                            const IPEndpoint& endpoint,
-                                           std::shared_ptr<IChannelListener> listener,
-                                           const StatisticsChangeHandler_t& statisticsChangeHandler);
+                                           std::shared_ptr<IChannelListener> listener);
 
     std::shared_ptr<IChannel> AddUDPChannel(const std::string& id,
                                             const opendnp3::LogLevels& levels,
                                             const ChannelRetry& retry,
                                             const IPEndpoint& localEndpoint,
                                             const IPEndpoint& remoteEndpoint,
-                                            std::shared_ptr<IChannelListener> listener,
-                                            const StatisticsChangeHandler_t& statisticsChangeHandler);
+                                            std::shared_ptr<IChannelListener> listener);
 
     std::shared_ptr<IChannel> AddSerial(const std::string& id,
                                         const opendnp3::LogLevels& levels,
@@ -100,8 +97,7 @@ public:
     std::shared_ptr<IListener> CreateListener(std::string loggerid,
                                               const opendnp3::LogLevels& levels,
                                               const IPEndpoint& endpoint,
-                                              const std::shared_ptr<IListenCallbacks>& callbacks,
-                                              const StatisticsChangeHandler_t& statisticsChangeHandler);
+                                              const std::shared_ptr<IListenCallbacks>& callbacks);
 
     std::shared_ptr<IListener> CreateListener(std::string loggerid,
                                               const opendnp3::LogLevels& levels,

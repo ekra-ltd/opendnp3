@@ -45,8 +45,7 @@ struct LinkConfig
           LocalAddr(localAddr),
           RemoteAddr(remoteAddr),
           Timeout(timeout),
-          KeepAliveTimeout(keepAliveTimeout),
-          StatisticsChangeEventHandler(std::move(statisticsChangeHandler))
+          KeepAliveTimeout(keepAliveTimeout)
     {
     }
 
@@ -57,8 +56,7 @@ struct LinkConfig
           LocalAddr(isMaster ? 1 : 1024),
           RemoteAddr(isMaster ? 1024 : 1),
           Timeout(TimeDuration::Seconds(1)),
-          KeepAliveTimeout(TimeDuration::Minutes(1)),
-          StatisticsChangeEventHandler(nullptr)
+          KeepAliveTimeout(TimeDuration::Minutes(1))
     {
     }
 
@@ -82,8 +80,6 @@ struct LinkConfig
     /// the interval for keep-alive messages (link status requests)
     /// if set to TimeDuration::Max(), the keep-alive is disabled
     TimeDuration KeepAliveTimeout;
-
-    StatisticsChangeHandler_t StatisticsChangeEventHandler;
 };
 
 } // namespace opendnp3

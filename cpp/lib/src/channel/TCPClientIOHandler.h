@@ -41,10 +41,9 @@ public:
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       const ChannelRetry& retry,
                                                       const IPEndpointsList& remotes,
-                                                      const std::string& adapter,
-                                                      const StatisticsChangeHandler_t& statisticsChangeHandler)
+                                                      const std::string& adapter)
     {
-        return std::make_shared<TCPClientIOHandler>(logger, listener, executor, retry, remotes, adapter, statisticsChangeHandler);
+        return std::make_shared<TCPClientIOHandler>(logger, listener, executor, retry, remotes, adapter);
     }
 
     TCPClientIOHandler(const Logger& logger,
@@ -52,8 +51,7 @@ public:
                        const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                        const ChannelRetry& retry,
                        const IPEndpointsList& remotes,
-                       std::string adapter,
-                       const StatisticsChangeHandler_t& statisticsChangeHandler);
+                       std::string adapter);
 
 protected:
     void ShutdownImpl() final;
