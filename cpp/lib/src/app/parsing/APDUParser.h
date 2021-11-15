@@ -20,6 +20,7 @@
 #ifndef OPENDNP3_APDUPARSER_H
 #define OPENDNP3_APDUPARSER_H
 
+#include "app/parsing/BufferedCollection.h"
 #include "app/parsing/IAPDUHandler.h"
 #include "app/parsing/NumParser.h"
 #include "app/parsing/ParseResult.h"
