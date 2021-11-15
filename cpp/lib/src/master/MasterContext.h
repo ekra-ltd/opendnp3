@@ -32,6 +32,7 @@
 #include "opendnp3/logging/Logger.h"
 #include "opendnp3/master/CommandResultCallbackT.h"
 #include "opendnp3/master/CommandSet.h"
+#include "opendnp3/master/FileOperationTaskResult.h"
 #include "opendnp3/master/GetFilesInfoTaskResult.h"
 #include "opendnp3/master/IMasterApplication.h"
 #include "opendnp3/master/RestartOperationResult.h"
@@ -197,11 +198,11 @@ public:
 
     bool DemandTimeSyncronization();
 
-    bool ReadFile(const std::string& sourceFile, const std::string& destFilename);
-    bool WriteFile(const std::string& sourceFile, const std::string& destFilename);
+    bool ReadFile(const std::string& sourceFile, FileOperationTaskCallbackT callback);
+    bool WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback);
     void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback);
     void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback);
-    void DeleteFileFunction(const std::string& filename);
+    void DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback);
 
     void AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler);
     void RemoveStatisticsHandler();

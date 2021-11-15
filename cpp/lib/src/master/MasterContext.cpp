@@ -321,40 +321,35 @@ bool MContext::DemandTimeSyncronization()
     return result;
 }
 
-bool MContext::ReadFile(const std::string& sourceFile, const std::string& destFilename)
+bool MContext::ReadFile(const std::string& sourceFile, FileOperationTaskCallbackT callback)
 {
-    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    const auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
+    const auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, callback);
     this->ScheduleAdhocTask(task);
     return true;
 }
 
-bool MContext::WriteFile(const std::string& sourceFile, const std::string& destFilename)
+bool MContext::WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback)
 {
-    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    const auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, destFilename);
+    const auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger, source, destFilename, callback);
     this->ScheduleAdhocTask(task);
     return true;
 }
 
 void MContext::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
-    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     const auto task = std::make_shared<GetFilesInDirectoryTask>(this->tasks.context, *this->application, this->logger, sourceDirectory, callback);
     return this->ScheduleAdhocTask(task);
 }
 
 void MContext::GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback)
 {
-    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     const auto task = std::make_shared<GetFileInfoTask>(this->tasks.context, *this->application, this->logger, sourceFile, callback);
     return this->ScheduleAdhocTask(task);
 }
 
-void MContext::DeleteFileFunction(const std::string& filename)
+void MContext::DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback)
 {
-    const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    const auto task = std::make_shared<DeleteFileTask>(this->tasks.context, *this->application, this->logger, filename);
+    const auto task = std::make_shared<DeleteFileTask>(this->tasks.context, *this->application, this->logger, filename, callback);
     return this->ScheduleAdhocTask(task);
 }
 

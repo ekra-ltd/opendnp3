@@ -17,10 +17,13 @@ namespace opendnp3
     DeleteFileTask::DeleteFileTask(const std::shared_ptr<TaskContext>& context,
         IMasterApplication& app,
         const Logger& logger,
-        std::string filename)
+        std::string filename, 
+        FileOperationTaskCallbackT taskCallback)
         : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
         filename(std::move(filename))
-    { }
+    {
+        callback = taskCallback ? std::move(taskCallback) : [](const FileOperationTaskResult& /**/) {};
+    }
 
     void DeleteFileTask::Initialize()
     {
@@ -44,6 +47,7 @@ namespace opendnp3
             FileOperationHandler handler;
             const auto result = APDUParser::Parse(objects, handler, &logger);
             if (result != ParseResult::OK) {
+                callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
                 return ResponseResult::ERROR_BAD_RESPONSE;
             }
             fileCommandStatus = handler.GetFileStatusObject();
@@ -52,6 +56,7 @@ namespace opendnp3
             case FileCommandStatus::SUCCESS:
                 s = "Success deleting file - \"" + filename + "\"";
                 logger.log(flags::DBG, __FILE__, s.c_str());
+                callback(FileOperationTaskResult(TaskCompletion::SUCCESS));
                 return ResponseResult::OK_FINAL;
             case FileCommandStatus::PERMISSION_DENIED:
                 logger.log(flags::DBG, __FILE__, "Permission denied");
@@ -89,6 +94,7 @@ namespace opendnp3
             }
         }
 
+        callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
         return ResponseResult::ERROR_BAD_RESPONSE;
     }
 

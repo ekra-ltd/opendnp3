@@ -202,18 +202,18 @@ void MasterStack::PerformFunction(const std::string& name,
     return this->executor->post(add);
 }
 
-void MasterStack::ReadFile(const std::string& sourceFilename, const std::string& destFilename)
+void MasterStack::ReadFile(const std::string& sourceFilename, FileOperationTaskCallbackT callback)
 {
-    auto add = [self = this->shared_from_this(), sourceFilename, destFilename]() {
-        return self->mcontext.ReadFile(sourceFilename, destFilename);
+    auto add = [self = this->shared_from_this(), sourceFilename, callback]() {
+        return self->mcontext.ReadFile(sourceFilename, callback);
     };
     return this->executor->post(add);
 }
 
-void MasterStack::WriteFile(const std::string& sourceFilename, const std::string& destFilename)
+void MasterStack::WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback)
 {
-    auto add = [self = this->shared_from_this(), sourceFilename, destFilename]() {
-        return self->mcontext.WriteFile(sourceFilename, destFilename);
+    auto add = [self = this->shared_from_this(), source, destFilename, callback]() {
+        return self->mcontext.WriteFile(source, destFilename, callback);
     };
     return this->executor->post(add);
 }
@@ -234,10 +234,10 @@ void MasterStack::GetFileInfo(const std::string& sourceFile, const GetFilesInfoT
     return this->executor->post(add);
 }
 
-void MasterStack::DeleteFileFunction(const std::string& filename)
+void MasterStack::DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback)
 {
-    auto add = [self = this->shared_from_this(), filename]() {
-        return self->mcontext.DeleteFileFunction(filename);
+    auto add = [self = this->shared_from_this(), filename, callback]() {
+        return self->mcontext.DeleteFileFunction(filename, callback);
     };
     return this->executor->post(add);
 }

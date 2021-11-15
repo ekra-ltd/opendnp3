@@ -30,6 +30,9 @@ namespace opendnp3
         fileCommandStatus = Group70Var4();
         fileTransportObject = Group70Var5();
         filesInfo.clear();
+        if (callback == nullptr) {
+            callback = [](const GetFilesInfoTaskResult& /**/) {};
+        }
     }
 
     bool GetFilesInDirectoryTask::BuildRequest(APDURequest& request, uint8_t seq) {

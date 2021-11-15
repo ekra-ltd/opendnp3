@@ -4,6 +4,8 @@
 #include "master/IMasterTask.h"
 #include "master/TaskPriority.h"
 #include "FileOperationTaskState.h"
+#include "opendnp3/master/FileOperationTaskResult.h"
+
 
 #include <fstream>
 #include <string>
@@ -15,7 +17,7 @@ namespace opendnp3
 
     public:
         WriteFileTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-                     const std::string& sourceFilename, std::string destFilename);
+                      std::shared_ptr<std::ifstream> source, std::string destFilename, FileOperationTaskCallbackT taskCallback);
 
         char const* Name() const final
         {
@@ -58,17 +60,15 @@ namespace opendnp3
 
         void Initialize() final;
 
-    protected:
-        void OnTaskComplete(TaskCompletion result, Timestamp now) override;
-
     private:
         FileOperationTaskState taskState{ OPENING };
-        std::ifstream input_file;
+        std::shared_ptr<std::ifstream> input_file;
         uint32_t inputFileSize;
         std::string destFilename;
         Group70Var4 fileCommandStatus;
         Group70Var5 fileTransportObject;
         Group70Var6 fileTransportStatusObject;
+        FileOperationTaskCallbackT callback;
     };
 
 } // namespace opendnp3

@@ -29,6 +29,9 @@ namespace opendnp3
         currentTaskState = GETTING_FILE_INFO;
         fileCommandStatus = Group70Var4();
         fileInfo = DNPFileInfo();
+        if (callback == nullptr) {
+            callback = [](const GetFilesInfoTaskResult& /**/) {};
+        }
     }
 
     bool GetFileInfoTask::BuildRequest(APDURequest& request, uint8_t seq) {

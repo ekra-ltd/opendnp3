@@ -21,6 +21,7 @@
 #define OPENDNP3_IMASTEROPERATIONS_H
 
 #include "GetFilesInfoTaskResult.h"
+#include "FileOperationTaskResult.h"
 #include "opendnp3/StackStatistics.h"
 #include "opendnp3/StatisticsTypes.h"
 #include "opendnp3/app/ClassField.h"
@@ -157,15 +158,15 @@ public:
 
     virtual bool DemandTimeSyncronization() = 0;
 
-    virtual void ReadFile(const std::string& sourceFilename, const std::string& destFilename) = 0;
+    virtual void ReadFile(const std::string& sourceFilename, FileOperationTaskCallbackT callback = nullptr) = 0;
 
-    virtual void WriteFile(const std::string& sourceFilename, const std::string& destFilename) = 0;
+    virtual void WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback = nullptr) = 0;
 
-    virtual void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback) = 0;
+    virtual void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback = nullptr) = 0;
 
-    virtual void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback) = 0;
+    virtual void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback = nullptr) = 0;
 
-    virtual void DeleteFileFunction(const std::string& filename) = 0;
+    virtual void DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback = nullptr) = 0;
 
     virtual void AddStatisticsHandler (const StatisticsChangeHandler_t& changeHandler) = 0;
 

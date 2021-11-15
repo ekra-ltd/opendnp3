@@ -140,6 +140,7 @@ set(opendnp3_public_headers
     ./include/opendnp3/master/X509Info.h
     ./include/opendnp3/master/GetFilesInfoTaskResult.h
     ./include/opendnp3/master/DNPFileInfo.h
+    ./include/opendnp3/master/FileOperationTaskResult.h
 
     ./include/opendnp3/outstation/ApplicationIIN.h
     ./include/opendnp3/outstation/DatabaseConfig.h

@@ -248,18 +248,18 @@ bool MasterSessionStack::DemandTimeSyncronization()
     return context.DemandTimeSyncronization();
 }
 
-void MasterSessionStack::ReadFile(const std::string& sourceFilename, const std::string& destFilename)
+void MasterSessionStack::ReadFile(const std::string& sourceFilename, FileOperationTaskCallbackT callback)
 {
-    auto action = [self = shared_from_this(), sourceFilename, destFilename]() -> void {
-        self->context.ReadFile(sourceFilename, destFilename);
+    auto action = [self = shared_from_this(), sourceFilename, callback]() -> void {
+        self->context.ReadFile(sourceFilename, callback);
     };
     return executor->post(action);
 }
 
-void MasterSessionStack::WriteFile(const std::string& sourceFilename, const std::string& destFilename)
+void MasterSessionStack::WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback)
 {
-    auto action = [self = shared_from_this(), sourceFilename, destFilename]() -> void {
-        self->context.WriteFile(sourceFilename, destFilename);
+    auto action = [self = shared_from_this(), source, destFilename, callback]() -> void {
+        self->context.WriteFile(source, destFilename, callback);
     };
     return executor->post(action);
 }
@@ -280,10 +280,10 @@ void MasterSessionStack::GetFileInfo(const std::string& sourceFile, const GetFil
     return executor->post(action);
 }
 
-void MasterSessionStack::DeleteFileFunction(const std::string& filename)
+void MasterSessionStack::DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback)
 {
-    auto action = [self = shared_from_this(), filename]() -> void {
-        self->context.DeleteFileFunction(filename);
+    auto action = [self = shared_from_this(), filename, callback]() -> void {
+        self->context.DeleteFileFunction(filename, callback);
     };
     return executor->post(action);
 }

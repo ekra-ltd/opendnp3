@@ -107,11 +107,11 @@ public:
 
     /// --- File Operations ---
 
-    void ReadFile(const std::string& sourceFilename, const std::string& destFilename) override;
-    void WriteFile(const std::string& sourceFilename, const std::string& destFilename) override;
+    void ReadFile(const std::string& sourceFilename, FileOperationTaskCallbackT callback) override;
+    void WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback = nullptr) override;
     void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback) override;
     void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback) override;
-    void DeleteFileFunction(const std::string& filename) override;
+    void DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback = nullptr) override;
 
     /// --- ICommandProcessor ---
 

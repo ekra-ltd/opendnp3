@@ -16,16 +16,18 @@ namespace opendnp3
     WriteFileTask::WriteFileTask(const std::shared_ptr<TaskContext>& context,
         IMasterApplication& app,
         const Logger& logger,
-        const std::string& sourceFilename,
-        std::string destFilename)
+        std::shared_ptr<std::ifstream> source,
+        std::string destFilename,
+        FileOperationTaskCallbackT taskCallback)
         : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
-        input_file(sourceFilename, std::ios::binary | std::ios::in),
+        input_file(std::move(source)),
         destFilename(std::move(destFilename))
     {
-        auto fsize = input_file.tellg();
-        input_file.seekg(0, std::ios::end);
-        fsize = input_file.tellg() - fsize;
-        input_file.seekg(0);
+        callback = taskCallback ? std::move(taskCallback) : [](const FileOperationTaskResult& /**/) {};
+        auto fsize = input_file->tellg();
+        input_file->seekg(0, std::ios::end);
+        fsize = input_file->tellg() - fsize;
+        input_file->seekg(0);
         inputFileSize = static_cast<uint32_t>(fsize);
     }
 
@@ -33,11 +35,6 @@ namespace opendnp3
     {
         fileCommandStatus = Group70Var4();
         fileTransportObject = Group70Var5(FileOpeningMode::WRITE);
-    }
-
-    void WriteFileTask::OnTaskComplete(TaskCompletion /*result*/, Timestamp /*now*/)
-    {
-        input_file.close();
     }
 
     bool WriteFileTask::BuildRequest(APDURequest& request, uint8_t seq) {
@@ -58,7 +55,7 @@ namespace opendnp3
                 fileTransportObject.data.make_empty();
                 char* data = new char[size + 1];
                 data[size] = 0;
-                input_file.read(data, size);
+                input_file->read(data, size);
                 fileTransportObject.data = ser4cpp::rseq_t(reinterpret_cast<uint8_t const*>(data), size);
                 inputFileSize -= size;
                 if (inputFileSize == 0) {
@@ -175,7 +172,6 @@ namespace opendnp3
 
                     fileTransportObject.blockNumber = fileTransportStatusObject.blockNumber + 1;
                     return ResponseResult::OK_REPEAT;
-                    break;
                 case FileTransportStatus::LOST_COM:
                     logger.log(flags::DBG, __FILE__, "Communication lost");
                     break;

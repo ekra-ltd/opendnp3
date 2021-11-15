@@ -4,6 +4,7 @@
 #include "master/IMasterTask.h"
 #include "master/TaskPriority.h"
 #include "FileOperationTaskState.h"
+#include "opendnp3/master/FileOperationTaskResult.h"
 
 #include <string>
 
@@ -13,7 +14,8 @@ namespace opendnp3
     {
 
     public:
-        DeleteFileTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger, std::string filename);
+        DeleteFileTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
+            std::string filename, FileOperationTaskCallbackT taskCallback);
 
         char const* Name() const final
         {
@@ -56,6 +58,7 @@ namespace opendnp3
     private:
         std::string filename;
         Group70Var4 fileCommandStatus;
+        FileOperationTaskCallbackT callback;
     };
 
 } // namespace opendnp3
