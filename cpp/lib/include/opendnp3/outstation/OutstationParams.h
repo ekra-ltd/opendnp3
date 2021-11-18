@@ -35,7 +35,7 @@ namespace opendnp3
 struct OutstationParams
 {
     /// The maximum number of controls the outstation will attempt to process from a single APDU
-    uint32_t maxControlsPerRequest = 4'294'967'295;
+    uint32_t maxControlsPerRequest = 4294967295;
 
     /// How long the outstation will allow an operate to proceed after a prior select
     TimeDuration selectTimeout = TimeDuration::Seconds(10);
