@@ -136,7 +136,7 @@ public:
     /**
      * Called when the task first starts, before the first request is formatted
      */
-    void OnStart();
+    bool OnStart(Timestamp now);
 
     /**
      * Set the expiration time to minimum. The scheduler must also be informed

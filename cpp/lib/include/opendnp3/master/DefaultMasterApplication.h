@@ -39,7 +39,9 @@ public:
 
     virtual void OnReceiveIIN(const IINField& iin) final {}
 
-    virtual void OnTaskStart(MasterTaskType type, TaskId id) final {}
+    virtual bool OnTaskStart(MasterTaskType type, TaskId id) final {
+        return true;
+    }
 
     virtual void OnTaskComplete(const TaskInfo& info) final {}
 

@@ -485,14 +485,19 @@ bool MContext::Run(const std::shared_ptr<IMasterTask>& task)
 
     this->tstate = TaskState::TASK_READY;
     this->activeTask = task;
-    this->activeTask->OnStart();
-    FORMAT_LOG_BLOCK(logger, flags::INFO, "Begining task: %s", this->activeTask->Name());
-
-    if (!this->isSending)
-    {
-        this->tstate = this->ResumeActiveTask();
+    bool isTaskStarted = this->activeTask->OnStart(Timestamp(executor->get_time()));
+    if (!isTaskStarted) {
+        this->CompleteActiveTask();
+        this->tstate = TaskState::IDLE;
     }
+    else {
+        FORMAT_LOG_BLOCK(logger, flags::INFO, "Begining task: %s", this->activeTask->Name());
 
+        if (!this->isSending)
+        {
+            this->tstate = this->ResumeActiveTask();
+        }
+    }
     return true;
 }
 

@@ -147,16 +147,19 @@ void IMasterTask::OnMessageFormatError(Timestamp now)
     this->CompleteTask(TaskCompletion::FAILURE_MESSAGE_FORMAT_ERROR, now);
 }
 
-void IMasterTask::OnStart()
+bool IMasterTask::OnStart(Timestamp now)
 {
     if (config.pCallback)
     {
         config.pCallback->OnStart();
     }
 
-    this->application->OnTaskStart(this->GetTaskType(), config.taskId);
-
-    this->Initialize();
+    bool isTaskStarted = this->application->OnTaskStart(this->GetTaskType(), config.taskId);
+    if (isTaskStarted)
+        this->Initialize();
+    else
+        this->behavior.OnSuccess(now);
+    return isTaskStarted;
 }
 
 void IMasterTask::SetMinExpiration()

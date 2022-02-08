@@ -47,7 +47,9 @@ public:
     virtual void OnReceiveIIN(const IINField& iin) {}
 
     /// Task start notification
-    virtual void OnTaskStart(MasterTaskType type, TaskId id) {}
+    virtual bool OnTaskStart(MasterTaskType type, TaskId id) {
+        return true;
+    }
 
     /// Task completion notification
     virtual void OnTaskComplete(const TaskInfo& info) {}
