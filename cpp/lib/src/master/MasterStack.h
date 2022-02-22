@@ -44,7 +44,8 @@ public:
                 const std::shared_ptr<IMasterScheduler>& scheduler,
                 const std::shared_ptr<IOHandler>& iohandler,
                 const std::shared_ptr<IResourceManager>& manager,
-                const MasterStackConfig& config);
+                const MasterStackConfig& config,
+                const LinkLayerConfig& linkConfig);
 
     static std::shared_ptr<MasterStack> Create(const Logger& logger,
                                                const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
@@ -55,8 +56,9 @@ public:
                                                const std::shared_ptr<IResourceManager>& manager,
                                                const MasterStackConfig& config)
     {
+        const auto lc = LinkLayerConfig(config.link, false);
         auto ret = std::make_shared<MasterStack>(logger, executor, SOEHandler, application, scheduler, iohandler,
-                                                 manager, config);
+                                                 manager, config, lc);
 
         ret->tstack.link->SetRouter(*ret);
 

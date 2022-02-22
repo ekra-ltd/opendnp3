@@ -131,7 +131,8 @@ public:
                        const std::shared_ptr<IMasterScheduler>& scheduler,
                        std::shared_ptr<LinkSession> session,
                        ILinkTx& linktx,
-                       const MasterStackConfig& config);
+                       const MasterStackConfig& config,
+                       const LinkLayerConfig& linkConfig);
 
 
     void AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler) override;

@@ -36,7 +36,8 @@ std::shared_ptr<MasterSessionStack> MasterSessionStack::Create(const Logger& log
                                                                ILinkTx& linktx,
                                                                const MasterStackConfig& config)
 {
-    return std::make_shared<MasterSessionStack>(logger, executor, SOEHandler, application, scheduler, session, linktx, config);
+    const auto lc = LinkLayerConfig(config.link, false);
+    return std::make_shared<MasterSessionStack>(logger, executor, SOEHandler, application, scheduler, session, linktx, config, lc);
 }
 
 MasterSessionStack::MasterSessionStack(const Logger& logger,
@@ -46,11 +47,12 @@ MasterSessionStack::MasterSessionStack(const Logger& logger,
                                        const std::shared_ptr<IMasterScheduler>& scheduler,
                                        std::shared_ptr<LinkSession> session,
                                        ILinkTx& linktx,
-                                       const MasterStackConfig& config)
+                                       const MasterStackConfig& config,
+                                       const LinkLayerConfig& linkConfig)
     : executor(executor),
       scheduler(scheduler),
       session(std::move(session)),
-      stack(logger, executor, application, config.master.maxRxFragSize, LinkLayerConfig(config.link, false)),
+      stack(logger, executor, application, config.master.maxRxFragSize, linkConfig),
       context(Addresses(config.link.LocalAddr, config.link.RemoteAddr),
               logger,
               executor,

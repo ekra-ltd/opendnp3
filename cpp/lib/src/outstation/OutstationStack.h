@@ -49,7 +49,8 @@ public:
                     const std::shared_ptr<IOutstationApplication>& application,
                     const std::shared_ptr<IOHandler>& iohandler,
                     const std::shared_ptr<IResourceManager>& manager,
-                    const OutstationStackConfig& config);
+                    const OutstationStackConfig& config,
+                    const LinkLayerConfig& linkConfig);
 
     static std::shared_ptr<OutstationStack> Create(const Logger& logger,
                                                    const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
@@ -59,8 +60,9 @@ public:
                                                    const std::shared_ptr<IResourceManager>& manager,
                                                    const OutstationStackConfig& config)
     {
+        const auto lc = LinkLayerConfig(config.link, config.outstation.params.respondToAnyMaster);
         auto ret = std::make_shared<OutstationStack>(logger, executor, commandHandler, application, iohandler, manager,
-                                                     config);
+                                                     config, lc);
 
         ret->tstack.link->SetRouter(*ret);
 
