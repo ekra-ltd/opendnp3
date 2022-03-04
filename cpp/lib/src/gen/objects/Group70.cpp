@@ -17,6 +17,26 @@ namespace opendnp3 {
         }
     }
 
+    bool Group70Var3::Read(ser4cpp::rseq_t& buffer, Group70Var3& arg)
+    {
+        buffer.advance(2); // filename offset
+        uint16_t nameSize = 0;
+        ser4cpp::UInt16::read_from(buffer, nameSize); // filename size
+        buffer.advance(6); // time of creation
+        buffer.advance(2); // permissions
+        buffer.advance(4); // auth key
+        ser4cpp::UInt32::read_from(buffer, arg.filesize); // filesize
+        uint16_t mode = 0;
+        ser4cpp::UInt16::read_from(buffer, mode);
+        arg.operationMode = static_cast<FileOpeningMode>(mode);
+        ser4cpp::UInt16::read_from(buffer, arg.blockSize); // block size
+        ser4cpp::UInt16::read_from(buffer, arg.requestId); // request id
+        const auto filename = buffer.take(nameSize);
+        const auto *data = static_cast<const uint8_t*>(filename);
+        arg.filename = std::string(data, data + nameSize);
+        return true;
+    }
+
     bool Group70Var3::Write(const Group70Var3& arg, ser4cpp::wseq_t& buffer)
     {
         const auto length = arg.filename.size();
@@ -49,7 +69,7 @@ namespace opendnp3 {
         write_zeros(buffer, 4); // auth key
         ser4cpp::UInt32::write_to(buffer, arg.filesize); // file size
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(arg.operationMode)); // operation mode - read/write
-        ser4cpp::UInt16::write_to(buffer, 2048); // block size
+        ser4cpp::UInt16::write_to(buffer, arg.blockSize); // block size
         write_zeros(buffer, 2); // request id
         for (size_t i = 0; i < length; ++i) { // filename
             buffer.put(static_cast<uint8_t>(arg.filename[i]));
@@ -80,6 +100,7 @@ namespace opendnp3 {
         if (ser4cpp::UInt8::read_from(buffer, status)) {
             arg.status = static_cast<FileCommandStatus>(status);
         }
+        arg.isInitialize = true;
 
         return true;
     }
@@ -91,7 +112,7 @@ namespace opendnp3 {
         ser4cpp::UInt32::write_to(buffer, arg.fileSize); // file size
         ser4cpp::UInt16::write_to(buffer, arg.blockSize); // block size
         ser4cpp::UInt16::write_to(buffer, arg.requestId); // request id
-        ser4cpp::UInt8::write_to(buffer, 0); // status, should be 0
+        ser4cpp::UInt8::write_to(buffer, static_cast<uint8_t>(arg.status)); // status, should be 0
 
         return true;
     }
@@ -139,9 +160,10 @@ namespace opendnp3 {
         if (ser4cpp::UInt32::read_from(buffer, fileHanlde)) {
             arg.fileId = fileHanlde;
         }
-        uint16_t blockSize = 0;
-        if (ser4cpp::UInt16::read_from(buffer, blockSize)) {
-            arg.blockNumber = blockSize;
+        uint32_t blockNumber = 0;
+        if (ser4cpp::UInt32::read_from(buffer, blockNumber)) {
+            arg.isLastBlock = blockNumber >> 31 == 1;
+            arg.blockNumber = blockNumber & 0x7FFFFFFF;
         }
         uint8_t status = 0;
         if (ser4cpp::UInt8::read_from(buffer, status)) {
@@ -154,8 +176,24 @@ namespace opendnp3 {
         return true;
     }
 
+    bool Group70Var6::Write(const Group70Var6& arg, ser4cpp::wseq_t& buffer)
+    {
+        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(Size())); // object size
+        ser4cpp::UInt32::write_to(buffer, arg.fileId);
+        ser4cpp::UInt32::write_to(buffer, arg.blockNumber);
+        ser4cpp::UInt8::write_to(buffer, static_cast<uint8_t>(arg.status));
+        return true;
+    }
+
     bool Group70Var7::Read(ser4cpp::rseq_t& buffer, Group70Var7& arg)
     {
+        // group70var7 can be the part of group70var5 object
+        // in that case object size already written in the parent object
+        // and we just filling the data
+        if (!arg.asData)
+        {
+            buffer.advance(2); // object size
+        }
         buffer.advance(2); // filename offset
         uint16_t filenameSize;
         ser4cpp::UInt16::read_from(buffer, filenameSize);
@@ -190,11 +228,18 @@ namespace opendnp3 {
     bool Group70Var7::Write(const Group70Var7& arg, ser4cpp::wseq_t& buffer)
     {
         const auto length = arg.fileInfo.filename.size();
-        const auto size = Size() + length;
-        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(size)); // object size
+        // object size should be written only if group70var7
+        // is not a data part of the group70var5
+        if (!arg.asData)
+        {
+            ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(Size() + length)); // object size
+        }
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(Size())); // filename offset
         ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(length)); // filename size
-        write_zeros(buffer, 14);
+        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(arg.fileInfo.fileType)); // file type
+        ser4cpp::UInt32::write_to(buffer, arg.fileInfo.fileSize); // file size
+        ser4cpp::UInt48::write_to(buffer, ser4cpp::UInt48Type(arg.fileInfo.timeOfCreation.value)); // time of creation
+        ser4cpp::UInt16::write_to(buffer, static_cast<uint16_t>(arg.fileInfo.permissions)); // permissions
         ser4cpp::UInt16::write_to(buffer, arg.requestId);
         for (size_t i = 0; i < length; ++i) { // filename
             buffer.put(static_cast<uint8_t>(arg.fileInfo.filename[i]));

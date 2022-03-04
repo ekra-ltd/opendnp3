@@ -42,6 +42,8 @@ public:
     const bool fir;
     const bool fin;
     const uint8_t seq;
+
+    static const uint8_t HEADER_SIZE = 1;
 };
 
 } // namespace opendnp3

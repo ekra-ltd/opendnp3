@@ -3,7 +3,6 @@
 #include "gen/objects/Group70.h"
 #include "master/IMasterTask.h"
 #include "master/TaskPriority.h"
-#include "FileOperationTaskState.h"
 #include "opendnp3/master/GetFilesInfoTaskResult.h"
 
 #include <string>
@@ -52,18 +51,11 @@ namespace opendnp3
         ResponseResult ProcessResponse(const APDUResponseHeader& response,
             const ser4cpp::rseq_t& objects) final;
 
-        ResponseResult OnResponseStatusObject(const APDUResponseHeader& response, const ser4cpp::rseq_t& objects);
-        ResponseResult OnResponseGetInfo(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
-
         void Initialize() final;
 
-        ResponseResult HandleCommandStatus();
-
     private:
-        FileOperationTaskState currentTaskState{ OPENING };
         std::string sourceFile;
-        Group70Var4 fileCommandStatus;
-        DNPFileInfo fileInfo;
+        DNPFileInfo fileInfo{};
         GetFilesInfoTaskCallbackT callback;
     };
 

@@ -2,9 +2,9 @@
 
 #include "app/APDUBuilders.h"
 #include "app/parsing/APDUParser.h"
+#include "app/parsing/FileOperationHandler.h"
 #include "gen/objects/Group70.h"
 #include "logging/HexLogging.h"
-#include "master/FileOperationHandler.h"
 
 #include <ser4cpp/serialization/LittleEndian.h>
 
@@ -18,10 +18,10 @@ namespace opendnp3
         IMasterApplication& app,
         const Logger& logger,
         std::string sourceFilename,
-        FileOperationTaskCallbackT taskCallback)
+        FileOperationTaskCallbackT taskCallback,
+        uint16_t rxSize)
         : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
-        sourceFilename(std::move(sourceFilename)),
-        output_file(std::ios::binary | std::ios::out)
+          sourceFilename(std::move(sourceFilename)), output_file(std::ios::binary | std::ios::out), _rxSize(rxSize)
     {
         callback = taskCallback ? std::move(taskCallback) : [](const FileOperationTaskResult& /**/) {};
     }
@@ -38,6 +38,7 @@ namespace opendnp3
                 logger.log(flags::DBG, __FILE__, "Attempting opening file");
                 Group70Var3 file;
                 file.filename = sourceFilename;
+                file.blockSize = _rxSize;
                 request.SetFunction(FunctionCode::OPEN_FILE);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
@@ -96,6 +97,10 @@ namespace opendnp3
                         return ResponseResult::OK_REPEAT;
                     }
                     logger.log(flags::DBG, __FILE__, "Successfully closed file");
+                    if (errorWhileReading) {
+                        callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
+                        return ResponseResult::ERROR_BAD_RESPONSE;
+                    }
                     callback(FileOperationTaskResult(TaskCompletion::SUCCESS, std::move(output_file)));
                     return ResponseResult::OK_FINAL;
                 case FileCommandStatus::PERMISSION_DENIED:
@@ -144,8 +149,9 @@ namespace opendnp3
             FileOperationHandler handler;
             const auto result = APDUParser::Parse(objects, handler, &logger);
             if (result != ParseResult::OK) {
-                callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
-                return ResponseResult::ERROR_BAD_RESPONSE;
+                errorWhileReading = true;
+                taskState = CLOSING;
+                return ResponseResult::OK_REPEAT;
             }
 
             fileTransportObject = handler.GetFileTransferObject();
@@ -162,7 +168,8 @@ namespace opendnp3
             return ResponseResult::OK_REPEAT;
         }
 
-        callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
-        return ResponseResult::ERROR_BAD_RESPONSE;
+        errorWhileReading = true;
+        taskState = CLOSING;
+        return ResponseResult::OK_REPEAT;
     }
 } // namespace opendnp3

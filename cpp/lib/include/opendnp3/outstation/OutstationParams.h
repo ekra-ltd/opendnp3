@@ -73,6 +73,18 @@ struct OutstationParams
     /// If true, the outstation processes responds to any request/confirmation as if it came from the expected master
     /// address
     bool respondToAnyMaster = false;
+
+    /// if false, outstation will respond with FUNC_NOT_SUPPORTED
+    bool enableFileTransfer = true;
+
+    /// amount of files that can be opened simultaneously
+    uint32_t maxOpenedFiles = 1u;
+
+    /// if false, content will be appended to files
+    bool shouldOverrideFiles = true;
+
+    /// if false, function code CLOSE_FILE not supported
+    bool permitDeleteFiles = true;
 };
 
 } // namespace opendnp3

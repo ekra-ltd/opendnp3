@@ -101,6 +101,7 @@ public:
     void OnHeader(const PrefixHeader& header, const ICollection<Indexed<AnalogOutputFloat32>>& values);
     void OnHeader(const PrefixHeader& header, const ICollection<Indexed<AnalogOutputDouble64>>& values);
 
+    void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var3>& values);
     void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values);
     void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values);
     void OnHeader(const FreeFormatHeader& header, const ICollection<Group70Var6>& values);
@@ -169,6 +170,7 @@ protected:
     virtual IINField ProcessHeader(const PrefixHeader& header,
                                    const ICollection<Indexed<AnalogOutputDouble64>>& values);
 
+    virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var3>& values);
     virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values);
     virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values);
     virtual IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var6>& values);

@@ -234,6 +234,15 @@ protected:
 
 private:
     StatisticsChangeHandler_t statisticsChangeHandler;
+
+    // because mxRx/Tx frag size not taking into account the size of headers for file transfer
+    // and just the max size of packet and not file data size
+    // the amount we reading/writting from/to the file should be reduced by the all headers size or it may cause malformed packets
+    /// file rx transfer block size
+    uint32_t FileTransferMaxRxBlockSize;
+
+    /// file tx transfer block size
+    uint32_t FileTransferMaxTxBlockSize;
 };
 
 } // namespace opendnp3

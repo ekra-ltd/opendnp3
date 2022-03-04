@@ -179,6 +179,9 @@ ParseResult APDUParser::HandleFreeFormatHeader(
     if (pHandler)
     {
         switch (record.enumeration) {
+            case GroupVariation::Group70Var3:
+                ParseFileObjects<Group70Var3>(buffer, pLogger, record, pHandler);
+                break;
             case GroupVariation::Group70Var4:
                 ParseFileObjects<Group70Var4>(buffer, pLogger, record, pHandler);
                 break;

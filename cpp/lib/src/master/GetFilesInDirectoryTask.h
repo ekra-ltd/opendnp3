@@ -16,7 +16,7 @@ namespace opendnp3
 
     public:
         GetFilesInDirectoryTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-            std::string sourceDirectory, GetFilesInfoTaskCallbackT taskCallback);
+            std::string sourceDirectory, GetFilesInfoTaskCallbackT taskCallback, uint16_t rxSize);
 
         char const* Name() const final
         {
@@ -66,6 +66,8 @@ namespace opendnp3
         Group70Var5 fileTransportObject;
         std::deque<DNPFileInfo> filesInfo;
         GetFilesInfoTaskCallbackT callback;
+        uint16_t _rxSize;
+        bool errorWhileReading = false;
     };
 
 } // namespace opendnp3

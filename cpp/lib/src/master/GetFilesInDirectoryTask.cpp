@@ -2,9 +2,9 @@
 
 #include "app/APDUBuilders.h"
 #include "app/parsing/APDUParser.h"
+#include "app/parsing/FileOperationHandler.h"
 #include "gen/objects/Group70.h"
 #include "logging/HexLogging.h"
-#include "master/FileOperationHandler.h"
 
 #include <ser4cpp/serialization/LittleEndian.h>
 
@@ -18,10 +18,10 @@ namespace opendnp3
         IMasterApplication& app,
         const Logger& logger,
         std::string sourceDirectory,
-        GetFilesInfoTaskCallbackT taskCallback)
+        GetFilesInfoTaskCallbackT taskCallback,
+        uint16_t rxSize)
         : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
-        sourceDirectory(std::move(sourceDirectory)),
-        callback(std::move(taskCallback))
+          sourceDirectory(std::move(sourceDirectory)), callback(std::move(taskCallback)), _rxSize(rxSize)
     { }
 
     void GetFilesInDirectoryTask::Initialize()
@@ -41,6 +41,7 @@ namespace opendnp3
                 logger.log(flags::DBG, __FILE__, "Attempting opening directory");
                 Group70Var3 file;
                 file.filename = sourceDirectory;
+                file.blockSize = _rxSize;
                 request.SetFunction(FunctionCode::OPEN_FILE);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
@@ -103,6 +104,10 @@ namespace opendnp3
                         case CLOSING:
                             s = "Successfully closed directory - \"" + sourceDirectory + "\"";
                             logger.log(flags::DBG, __FILE__, s.c_str());
+                            if (errorWhileReading) {
+                                callback(GetFilesInfoTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
+                                return ResponseResult::ERROR_BAD_RESPONSE;
+                            }
                             callback(GetFilesInfoTaskResult(TaskCompletion::SUCCESS, filesInfo));
                             return ResponseResult::OK_FINAL;
                         default: 
@@ -156,8 +161,9 @@ namespace opendnp3
             FileOperationHandler handler;
             const auto result = APDUParser::Parse(objects, handler, &logger);
             if (result != ParseResult::OK) {
-                callback(GetFilesInfoTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
-                return ResponseResult::ERROR_BAD_RESPONSE;
+                errorWhileReading = true;
+                currentTaskState = CLOSING;
+                return ResponseResult::OK_REPEAT;
             }
 
             fileTransportObject = handler.GetFileTransferObject();

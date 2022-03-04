@@ -32,6 +32,7 @@ const uint32_t DEFAULT_MAX_APDU_SIZE = 2048;
 
 // default timeout for the application layer
 const TimeDuration DEFAULT_APP_TIMEOUT = TimeDuration::Seconds(5);
+
 } // namespace opendnp3
 
 #endif

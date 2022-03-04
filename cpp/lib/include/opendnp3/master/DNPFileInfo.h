@@ -24,12 +24,21 @@ enum class DNPFileOperationPermission : uint16_t
     GROUP_EXECUTE_ALLOWED = 0x0008,
     WORLD_READ_ALLOWED = 0x0004,
     WORLD_WRITE_ALLOWED = 0x0002,
-    WORLD_EXECUTE_ALLOWED = 0x0001
+    WORLD_EXECUTE_ALLOWED = 0x0001,
+    NONE = 0x0
 };
 
 inline DNPFileOperationPermission operator|(DNPFileOperationPermission a, DNPFileOperationPermission b)
 {
     return static_cast<DNPFileOperationPermission>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline void operator|=(uint16_t& a, DNPFileOperationPermission b) {
+    a |= static_cast<uint16_t>(b);
+}
+
+inline void operator|=(DNPFileOperationPermission& a, DNPFileOperationPermission b) {
+    a = a | b;
 }
 
 struct DNPFileInfo

@@ -1,0 +1,31 @@
+#pragma once
+#include "app/parsing/IAPDUHandler.h"
+#include "gen/objects/Group70.h"
+
+namespace opendnp3
+{
+    class FileOperationHandler : public opendnp3::IAPDUHandler
+    {
+    public:
+        bool IsAllowed(uint32_t headerCount, GroupVariation gv, QualifierCode qc) override;
+        Group70Var3 GetFileCommandObject() const;
+        Group70Var4 GetFileStatusObject() const;
+        Group70Var5 GetFileTransferObject() const;
+        Group70Var6 GetFileTransferStatusObject() const;
+        Group70Var7 GetFileDescriptorObject() const;
+
+    protected:
+        IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var3>& values) override;
+        IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var4>& values) override;
+        IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var5>& values) override;
+        IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var6>& values) override;
+        IINField ProcessHeader(const FreeFormatHeader& header, const ICollection<Group70Var7>& values) override;
+
+    private:
+        Group70Var3 fileCommandObject;
+        Group70Var4 fileStatusObject;
+        Group70Var5 fileTransferObject;
+        Group70Var6 fileTransferStatusObject;
+        Group70Var7 fileDescriptorObject{};
+    };
+}

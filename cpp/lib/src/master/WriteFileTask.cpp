@@ -2,9 +2,9 @@
 
 #include "app/APDUBuilders.h"
 #include "app/parsing/APDUParser.h"
+#include "app/parsing/FileOperationHandler.h"
 #include "gen/objects/Group70.h"
 #include "logging/HexLogging.h"
-#include "master/FileOperationHandler.h"
 
 #include <ser4cpp/serialization/LittleEndian.h>
 
@@ -17,11 +17,10 @@ namespace opendnp3
         IMasterApplication& app,
         const Logger& logger,
         std::shared_ptr<std::ifstream> source,
-        std::string destFilename,
+        std::string destFilename, uint16_t txSize,
         FileOperationTaskCallbackT taskCallback)
         : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
-        input_file(std::move(source)),
-        destFilename(std::move(destFilename))
+          input_file(std::move(source)), destFilename(std::move(destFilename)), _txSize(txSize)
     {
         callback = taskCallback ? std::move(taskCallback) : [](const FileOperationTaskResult& /**/) {};
         auto fsize = input_file->tellg();
@@ -44,6 +43,7 @@ namespace opendnp3
                 Group70Var3 file(FileOpeningMode::WRITE);
                 file.filename = destFilename;
                 file.filesize = inputFileSize;
+                file.blockSize = _txSize;
                 request.SetFunction(FunctionCode::OPEN_FILE);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
@@ -111,6 +111,9 @@ namespace opendnp3
                     return ResponseResult::OK_REPEAT;
                 }
                 logger.log(flags::DBG, __FILE__, "Successfully closed file");
+                if (errorWhileWriting) {
+                    return ResponseResult::ERROR_BAD_RESPONSE;
+                }
                 return ResponseResult::OK_FINAL;
             case FileCommandStatus::PERMISSION_DENIED:
                 logger.log(flags::DBG, __FILE__, "Permission denied");
@@ -193,9 +196,11 @@ namespace opendnp3
                     break;
                 default: 
                     logger.log(flags::DBG, __FILE__, "Unknown status code");
-                    return ResponseResult::ERROR_BAD_RESPONSE;
             }
         }
-        return ResponseResult::ERROR_BAD_RESPONSE;
+
+        errorWhileWriting = true;
+        taskState = CLOSING;
+        return ResponseResult::OK_REPEAT;
     }
 } // namespace opendnp3

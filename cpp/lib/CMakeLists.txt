@@ -224,6 +224,7 @@ set(opendnp3_private_headers
     ./src/app/parsing/ParserSettings.h
     ./src/app/parsing/PrefixFields.h
     ./src/app/parsing/RangeParser.h
+    ./src/app/parsing/FileOperationHandler.h
 
     ./src/channel/ASIOSerialHelpers.h
     ./src/channel/DNP3Channel.h
@@ -351,7 +352,6 @@ set(opendnp3_private_headers
     ./src/master/UserPollTask.h
     ./src/master/ReadFileTask.h
     ./src/master/WriteFileTask.h
-    ./src/master/FileOperationHandler.h
     ./src/master/FileOperationTaskState.h
     ./src/master/GetFilesInDirectoryTask.h
     ./src/master/GetFileInfoTask.h
@@ -390,6 +390,7 @@ set(opendnp3_private_headers
     ./src/outstation/StaticWriters.h
     ./src/outstation/TimeSyncState.h
     ./src/outstation/WriteHandler.h
+    ./src/outstation/FileTransferWorker.h
 
     ./src/outstation/event/ASDUEventWriteHandler.h
     ./src/outstation/event/ClazzCount.h
@@ -445,7 +446,7 @@ set(opendnp3_src
     ./src/app/MeasurementInfo.cpp
     ./src/app/MeasurementTypes.cpp
     ./src/app/OctetData.cpp
-    ./src/app/QualityFlags.cpp    
+    ./src/app/QualityFlags.cpp
 
     ./src/app/parsing/APDUHeaderParser.cpp
     ./src/app/parsing/APDUParser.cpp
@@ -456,6 +457,7 @@ set(opendnp3_src
     ./src/app/parsing/NumParser.cpp
     ./src/app/parsing/ObjectHeaderParser.cpp
     ./src/app/parsing/RangeParser.cpp
+    ./src/app/parsing/FileOperationHandler.cpp
 
     ./src/channel/ASIOSerialHelpers.cpp
     ./src/channel/ChannelRetry.cpp
@@ -606,7 +608,6 @@ set(opendnp3_src
     ./src/master/UserPollTask.cpp
     ./src/master/ReadFileTask.cpp
     ./src/master/WriteFileTask.cpp
-    ./src/master/FileOperationHandler.cpp
     ./src/master/GetFilesInDirectoryTask.cpp
     ./src/master/GetFileInfoTask.cpp
     ./src/master/DeleteFileTask.cpp
@@ -637,6 +638,7 @@ set(opendnp3_src
     ./src/outstation/StaticWriters.cpp
     ./src/outstation/UpdateBuilder.cpp
     ./src/outstation/WriteHandler.cpp
+    ./src/outstation/FileTransferWorker.cpp
 
     ./src/outstation/event/ASDUEventWriteHandler.cpp
     ./src/outstation/event/EventBuffer.cpp
@@ -655,6 +657,10 @@ set(opendnp3_src
 
     ./src/util/TimeDuration.cpp
     ./src/util/Timestamp.cpp
+    ./src/util/EncodingConverter.h
+    ./src/util/EncodingConverter.cpp
+    ./src/util/CharacterSet.h
+    ./src/util/CharacterSet.cpp
 )
 
 set(opendnp3_tls_private_headers
@@ -682,6 +688,14 @@ if(DNP3_TLS)
     list(APPEND all_sources ${opendnp3_tls_private_headers} ${opendnp3_tls_src})
 endif()
 
+# Find boost
+if(NOT TARGET boost)
+if(NOT DEFINED BOOST_ROOT)
+    set(BOOST_ROOT "../boost") # reasonable default: boost is in a parallel directory
+endif()
+find_package(Boost REQUIRED COMPONENTS filesystem)
+endif()
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${all_sources})
 
 add_library(opendnp3 ${all_sources})
@@ -691,6 +705,7 @@ target_link_libraries(opendnp3 PRIVATE
     $<BUILD_INTERFACE:exe4cpp>
     $<BUILD_INTERFACE:asio>
     $<$<BOOL:${DNP3_TLS}>:OpenSSL::SSL>
+    Boost::filesystem
 )
 target_include_directories(opendnp3
     PUBLIC

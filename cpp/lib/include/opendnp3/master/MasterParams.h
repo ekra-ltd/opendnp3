@@ -88,6 +88,15 @@ struct MasterParams
     /// The default behavior is to always use two bytes, but the one byte optimization
     /// can be enabled
     IndexQualifierMode controlQualifierMode = IndexQualifierMode::always_two_bytes;
+
+    /// if false, outstation will respond with FUNC_NOT_SUPPORTED
+    bool enableFileTransfer = true;
+
+    /// amount of files that can be opened simultaneously
+    uint8_t maxOpenedFiles = 1u;
+
+    /// if false, content will be appended to files
+    bool shouldOverrideFiles = true;
 };
 
 } // namespace opendnp3

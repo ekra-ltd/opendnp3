@@ -24,6 +24,7 @@
 #include "app/Functions.h"
 #include "app/parsing/APDUHeaderParser.h"
 #include "app/parsing/APDUParser.h"
+#include "link/LinkHeader.h"
 #include "logging/LogMacros.h"
 #include "outstation/AssignClassHandler.h"
 #include "outstation/ClassBasedRequestHandler.h"
@@ -36,6 +37,7 @@
 #include "outstation/WriteHandler.h"
 
 #include "opendnp3/logging/LogLevels.h"
+#include "transport/TransportHeader.h"
 
 #include <utility>
 
@@ -69,8 +71,24 @@ OContext::OContext(const Addresses& addresses,
       sol(config.params.maxTxFragSize),
       unsol(config.params.maxTxFragSize),
       unsolRetries(config.params.numUnsolRetries),
-      shouldCheckForUnsolicited(false)
+      shouldCheckForUnsolicited(false),
+      _fileTransferWorker(config.params.enableFileTransfer, config.params.maxOpenedFiles, config.params.shouldOverrideFiles,
+                          config.params.permitDeleteFiles, this->logger)
 {
+    // because mxRx/Tx frag size not taking into account the size of headers for file transfer
+    // and just the max size of packet and not file data size
+    // the amount we reading/writting from/to the file should be reduced by the all headers size or it may cause malformed packets
+    const uint32_t fileTransferMaxTxBlockSize = config.params.maxRxFragSize
+                                        - LinkHeader::HEADER_SIZE
+                                        - TransportHeader::HEADER_SIZE
+                                        - APDUHeader::RESPONSE_SIZE
+                                        - 3;
+    const uint32_t fileTransferMaxRxBlockSize = config.params.maxTxFragSize
+                                        - LinkHeader::HEADER_SIZE
+                                        - TransportHeader::HEADER_SIZE
+                                        - APDUHeader::REQUEST_SIZE
+                                        - 3;
+    _fileTransferWorker.SetPrefferedBlockSize(fileTransferMaxTxBlockSize, fileTransferMaxRxBlockSize);
 }
 
 bool OContext::OnLowerLayerUp()
@@ -107,6 +125,7 @@ bool OContext::OnLowerLayerDown()
     eventBuffer.Unselect();
     rspContext.Reset();
     confirmTimer.cancel();
+    _fileTransferWorker.Reset();
 
     return true;
 }
@@ -560,7 +579,7 @@ bool OContext::ProcessBroadcastRequest(const ParsedRequest& request)
     switch (request.header.function)
     {
     case (FunctionCode::WRITE):
-        this->HandleWrite(request.objects);
+        this->HandleWrite(request.objects, nullptr);
         return true;
     case (FunctionCode::DIRECT_OPERATE_NR):
         this->HandleDirectOperate(request.objects, OperateType::DirectOperateNoAck, nullptr);
@@ -652,7 +671,7 @@ IINField OContext::HandleNonReadResponse(const APDUHeader& header, const ser4cpp
     switch (header.function)
     {
     case (FunctionCode::WRITE):
-        return this->HandleWrite(objects);
+        return this->HandleWrite(objects, &writer);
     case (FunctionCode::SELECT):
         return this->HandleSelect(objects, writer);
     case (FunctionCode::OPERATE):
@@ -679,8 +698,15 @@ IINField OContext::HandleNonReadResponse(const APDUHeader& header, const ser4cpp
         return this->HandleFreeze(objects);
     case (FunctionCode::FREEZE_CLEAR):
         return this->HandleFreezeAndClear(objects);
+    case FunctionCode::OPEN_FILE:
+    case FunctionCode::CLOSE_FILE:
+    case FunctionCode::DELETE_FILE:
+    case FunctionCode::GET_FILE_INFO:
+    case FunctionCode::AUTHENTICATE_FILE:
+    case FunctionCode::ABORT_FILE:
+        return this->HandleFileTransfer(objects, &writer, header.function);
     default:
-        return IINField(IINBit::FUNC_NOT_SUPPORTED);
+        return { IINBit::FUNC_NOT_SUPPORTED };
     }
 }
 
@@ -691,12 +717,16 @@ ser4cpp::Pair<IINField, AppControlField> OContext::HandleRead(const ser4cpp::rse
     this->database.Unselect();
 
     ReadHandler handler(this->database, this->eventBuffer);
-    auto result = APDUParser::Parse(objects, handler, &this->logger,
-                                    ParserSettings::NoContents()); // don't expect range/count context on a READ
+    const auto result = APDUParser::Parse(objects, handler, &this->logger,
+                                          ParserSettings::NoContents()); // don't expect range/count context on a READ
+    if (handler.IsFileRead())
+    {
+        return _fileTransferWorker.HandleReadFile(objects, &writer);
+    }
     if (result == ParseResult::OK)
     {
-        auto control = this->rspContext.LoadResponse(writer);
-        return ser4cpp::Pair<IINField, AppControlField>(handler.Errors(), control);
+        const auto controlField = this->rspContext.LoadResponse(writer);
+        return ser4cpp::Pair<IINField, AppControlField>(handler.Errors(), controlField);
     }
 
     this->rspContext.Reset();
@@ -704,11 +734,15 @@ ser4cpp::Pair<IINField, AppControlField> OContext::HandleRead(const ser4cpp::rse
                                                     AppControlField(true, true, false, false));
 }
 
-IINField OContext::HandleWrite(const ser4cpp::rseq_t& objects)
+IINField OContext::HandleWrite(const ser4cpp::rseq_t& objects, HeaderWriter* writer)
 {
     WriteHandler handler(*this->application, this->time, this->sol.seq.num, Timestamp(this->executor->get_time()),
                          &this->staticIIN);
-    auto result = APDUParser::Parse(objects, handler, &this->logger);
+    const auto result = APDUParser::Parse(objects, handler, &this->logger);
+    if (handler.IsFileWrite() && writer != nullptr)
+    {
+        return _fileTransferWorker.HandleWriteFile(objects, writer);
+    }
     return (result == ParseResult::OK) ? handler.Errors() : IINFromParseResult(result);
 }
 
@@ -900,6 +934,26 @@ IINField OContext::HandleFreezeAndClear(const ser4cpp::rseq_t& objects)
     FreezeRequestHandler handler(true, database);
     auto result = APDUParser::Parse(objects, handler, &this->logger, ParserSettings::NoContents());
     return IINFromParseResult(result);
+}
+
+IINField OContext::HandleFileTransfer(const ser4cpp::rseq_t& objects, HeaderWriter* writer, FunctionCode fc)
+{
+    switch (fc) {
+        case FunctionCode::OPEN_FILE:
+            return _fileTransferWorker.HandleOpenFile(objects, writer);
+        case FunctionCode::CLOSE_FILE:
+            return _fileTransferWorker.HandleCloseFile(objects, writer);
+        case FunctionCode::DELETE_FILE:
+            return _fileTransferWorker.HandleDeleteFile(objects, writer);
+        case FunctionCode::GET_FILE_INFO:
+            return _fileTransferWorker.HandleGetFileInfo(objects, writer);
+        case FunctionCode::AUTHENTICATE_FILE:
+            return _fileTransferWorker.HandleAuthFile(objects, writer);
+        case FunctionCode::ABORT_FILE:
+            return _fileTransferWorker.HandleAbortFile(objects, writer);
+    }
+
+    return IINField::Empty();
 }
 
 } // namespace opendnp3

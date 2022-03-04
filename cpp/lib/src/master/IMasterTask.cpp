@@ -156,9 +156,13 @@ bool IMasterTask::OnStart(Timestamp now)
 
     bool isTaskStarted = this->application->OnTaskStart(this->GetTaskType(), config.taskId);
     if (isTaskStarted)
+    {
         this->Initialize();
+    }
     else
+    {
         this->behavior.OnSuccess(now);
+    }
     return isTaskStarted;
 }
 

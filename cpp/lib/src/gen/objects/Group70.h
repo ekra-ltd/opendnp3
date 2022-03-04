@@ -119,12 +119,15 @@ struct Group70Var3
 
     static GroupVariationID ID() { return GroupVariationID(70,3); }
     static size_t Size() { return 26; }
-    static bool Read(ser4cpp::rseq_t& /*buffer*/, Group70Var3& /*arg*/) { return false; }
+    static bool Read(ser4cpp::rseq_t& /*buffer*/, Group70Var3& /*arg*/);
     static bool Write(const Group70Var3& arg, ser4cpp::wseq_t& buffer);
 
+    uint16_t objectSize{ 0 };
     FileOpeningMode operationMode{ FileOpeningMode::READ };
     std::string filename;
     uint32_t filesize = 0;
+    uint16_t blockSize = 2048;
+    uint16_t requestId{ 0 };
 };
 
 // File-control - File command status
@@ -144,8 +147,11 @@ struct Group70Var4
     | Request ID          |   2   |
     +---------------------+-------+
     | Status              |   1   |
-    +---------------------+-------+ 
+    +---------------------+-------+
     */
+
+    Group70Var4() = default;
+    Group70Var4(const FileCommandStatus s) : status(s) {  }
 
     static GroupVariationID ID() { return GroupVariationID(70,4); }
     static size_t Size() { return 13; }
@@ -157,7 +163,8 @@ struct Group70Var4
     uint32_t fileSize{ 0 };
     uint16_t blockSize{ 0 };
     uint16_t requestId{ 0 };
-    FileCommandStatus status{ FileCommandStatus::FILE_NOT_OPEN };
+    FileCommandStatus status{ FileCommandStatus::SUCCESS };
+    bool isInitialize = false; // used to check GET_FILE_INFO func response
 };
 
 // File-control - File transport
@@ -208,13 +215,14 @@ struct Group70Var6
     static GroupVariationID ID() { return GroupVariationID(70,6); }
     static size_t Size() { return 9; }
     static bool Read(ser4cpp::rseq_t& buffer, Group70Var6& arg);
-    static bool Write(const Group70Var6& /*arg*/, ser4cpp::wseq_t& /*buffer*/) { return false; }
+    static bool Write(const Group70Var6& arg, ser4cpp::wseq_t& buffer);
 
     uint16_t objectSize{ 0 };
     uint32_t fileId{ 0 };
     uint32_t blockNumber{ 0 };
     FileTransportStatus status{ FileTransportStatus::FILE_NOT_OPENED };
     std::string additionalInformation;
+    bool isLastBlock = false;
 };
 
 // File-control - File descriptor
@@ -251,6 +259,7 @@ struct Group70Var7
     bool isInitialized{ false };
     DNPFileInfo fileInfo;
     uint16_t requestId{ 0 };
+    bool asData = true; /// shows is this object part of the parent object or not
 };
 
 // File-control - File specification string

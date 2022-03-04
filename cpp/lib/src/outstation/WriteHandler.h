@@ -40,20 +40,29 @@ public:
                  Timestamp now,
                  IINField* pWriteIIN);
 
-    virtual bool IsAllowed(uint32_t headerCount, GroupVariation gv, QualifierCode qc) override
+    bool IsAllowed(uint32_t /*headerCount*/, GroupVariation gv, QualifierCode /*qc*/) override
     {
+        if (gv == GroupVariation::Group70Var5)
+        {
+            isFileWrite = true;
+        }
         return true;
     }
 
+    bool IsFileWrite() const
+    {
+        return isFileWrite;
+    }
+
 private:
-    virtual IINField ProcessHeader(const RangeHeader& header, const ICollection<Indexed<IINValue>>& values) override;
+    IINField ProcessHeader(const RangeHeader& header, const ICollection<Indexed<IINValue>>& values) override;
 
-    virtual IINField ProcessHeader(const CountHeader& header, const ICollection<Group50Var1>& values) override;
+    IINField ProcessHeader(const CountHeader& header, const ICollection<Group50Var1>& values) override;
 
-    virtual IINField ProcessHeader(const CountHeader& header, const ICollection<Group50Var3>& values) override;
+    IINField ProcessHeader(const CountHeader& header, const ICollection<Group50Var3>& values) override;
 
-    virtual IINField ProcessHeader(const PrefixHeader& header,
-                                   const ICollection<Indexed<TimeAndInterval>>& values) override;
+    IINField ProcessHeader(const PrefixHeader& header,
+                           const ICollection<Indexed<TimeAndInterval>>& values) override;
 
     IOutstationApplication* application;
     TimeSyncState* timeSyncState;
@@ -63,6 +72,7 @@ private:
 
     bool wroteTime = false;
     bool wroteIIN = false;
+    bool isFileWrite = false; // if true - WRITE func used on file
 };
 
 } // namespace opendnp3

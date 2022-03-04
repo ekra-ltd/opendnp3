@@ -36,12 +36,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include(./cmake/ClangFormat.cmake)
 include(./cmake/ClangTidy.cmake)
 
-if(WIN32)
-    set(DNP3_STATIC_LIBS_BY_DEFAULT ON)
-else()
-    set(DNP3_STATIC_LIBS_BY_DEFAULT OFF)
-endif()
-
+# because of the added dependency from boost::filesystem for c++ we should build static libraries instead of shared
+# if c++ code wont be used parameter can be changed to OFF
+set(DNP3_STATIC_LIBS_BY_DEFAULT ON)
 # Compilation options
 option(DNP3_TLS "Build TLS client/server support (requires OpenSSL)" OFF)
 option(DNP3_TESTS "Build unit and integration tests" OFF)

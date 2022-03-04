@@ -20,6 +20,7 @@
 #ifndef OPENDNP3_OUTSTATIONCONTEXT_H
 #define OPENDNP3_OUTSTATIONCONTEXT_H
 
+#include "FileTransferWorker.h"
 #include "LayerInterfaces.h"
 #include "link/LinkLayerConstants.h"
 #include "outstation/ControlState.h"
@@ -161,7 +162,7 @@ private:
 
     // ------ Function Handlers ------
 
-    IINField HandleWrite(const ser4cpp::rseq_t& objects);
+    IINField HandleWrite(const ser4cpp::rseq_t& objects, HeaderWriter* writer);
     IINField HandleSelect(const ser4cpp::rseq_t& objects, HeaderWriter& writer);
     IINField HandleOperate(const ser4cpp::rseq_t& objects, HeaderWriter& writer);
     IINField HandleDirectOperate(const ser4cpp::rseq_t& objects, OperateType opType, HeaderWriter* pWriter);
@@ -174,6 +175,7 @@ private:
     IINField HandleCommandWithConstant(const ser4cpp::rseq_t& objects, HeaderWriter& writer, CommandStatus status);
     IINField HandleFreeze(const ser4cpp::rseq_t& objects);
     IINField HandleFreezeAndClear(const ser4cpp::rseq_t& objects);
+    IINField HandleFileTransfer(const ser4cpp::rseq_t& objects, HeaderWriter* writer, FunctionCode fc);
 
     // ------ resources --------
     const Addresses addresses;
@@ -214,6 +216,8 @@ private:
 
     // ------ Dynamic state related to broadcast messages ------
     ser4cpp::Settable<LinkBroadcastAddress> lastBroadcastMessageReceived;
+
+    FileTransferWorker _fileTransferWorker;
 };
 
 } // namespace opendnp3

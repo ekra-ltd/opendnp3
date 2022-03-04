@@ -34,6 +34,8 @@ struct LinkHeader
 
     LinkHeader(uint8_t len, uint16_t src, uint16_t dest, bool aFromMaster, bool fcvdfc, bool fcb, LinkFunction aCode);
 
+    static const uint8_t HEADER_SIZE = 10;
+
     // Setter
 
     void Set(uint8_t len, uint16_t src, uint16_t dest, bool aFromMaster, bool fcvdfc, bool fcb, LinkFunction aCode);

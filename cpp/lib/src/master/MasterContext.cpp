@@ -30,6 +30,7 @@
 #include "app/APDULogging.h"
 #include "app/parsing/APDUHeaderParser.h"
 #include "gen/objects/Group12.h"
+#include "link/LinkHeader.h"
 #include "logging/LogMacros.h"
 #include "master/CommandTask.h"
 #include "master/EmptyResponseTask.h"
@@ -38,6 +39,8 @@
 #include "master/UserPollTask.h"
 
 #include "opendnp3/logging/LogLevels.h"
+#include "transport/TransportHeader.h"
+
 
 #include <utility>
 
@@ -63,6 +66,18 @@ MContext::MContext(const Addresses& addresses,
       txBuffer(params.maxTxFragSize),
       tstate(TaskState::IDLE)
 {
+    FileTransferMaxRxBlockSize = params.maxRxFragSize
+                               - LinkHeader::HEADER_SIZE
+                               - TransportHeader::HEADER_SIZE
+                               - APDUHeader::RESPONSE_SIZE
+                               - 3;
+
+    /// file tx transfer block size
+    FileTransferMaxTxBlockSize = params.maxTxFragSize
+                               - LinkHeader::HEADER_SIZE
+                               - TransportHeader::HEADER_SIZE
+                               - APDUHeader::REQUEST_SIZE
+                               - 3;
 }
 
 bool MContext::OnLowerLayerUp()
@@ -323,21 +338,24 @@ bool MContext::DemandTimeSyncronization()
 
 bool MContext::ReadFile(const std::string& sourceFile, FileOperationTaskCallbackT callback)
 {
-    const auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile, callback);
+    const auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile,
+                                                     callback, FileTransferMaxRxBlockSize);
     this->ScheduleAdhocTask(task);
     return true;
 }
 
 bool MContext::WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback)
 {
-    const auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger, source, destFilename, callback);
+    const auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger,
+                                                      source, destFilename, FileTransferMaxTxBlockSize, callback);
     this->ScheduleAdhocTask(task);
     return true;
 }
 
 void MContext::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
-    const auto task = std::make_shared<GetFilesInDirectoryTask>(this->tasks.context, *this->application, this->logger, sourceDirectory, callback);
+    const auto task = std::make_shared<GetFilesInDirectoryTask>(this->tasks.context, *this->application, this->logger, sourceDirectory,
+                                                                callback, FileTransferMaxRxBlockSize);
     return this->ScheduleAdhocTask(task);
 }
 

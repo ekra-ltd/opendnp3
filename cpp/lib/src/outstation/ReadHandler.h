@@ -35,9 +35,18 @@ class ReadHandler final : public IAPDUHandler
 public:
     ReadHandler(IStaticSelector& staticSelector, IEventSelector& eventSelector);
 
-    bool IsAllowed(uint32_t headerCount, GroupVariation gv, QualifierCode qc) override final
+    bool IsAllowed(uint32_t /*headerCount*/, GroupVariation gv, QualifierCode /*qc*/) override final
     {
+        if (gv == GroupVariation::Group70Var5)
+        {
+            _isFileRead = true;
+        }
         return true;
+    }
+
+    bool IsFileRead() const
+    {
+        return _isFileRead;
     }
 
 private:
@@ -51,6 +60,7 @@ private:
 
     IStaticSelector* pStaticSelector;
     IEventSelector* pEventSelector;
+    bool _isFileRead{ false }; // if true - READ func used on file
 };
 
 } // namespace opendnp3

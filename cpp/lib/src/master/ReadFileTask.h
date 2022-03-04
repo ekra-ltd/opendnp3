@@ -17,7 +17,7 @@ namespace opendnp3
 
     public:
         ReadFileTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-                     std::string sourceFilename, FileOperationTaskCallbackT taskCallback);
+                     std::string sourceFilename, FileOperationTaskCallbackT taskCallback, uint16_t rxSize);
 
         char const* Name() const final
         {
@@ -67,6 +67,8 @@ namespace opendnp3
         Group70Var4 fileCommandStatus;
         Group70Var5 fileTransportObject;
         FileOperationTaskCallbackT callback;
+        uint16_t _rxSize;
+        bool errorWhileReading = false;
     };
 
 } // namespace opendnp3
