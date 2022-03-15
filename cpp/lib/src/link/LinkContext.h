@@ -50,7 +50,7 @@ enum class LinkTransmitMode : uint8_t
     Secondary
 };
 
-//	@section desc Implements the contextual state of DNP3 Data Link Layer
+//  @section desc Implements the contextual state of DNP3 Data Link Layer
 class LinkContext
 {
 

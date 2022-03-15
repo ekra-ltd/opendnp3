@@ -30,7 +30,7 @@ namespace opendnp3
 {
 
 /**
- *	Static configuration parameters for an outstation session
+ *  Static configuration parameters for an outstation session
  */
 struct OutstationParams
 {

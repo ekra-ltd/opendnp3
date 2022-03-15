@@ -40,6 +40,7 @@ public:
     bool Update(const OctetString& meas, uint16_t index, EventMode mode = EventMode::Detect) override;
     bool Update(const TimeAndInterval& meas, uint16_t index) override;
     bool Modify(FlagsType type, uint16_t start, uint16_t stop, uint8_t flags) override;
+    bool Modify(uint16_t index, DoubleBitBinary value, EventMode mode) override;
 
     Updates Build();
 

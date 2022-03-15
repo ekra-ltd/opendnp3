@@ -87,7 +87,7 @@ size_t LinkFrame::CalcUserDataSize(size_t dataLength)
 
 ////////////////////////////////////////////////
 //
-//	Outgoing frame formatting functions for Sec to Pri transactions
+//  Outgoing frame formatting functions for Sec to Pri transactions
 //
 ////////////////////////////////////////////////
 
@@ -119,7 +119,7 @@ ser4cpp::rseq_t LinkFrame::FormatNotSupported(
 
 ////////////////////////////////////////////////
 //
-//	Outgoing frame formatting functions for Pri to Sec transactions
+//  Outgoing frame formatting functions for Pri to Sec transactions
 //
 ////////////////////////////////////////////////
 

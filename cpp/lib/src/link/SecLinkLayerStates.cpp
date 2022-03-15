@@ -38,7 +38,7 @@ SecStateBase& SecStateBase::OnTxReady(LinkContext& ctx)
 }
 
 ////////////////////////////////////////////////////////
-//	Class SLLS_NotReset
+//  Class SLLS_NotReset
 ////////////////////////////////////////////////////////
 SLLS_NotReset SLLS_NotReset::instance;
 
@@ -71,7 +71,7 @@ SecStateBase& SLLS_NotReset::OnRequestLinkStatus(LinkContext& ctx, uint16_t sour
 }
 
 ////////////////////////////////////////////////////////
-//	Class SLLS_Reset
+//  Class SLLS_Reset
 ////////////////////////////////////////////////////////
 SLLS_Reset SLLS_Reset::instance;
 
@@ -126,12 +126,12 @@ SecStateBase& SLLS_Reset::OnRequestLinkStatus(LinkContext& ctx, uint16_t source)
 }
 
 ////////////////////////////////////////////////////////
-//	Class SLLS_TransmitWaitReset
+//  Class SLLS_TransmitWaitReset
 ////////////////////////////////////////////////////////
 SLLS_TransmitWaitReset SLLS_TransmitWaitReset::instance;
 
 ////////////////////////////////////////////////////////
-//	Class SLLS_TransmitWaitNotReset
+//  Class SLLS_TransmitWaitNotReset
 ////////////////////////////////////////////////////////
 SLLS_TransmitWaitNotReset SLLS_TransmitWaitNotReset::instance;
 

@@ -36,12 +36,12 @@ class IClassAssigner
 {
 public:
     /**
-     *	@return the full range for the actual type, an invalid range if the type doesn't exist
+     *  @return the full range for the actual type, an invalid range if the type doesn't exist
      */
     virtual Range AssignClassToAll(AssignClassType type, PointClass clazz) = 0;
 
     /**
-     *	@return the portion of the requested range that is valid, an invalid range if the type doesn't exist
+     *  @return the portion of the requested range that is valid, an invalid range if the type doesn't exist
      */
     virtual Range AssignClassToRange(AssignClassType type, PointClass clazz, const Range& range) = 0;
 };

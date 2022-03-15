@@ -35,7 +35,7 @@ class LinkFrame : private StaticOnly
 
 public:
     ////////////////////////////////////////////////
-    //	Functions for formatting outgoing Sec to Pri frames
+    //  Functions for formatting outgoing Sec to Pri frames
     ////////////////////////////////////////////////
 
     static ser4cpp::rseq_t FormatAck(
@@ -48,7 +48,7 @@ public:
         ser4cpp::wseq_t& buffer, bool aIsMaster, bool aIsRcvBuffFull, uint16_t aDest, uint16_t aSrc, Logger* pLogger);
 
     ////////////////////////////////////////////////
-    //	Functions for formatting outgoing Pri to Sec frames
+    //  Functions for formatting outgoing Pri to Sec frames
     ////////////////////////////////////////////////
 
     static ser4cpp::rseq_t FormatTestLinkStatus(
@@ -72,13 +72,13 @@ public:
                                                      Logger* pLogger);
 
     ////////////////////////////////////////////////
-    //	Reusable static formatting functions to any buffer
+    //  Reusable static formatting functions to any buffer
     ////////////////////////////////////////////////
 
     /** Reads data from src to dest removing 2 byte CRC checks every 16 data bytes
     @param apSrc Source buffer with crc checks. Must begin at data, not header
     @param apDest Destination buffer to which the data is extracted
-    @param aLength Length of user data to read to the dest buffer. The source buffer must be larger b/c of crc bytes.
+    @param len Length of user data to read to the dest buffer. The source buffer must be larger b/c of crc bytes.
     */
     static void ReadUserData(const uint8_t* apSrc, uint8_t* apDest, size_t len);
 
@@ -95,8 +95,8 @@ private:
     static size_t CalcUserDataSize(size_t dataLength);
 
     /** Writes data from src to dest interlacing 2 byte CRC checks every 16 data bytes
-        @param apSrc Source buffer full of user data
-        @param apDest Destination buffer where the data + CRC is written
+        @param pSrc Source buffer full of user data
+        @param pDest Destination buffer where the data + CRC is written
         @param length Number of user data bytes
     */
     static void WriteUserData(const uint8_t* pSrc, uint8_t* pDest, size_t length);

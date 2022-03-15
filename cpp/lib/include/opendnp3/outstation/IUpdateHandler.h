@@ -24,6 +24,7 @@
 #include "opendnp3/app/OctetString.h"
 #include "opendnp3/gen/EventMode.h"
 #include "opendnp3/gen/FlagsType.h"
+#include "opendnp3/gen/StaticTypeBitmask.h"
 
 namespace opendnp3
 {
@@ -118,12 +119,20 @@ public:
 
     /**
      * Update the flags of a measurement without changing it's value
-     * @param type enumeration specifiy the type to change
+     * @param type enumeration specify the type to change
      * @param start the start index at which to begin changing flags
      * @param stop the stop index at which to end changing flags
      * @param flags the new value of the flags
      */
     virtual bool Modify(FlagsType type, uint16_t start, uint16_t stop, uint8_t flags) = 0;
+
+    /**
+     * Update the old value based on new
+     * @param index index of the measurement
+     * @param value new value
+     * @param mode mode of the event
+     */
+    virtual bool Modify(uint16_t index, DoubleBitBinary value, EventMode mode = EventMode::Detect) = 0;
 };
 
 } // namespace opendnp3

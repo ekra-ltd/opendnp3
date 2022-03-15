@@ -52,7 +52,7 @@ public:
 };
 
 /**
- *	16-bit signed integer analog output. The underlying serialization is Group41, Variation 2
+ *  16-bit signed integer analog output. The underlying serialization is Group41, Variation 2
  */
 class AnalogOutputInt16 : public AnalogOutput<int16_t>
 {
@@ -65,7 +65,7 @@ public:
 };
 
 /**
- *	32-bit signed integer analog output. The underlying serialization is Group41, Variation 1
+ *  32-bit signed integer analog output. The underlying serialization is Group41, Variation 1
  */
 class AnalogOutputInt32 : public AnalogOutput<int32_t>
 {
@@ -78,7 +78,7 @@ public:
 };
 
 /**
- *	Single precision analog output. The underlying serialization is Group41, Variation 3
+ *  Single precision analog output. The underlying serialization is Group41, Variation 3
  */
 class AnalogOutputFloat32 : public AnalogOutput<float>
 {
@@ -91,7 +91,7 @@ public:
 };
 
 /**
- *	Double precision analog output. The underlying serialization is Group41, Variation 3
+ *  Double precision analog output. The underlying serialization is Group41, Variation 3
  */
 class AnalogOutputDouble64 : public AnalogOutput<double>
 {

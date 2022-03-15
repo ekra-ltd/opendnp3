@@ -45,19 +45,19 @@ namespace opendnp3
 class DNP3ManagerImpl;
 
 /**
- *	Root DNP3 object used to create channels and sessions.
+ *  Root DNP3 object used to create channels and sessions.
  */
 class DNP3Manager
 {
 
 public:
     /**
-     *	Construct a manager
+     *  Construct a manager
      *
-     *	@param concurrencyHint How many threads to allocate in the thread pool
-     *	@param handler Callback interface for log messages
-     *	@param onThreadStart Action to run when a thread pool thread starts
-     *	@param onThreadExit Action to run just before a thread pool thread exits
+     *  @param concurrencyHint How many threads to allocate in the thread pool
+     *  @param handler Callback interface for log messages
+     *  @param onThreadStart Action to run when a thread pool thread starts
+     *  @param onThreadExit Action to run just before a thread pool thread exits
      */
     DNP3Manager(uint32_t concurrencyHint,
                 std::shared_ptr<opendnp3::ILogHandler> handler = std::shared_ptr<opendnp3::ILogHandler>(),

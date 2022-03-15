@@ -115,6 +115,9 @@ public:
 
     bool modify(uint16_t start, uint16_t stop, uint8_t flags, IEventReceiver& receiver);
 
+    // function specifically for DoubleBit due to the possibility of the different sources for each bit
+    bool modify(uint16_t index, DoubleBitBinary value, EventMode mode, IEventReceiver& receiver);
+
     void clear_selection();
 
     bool has_any_selection() const
@@ -287,6 +290,17 @@ bool StaticDataMap<Spec>::modify(uint16_t start, uint16_t stop, uint8_t flags, I
     }
 
     return true;
+}
+
+inline bool StaticDataMap<DoubleBitBinarySpec>::modify(uint16_t index, DoubleBitBinary value, EventMode mode, IEventReceiver& receiver)
+{
+    const auto iter = this->map.find(index);
+    if (iter == this->map.end())
+    {
+        return false;
+    }
+    value.ModifyWith(iter->second.value);
+    return this->update(iter, value, mode, receiver);
 }
 
 template<class Spec> template<class F> size_t StaticDataMap<Spec>::select_all(F get_variation)

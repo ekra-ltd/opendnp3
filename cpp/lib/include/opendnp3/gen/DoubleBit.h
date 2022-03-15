@@ -54,6 +54,13 @@ enum class DoubleBit : uint8_t
 
 struct DoubleBitSpec
 {
+  enum class BitPosition
+  {
+      ALL = -1,
+      FIRST_BIT = 0,
+      SECOND_BIT = 1
+  };
+
   using enum_type_t = DoubleBit;
 
   static uint8_t to_type(DoubleBit arg);
@@ -62,6 +69,11 @@ struct DoubleBitSpec
   static char const* to_human_string(DoubleBit arg);
   static DoubleBit from_string(const std::string& arg);
 };
+
+inline DoubleBit operator&(DoubleBit a, DoubleBit b)
+{
+    return DoubleBitSpec::from_type(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
 
 }
 

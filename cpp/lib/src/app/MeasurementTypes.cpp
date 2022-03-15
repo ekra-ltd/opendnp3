@@ -23,6 +23,8 @@
 
 #include "opendnp3/gen/BinaryQuality.h"
 
+#include <algorithm>
+
 namespace opendnp3
 {
 
@@ -58,6 +60,27 @@ DoubleBitBinary::DoubleBitBinary(DoubleBit value, Flags flags) : TypedMeasuremen
 DoubleBitBinary::DoubleBitBinary(DoubleBit value, Flags flags, DNPTime time)
     : TypedMeasurement(value, GetFlags(flags, value), time)
 {
+}
+
+DoubleBitBinary::DoubleBitBinary(bool value, DoubleBitSpec::BitPosition position, Flags flags, DNPTime time)
+    : TypedMeasurement(DoubleBit::INDETERMINATE, flags, time), _changeToBit(value), _bitPosition(position)
+{
+}
+
+void DoubleBitBinary::ModifyWith(DoubleBitBinary old)
+{
+    auto res = static_cast<uint8_t>(old.value);
+    const uint8_t bit = _changeToBit ? 0x1 : 0x0;
+    if (_bitPosition == DoubleBitSpec::BitPosition::ALL) {
+        res = _changeToBit ? 0x3 : 0x0;
+    }
+    else {
+        auto shift = static_cast<int>(_bitPosition);
+        shift = std::max(0, std::min(shift, 1));
+        res ^= (-bit ^ res) & (1 << shift);
+    }
+    value = static_cast<DoubleBit>(res);
+    flags = GetFlags(flags, value);
 }
 
 DoubleBit DoubleBitBinary::GetValue(Flags flags)

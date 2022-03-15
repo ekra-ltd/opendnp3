@@ -67,9 +67,16 @@ public:
 
     DoubleBitBinary(DoubleBit value, Flags flags, DNPTime time);
 
+    DoubleBitBinary(bool value, DoubleBitSpec::BitPosition position, Flags flags, DNPTime time);
+    
+    void ModifyWith(DoubleBitBinary old);
+
 private:
     static const uint8_t ValueMask = 0xC0;
     static const uint8_t QualityMask = 0x3F;
+
+    bool _changeToBit = false;
+    DoubleBitSpec::BitPosition _bitPosition = DoubleBitSpec::BitPosition::ALL;
 
     static DoubleBit GetValue(Flags flags);
 

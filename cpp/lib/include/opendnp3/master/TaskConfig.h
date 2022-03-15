@@ -29,7 +29,7 @@ namespace opendnp3
 {
 
 /**
- *	Object containing multiple fields for configuring tasks
+ *  Object containing multiple fields for configuring tasks
  */
 class TaskConfig
 {

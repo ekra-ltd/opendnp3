@@ -501,23 +501,28 @@ bool Database::Modify(FlagsType type, uint16_t start, uint16_t stop, uint8_t fla
 {
     switch (type)
     {
-    case (FlagsType::BinaryInput):
-        return this->binary_input.modify(start, stop, flags, this->event_receiver);
-    case (FlagsType::DoubleBinaryInput):
-        return this->double_binary.modify(start, stop, flags, this->event_receiver);
-    case (FlagsType::AnalogInput):
-        return this->analog_input.modify(start, stop, flags, this->event_receiver);
-    case (FlagsType::Counter):
-        return this->counter.modify(start, stop, flags, this->event_receiver);
-    case (FlagsType::FrozenCounter):
-        return this->frozen_counter.modify(start, stop, flags, this->event_receiver);
-    case (FlagsType::BinaryOutputStatus):
-        return this->binary_output_status.modify(start, stop, flags, this->event_receiver);
-    case (FlagsType::AnalogOutputStatus):
-        return this->analog_output_status.modify(start, stop, flags, this->event_receiver);
+        case (FlagsType::BinaryInput):
+            return this->binary_input.modify(start, stop, flags, this->event_receiver);
+        case (FlagsType::DoubleBinaryInput):
+            return this->double_binary.modify(start, stop, flags, this->event_receiver);
+        case (FlagsType::AnalogInput):
+            return this->analog_input.modify(start, stop, flags, this->event_receiver);
+        case (FlagsType::Counter):
+            return this->counter.modify(start, stop, flags, this->event_receiver);
+        case (FlagsType::FrozenCounter):
+            return this->frozen_counter.modify(start, stop, flags, this->event_receiver);
+        case (FlagsType::BinaryOutputStatus):
+            return this->binary_output_status.modify(start, stop, flags, this->event_receiver);
+        case (FlagsType::AnalogOutputStatus):
+            return this->analog_output_status.modify(start, stop, flags, this->event_receiver);
     }
 
     return false;
+}
+
+bool Database::Modify(uint16_t index, DoubleBitBinary value, EventMode mode)
+{
+    return this->double_binary.modify(index, value, mode, this->event_receiver);
 }
 
 bool Database::FreezeSelectedCounters(bool clear, EventMode mode)

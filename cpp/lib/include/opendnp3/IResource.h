@@ -24,7 +24,7 @@ namespace opendnp3
 {
 
 /**
- *	Anything that can be shutdown
+ *  Anything that can be shutdown
  */
 struct IResource
 {

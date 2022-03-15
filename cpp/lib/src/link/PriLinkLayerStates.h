@@ -49,7 +49,7 @@ public:
     virtual char const* Name() const = 0;
 };
 
-//	@section desc Entry state for primary station
+//  @section desc Entry state for primary station
 class PLLS_Idle final : public PriStateBase
 {
     MACRO_STATE_SINGLETON_INSTANCE(PLLS_Idle);
@@ -73,7 +73,7 @@ class PLLS_SendUnconfirmedTransmitWait final : public PriStateBase
 // Waiting for a link status response
 /////////////////////////////////////////////////////////////////////////////
 
-//	@section desc As soon as we get an ACK, send the delayed pri frame
+//  @section desc As soon as we get an ACK, send the delayed pri frame
 class PLLS_RequestLinkStatusWait final : public PriStateBase
 {
     MACRO_STATE_SINGLETON_INSTANCE(PLLS_RequestLinkStatusWait);

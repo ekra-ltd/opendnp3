@@ -26,7 +26,7 @@
 namespace opendnp3
 {
 
-//	@section desc Implements the contextual state of DNP3 Data Link Layer
+//  @section desc Implements the contextual state of DNP3 Data Link Layer
 class LinkLayer final : public ILinkLayer, public ILinkSession
 {
 

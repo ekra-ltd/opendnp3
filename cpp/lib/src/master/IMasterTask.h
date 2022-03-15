@@ -68,7 +68,7 @@ public:
 
     /**
      *
-     * @return	the name of the task
+     * @return  the name of the task
      */
     virtual char const* Name() const = 0;
 

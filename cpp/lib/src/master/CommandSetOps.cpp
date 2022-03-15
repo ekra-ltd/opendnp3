@@ -107,8 +107,8 @@ bool CommandSetOps::IsAllowed(uint32_t /*headerCount*/, GroupVariation gv, Quali
 
     switch (gv)
     {
-    case (GroupVariation::Group12Var1): //	CROB
-    case (GroupVariation::Group41Var1): //	4 kinds of AO
+    case (GroupVariation::Group12Var1): //  CROB
+    case (GroupVariation::Group41Var1): //  4 kinds of AO
     case (GroupVariation::Group41Var2):
     case (GroupVariation::Group41Var3):
     case (GroupVariation::Group41Var4):

@@ -79,6 +79,11 @@ bool UpdateBuilder::Modify(FlagsType type, uint16_t start, uint16_t stop, uint8_
     return this->Add([=](IUpdateHandler& handler) { handler.Modify(type, start, stop, flags); });
 }
 
+bool UpdateBuilder::Modify(uint16_t index, DoubleBitBinary value, EventMode mode)
+{
+    return this->Add([=](IUpdateHandler& handler) { handler.Modify(index, value, mode); });
+}
+
 template<class T> bool UpdateBuilder::AddMeas(const T& meas, uint16_t index, EventMode mode)
 {
     return this->Add([=](IUpdateHandler& handler) { handler.Update(meas, index, mode); });

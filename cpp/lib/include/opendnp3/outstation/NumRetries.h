@@ -26,7 +26,7 @@ namespace opendnp3
 {
 
 /**
- *	Unsolicited response number of retries
+ *  Unsolicited response number of retries
  */
 class NumRetries final
 {

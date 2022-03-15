@@ -30,7 +30,7 @@ namespace opendnp3
 {
 
 /**
- *	ISOEHandler singleton that prints to the console.
+ *  ISOEHandler singleton that prints to the console.
  */
 class PrintingSOEHandler final : public ISOEHandler
 {

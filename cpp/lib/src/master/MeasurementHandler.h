@@ -58,7 +58,7 @@ public:
     /**
      * Creates a new ResponseLoader instance.
      *
-     * @param logger	the Logger that the loader should use for message reporting
+     * @param logger    the Logger that the loader should use for message reporting
      */
     MeasurementHandler(ResponseInfo info, const Logger& logger, ISOEHandler* pSOEHandler);
 

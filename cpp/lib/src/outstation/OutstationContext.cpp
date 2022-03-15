@@ -418,7 +418,7 @@ OutstationState& OContext::RespondToNonReadRequest(const ParsedRequest& request)
     auto writer = response.GetWriter();
     response.SetFunction(FunctionCode::RESPONSE);
     response.SetControl(AppControlField(true, true, false, false, request.header.control.SEQ));
-    auto iin = this->HandleNonReadResponse(request.header, request.objects, writer);
+    const auto iin = this->HandleNonReadResponse(request.header, request.objects, writer);
     response.SetIIN(iin | this->GetResponseIIN());
     return this->BeginResponseTx(request.addresses.source, response);
 }
@@ -463,7 +463,7 @@ IINField OContext::GetResponseIIN()
 
 IINField OContext::GetDynamicIIN()
 {
-    auto classField = this->eventBuffer.UnwrittenClassField();
+    const auto classField = this->eventBuffer.UnwrittenClassField();
 
     IINField ret;
     ret.SetBitToValue(IINBit::CLASS1_EVENTS, classField.HasClass1());
@@ -753,12 +753,12 @@ IINField OContext::HandleDirectOperate(const ser4cpp::rseq_t& objects, OperateTy
     {
         FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Igonring command request due to oversized payload size of %zu",
                          objects.length());
-        return IINField(IINBit::PARAM_ERROR);
+        return {IINBit::PARAM_ERROR};
     }
 
     CommandActionAdapter adapter(*this->commandHandler, false, this->database, opType);
     CommandResponseHandler handler(this->params.maxControlsPerRequest, &adapter, pWriter);
-    auto result = APDUParser::Parse(objects, handler, &this->logger);
+    const auto result = APDUParser::Parse(objects, handler, &this->logger);
     this->shouldCheckForUnsolicited = true;
     return (result == ParseResult::OK) ? handler.Errors() : IINFromParseResult(result);
 }
@@ -770,13 +770,13 @@ IINField OContext::HandleSelect(const ser4cpp::rseq_t& objects, HeaderWriter& wr
     {
         FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Igonring command request due to oversized payload size of %zu",
                          objects.length());
-        return IINField(IINBit::PARAM_ERROR);
+        return {IINBit::PARAM_ERROR};
     }
 
     // the 'OperateType' is just ignored  since it's a select
     CommandActionAdapter adapter(*this->commandHandler, true, this->database, OperateType::DirectOperate);
     CommandResponseHandler handler(this->params.maxControlsPerRequest, &adapter, &writer);
-    auto result = APDUParser::Parse(objects, handler, &this->logger);
+    const auto result = APDUParser::Parse(objects, handler, &this->logger);
     if (result == ParseResult::OK)
     {
         if (handler.AllCommandsSuccessful())
@@ -797,19 +797,19 @@ IINField OContext::HandleOperate(const ser4cpp::rseq_t& objects, HeaderWriter& w
     {
         FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Igonring command request due to oversized payload size of %zu",
                          objects.length());
-        return IINField(IINBit::PARAM_ERROR);
+        return {IINBit::PARAM_ERROR};
     }
 
-    auto now = Timestamp(this->executor->get_time());
-    auto result = this->control.ValidateSelection(this->sol.seq.num, now, this->params.selectTimeout, objects);
+    const auto now = Timestamp(this->executor->get_time());
+    const auto result = this->control.ValidateSelection(this->sol.seq.num, now, this->params.selectTimeout, objects);
 
     if (result == CommandStatus::SUCCESS)
     {
         CommandActionAdapter adapter(*this->commandHandler, false, this->database, OperateType::SelectBeforeOperate);
         CommandResponseHandler handler(this->params.maxControlsPerRequest, &adapter, &writer);
-        auto result = APDUParser::Parse(objects, handler, &this->logger);
+        const auto innerResult = APDUParser::Parse(objects, handler, &this->logger);
         this->shouldCheckForUnsolicited = true;
-        return (result == ParseResult::OK) ? handler.Errors() : IINFromParseResult(result);
+        return (innerResult == ParseResult::OK) ? handler.Errors() : IINFromParseResult(innerResult);
     }
     else
     {
@@ -830,7 +830,7 @@ IINField OContext::HandleDelayMeasure(const ser4cpp::rseq_t& objects, HeaderWrit
     }
 
     // there shouldn't be any trailing headers in delay measure request, no need to even parse
-    return IINField(IINBit::PARAM_ERROR);
+    return {IINBit::PARAM_ERROR};
 }
 
 IINField OContext::HandleRecordCurrentTime()
@@ -842,9 +842,9 @@ IINField OContext::HandleRecordCurrentTime()
 IINField OContext::HandleRestart(const ser4cpp::rseq_t& objects, bool isWarmRestart, HeaderWriter* pWriter)
 {
     if (objects.is_not_empty())
-        return IINField(IINBit::PARAM_ERROR);
+        return {IINBit::PARAM_ERROR};
 
-    auto mode = isWarmRestart ? this->application->WarmRestartSupport() : this->application->ColdRestartSupport();
+    const auto mode = isWarmRestart ? this->application->WarmRestartSupport() : this->application->ColdRestartSupport();
 
     switch (mode)
     {
@@ -852,7 +852,7 @@ IINField OContext::HandleRestart(const ser4cpp::rseq_t& objects, bool isWarmRest
         return IINField(IINBit::FUNC_NOT_SUPPORTED);
     case (RestartMode::SUPPORTED_DELAY_COARSE):
     {
-        auto delay = isWarmRestart ? this->application->WarmRestart() : this->application->ColdRestart();
+        const auto delay = isWarmRestart ? this->application->WarmRestart() : this->application->ColdRestart();
         if (pWriter)
         {
             Group52Var1 coarse;
@@ -863,7 +863,7 @@ IINField OContext::HandleRestart(const ser4cpp::rseq_t& objects, bool isWarmRest
     }
     default:
     {
-        auto delay = isWarmRestart ? this->application->WarmRestart() : this->application->ColdRestart();
+        const auto delay = isWarmRestart ? this->application->WarmRestart() : this->application->ColdRestart();
         if (pWriter)
         {
             Group52Var2 fine;
@@ -880,17 +880,17 @@ IINField OContext::HandleAssignClass(const ser4cpp::rseq_t& objects)
     if (this->application->SupportsAssignClass())
     {
         AssignClassHandler handler(*this->application, this->database);
-        auto result = APDUParser::Parse(objects, handler, &this->logger, ParserSettings::NoContents());
+        const auto result = APDUParser::Parse(objects, handler, &this->logger, ParserSettings::NoContents());
         return (result == ParseResult::OK) ? handler.Errors() : IINFromParseResult(result);
     }
 
-    return IINField(IINBit::FUNC_NOT_SUPPORTED);
+    return {IINBit::FUNC_NOT_SUPPORTED};
 }
 
 IINField OContext::HandleDisableUnsolicited(const ser4cpp::rseq_t& objects, HeaderWriter* /*writer*/)
 {
     ClassBasedRequestHandler handler;
-    auto result = APDUParser::Parse(objects, handler, &this->logger);
+    const auto result = APDUParser::Parse(objects, handler, &this->logger);
     if (result == ParseResult::OK)
     {
         this->params.unsolClassMask.Clear(handler.GetClassField());
@@ -903,7 +903,7 @@ IINField OContext::HandleDisableUnsolicited(const ser4cpp::rseq_t& objects, Head
 IINField OContext::HandleEnableUnsolicited(const ser4cpp::rseq_t& objects, HeaderWriter* /*writer*/)
 {
     ClassBasedRequestHandler handler;
-    auto result = APDUParser::Parse(objects, handler, &this->logger);
+    const auto result = APDUParser::Parse(objects, handler, &this->logger);
     if (result == ParseResult::OK)
     {
         this->params.unsolClassMask.Set(handler.GetClassField());
@@ -918,21 +918,21 @@ IINField OContext::HandleCommandWithConstant(const ser4cpp::rseq_t& objects, Hea
 {
     ConstantCommandAction constant(status);
     CommandResponseHandler handler(this->params.maxControlsPerRequest, &constant, &writer);
-    auto result = APDUParser::Parse(objects, handler, &this->logger);
+    const auto result = APDUParser::Parse(objects, handler, &this->logger);
     return IINFromParseResult(result);
 }
 
 IINField OContext::HandleFreeze(const ser4cpp::rseq_t& objects)
 {
     FreezeRequestHandler handler(false, database);
-    auto result = APDUParser::Parse(objects, handler, &this->logger, ParserSettings::NoContents());
+    const auto result = APDUParser::Parse(objects, handler, &this->logger, ParserSettings::NoContents());
     return IINFromParseResult(result);
 }
 
 IINField OContext::HandleFreezeAndClear(const ser4cpp::rseq_t& objects)
 {
     FreezeRequestHandler handler(true, database);
-    auto result = APDUParser::Parse(objects, handler, &this->logger, ParserSettings::NoContents());
+    const auto result = APDUParser::Parse(objects, handler, &this->logger, ParserSettings::NoContents());
     return IINFromParseResult(result);
 }
 
@@ -951,9 +951,9 @@ IINField OContext::HandleFileTransfer(const ser4cpp::rseq_t& objects, HeaderWrit
             return _fileTransferWorker.HandleAuthFile(objects, writer);
         case FunctionCode::ABORT_FILE:
             return _fileTransferWorker.HandleAbortFile(objects, writer);
+        default: 
+            return IINField::Empty();
     }
-
-    return IINField::Empty();
 }
 
 } // namespace opendnp3

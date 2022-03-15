@@ -34,8 +34,8 @@ namespace opendnp3
 class Measurement
 {
 public:
-    Flags flags;  //	bitfield that stores type specific quality information
-    DNPTime time; //	timestamp associated with the measurement
+    Flags flags;  //    bitfield that stores type specific quality information
+    DNPTime time; //    timestamp associated with the measurement
 
 protected:
     Measurement() {}
