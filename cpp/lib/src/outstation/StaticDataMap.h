@@ -292,6 +292,7 @@ bool StaticDataMap<Spec>::modify(uint16_t start, uint16_t stop, uint8_t flags, I
     return true;
 }
 
+template<>
 inline bool StaticDataMap<DoubleBitBinarySpec>::modify(uint16_t index, DoubleBitBinary value, EventMode mode, IEventReceiver& receiver)
 {
     const auto iter = this->map.find(index);

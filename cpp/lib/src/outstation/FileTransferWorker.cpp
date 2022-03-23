@@ -38,8 +38,25 @@ namespace
             {
                 continue;
             }
-            size += 20;
-            size += f.path().filename().string().length();
+            // system dependend hidden file check
+#ifdef BOOST_WINDOWS_API
+            DWORD attributes = GetFileAttributes(f.path().string().c_str());
+            if (attributes & FILE_ATTRIBUTE_HIDDEN)
+            {
+                continue;
+            }
+#endif
+#ifdef BOOST_POSIX_API
+            const auto pStr = f.path().filename().string();
+            if (pStr == "." ||
+                pStr == ".." ||
+                pStr.rfind('.', 0) == 0)
+            {
+                continue;
+            }
+#endif
+            size += 20; // header size
+            size += f.path().filename().string().length(); // filename size
         }
         return size;
     }
@@ -211,6 +228,7 @@ IINField FileTransferWorker::HandleOpenFile(const ser4cpp::rseq_t& objects, Head
             {
                 continue;
             }
+            // system dependend hidden file check
 #ifdef BOOST_WINDOWS_API
             DWORD attributes = GetFileAttributes(f.path().string().c_str());
             if (attributes & FILE_ATTRIBUTE_HIDDEN)
@@ -226,8 +244,8 @@ IINField FileTransferWorker::HandleOpenFile(const ser4cpp::rseq_t& objects, Head
                 continue;
             }
 #endif
-            size += 20;
-            size += pStr.length();
+            size += 20; // header size
+            size += pStr.length(); // filename size
 
             Group70Var7 info;
             info.fileInfo.filename = pStr;
@@ -326,7 +344,7 @@ ser4cpp::Pair<IINField, AppControlField> FileTransferWorker::HandleReadFile(cons
 
     writer->WriteSingleValue<ser4cpp::UInt8, Group70Var5>(QualifierCode::FREE_FORMAT, fileTransportObject);
     delete[] data;
-    return ser4cpp::Pair<IINField, AppControlField>(IINField::Empty(), control);
+    return { IINField::Empty(), control };
 }
 
 IINField FileTransferWorker::HandleAuthFile(const ser4cpp::rseq_t& /*objects*/, HeaderWriter* /*writer*/)

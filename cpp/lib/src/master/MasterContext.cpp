@@ -41,7 +41,6 @@
 #include "opendnp3/logging/LogLevels.h"
 #include "transport/TransportHeader.h"
 
-
 #include <utility>
 
 namespace opendnp3
@@ -72,7 +71,6 @@ MContext::MContext(const Addresses& addresses,
                                - APDUHeader::RESPONSE_SIZE
                                - 3;
 
-    /// file tx transfer block size
     FileTransferMaxTxBlockSize = params.maxTxFragSize
                                - LinkHeader::HEADER_SIZE
                                - TransportHeader::HEADER_SIZE

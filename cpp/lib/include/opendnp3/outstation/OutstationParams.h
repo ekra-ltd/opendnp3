@@ -83,7 +83,7 @@ struct OutstationParams
     /// if false, content will be appended to files
     bool shouldOverrideFiles = true;
 
-    /// if false, function code CLOSE_FILE not supported
+    /// if false, function code REMOVE_FILE not supported
     bool permitDeleteFiles = true;
 };
 
