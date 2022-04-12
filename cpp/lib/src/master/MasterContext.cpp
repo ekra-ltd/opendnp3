@@ -78,6 +78,19 @@ MContext::MContext(const Addresses& addresses,
                                - 3;
 }
 
+std::shared_ptr<MContext> MContext::Create(
+    const Addresses& addresses,
+    const Logger& logger,
+    const std::shared_ptr<exe4cpp::IExecutor>& executor,
+    std::shared_ptr<ILowerLayer> lower,
+    const std::shared_ptr<ISOEHandler>& SOEHandler,
+    const std::shared_ptr<IMasterApplication>& application,
+    std::shared_ptr<IMasterScheduler> scheduler,
+    const MasterParams& params)
+{
+    return std::shared_ptr<MContext>(new MContext(addresses, logger, executor, lower, SOEHandler, application, scheduler, params));
+}
+
 bool MContext::OnLowerLayerUp()
 {
     if (isOnline)
@@ -381,7 +394,7 @@ void MContext::RemoveStatisticsHandler()
 
 void MContext::StartResponseTimer()
 {
-    auto timeout = [this]() { this->OnResponseTimeout(); };
+    auto timeout = [self = shared_from_this()]() { self->OnResponseTimeout(); };
     this->responseTimer = this->executor->start(this->params.responseTimeout.value, timeout);
 }
 

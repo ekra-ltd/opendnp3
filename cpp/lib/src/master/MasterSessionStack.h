@@ -29,6 +29,8 @@
 
 #include <exe4cpp/asio/StrandExecutor.h>
 
+#include <memory>
+
 namespace opendnp3
 {
 
@@ -146,7 +148,7 @@ private:
     std::shared_ptr<LinkSession> session;
 
     TransportStack stack;
-    MContext context;
+    std::shared_ptr<MContext> context;
 };
 
 } // namespace opendnp3
