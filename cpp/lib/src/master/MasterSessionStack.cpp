@@ -68,12 +68,12 @@ MasterSessionStack::MasterSessionStack(const Logger& logger,
 
 void MasterSessionStack::AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler)
 {
-    context.AddStatisticsHandler(changeHandler);
+    context->AddStatisticsHandler(changeHandler);
 }
 
 void MasterSessionStack::RemoveStatisticsHandler()
 {
-    context.RemoveStatisticsHandler();
+    context->RemoveStatisticsHandler();
 }
 
 void MasterSessionStack::OnLowerLayerUp()
@@ -247,13 +247,13 @@ void MasterSessionStack::PerformFunction(const std::string& name,
 
 bool MasterSessionStack::DemandTimeSyncronization()
 {
-    return context.DemandTimeSyncronization();
+    return context->DemandTimeSyncronization();
 }
 
 void MasterSessionStack::ReadFile(const std::string& sourceFilename, FileOperationTaskCallbackT callback)
 {
     auto action = [self = shared_from_this(), sourceFilename, callback]() -> void {
-        self->context.ReadFile(sourceFilename, callback);
+        self->context->ReadFile(sourceFilename, callback);
     };
     return executor->post(action);
 }
@@ -261,7 +261,7 @@ void MasterSessionStack::ReadFile(const std::string& sourceFilename, FileOperati
 void MasterSessionStack::WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback)
 {
     auto action = [self = shared_from_this(), source, destFilename, callback]() -> void {
-        self->context.WriteFile(source, destFilename, callback);
+        self->context->WriteFile(source, destFilename, callback);
     };
     return executor->post(action);
 }
@@ -269,7 +269,7 @@ void MasterSessionStack::WriteFile(std::shared_ptr<std::ifstream> source, const 
 void MasterSessionStack::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
     auto action = [self = shared_from_this(), sourceDirectory, callback]() -> void {
-        self->context.GetFilesInDirectory(sourceDirectory, callback);
+        self->context->GetFilesInDirectory(sourceDirectory, callback);
     };
     return executor->post(action);
 }
@@ -277,7 +277,7 @@ void MasterSessionStack::GetFilesInDirectory(const std::string& sourceDirectory,
 void MasterSessionStack::GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback)
 {
     auto action = [self = shared_from_this(), sourceFile, callback]() -> void {
-        self->context.GetFileInfo(sourceFile, callback);
+        self->context->GetFileInfo(sourceFile, callback);
     };
     return executor->post(action);
 }
@@ -285,7 +285,7 @@ void MasterSessionStack::GetFileInfo(const std::string& sourceFile, const GetFil
 void MasterSessionStack::DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback)
 {
     auto action = [self = shared_from_this(), filename, callback]() -> void {
-        self->context.DeleteFileFunction(filename, callback);
+        self->context->DeleteFileFunction(filename, callback);
     };
     return executor->post(action);
 }
@@ -326,7 +326,7 @@ void MasterSessionStack::Select(CommandSet&& commands,
     auto set = std::make_shared<CommandSet>(std::move(commands));
 
     auto action = [self = shared_from_this(), set, config, callback]() -> void {
-        self->context.Select(std::move(*set), callback, config);
+        self->context->Select(std::move(*set), callback, config);
     };
     executor->post(action);
 }
@@ -339,7 +339,7 @@ void MasterSessionStack::Operate(CommandSet&& commands,
     auto set = std::make_shared<CommandSet>(std::move(commands));
 
     auto action = [self = shared_from_this(), set, config, callback]() -> void {
-        self->context.Operate(std::move(*set), callback, config);
+        self->context->Operate(std::move(*set), callback, config);
     };
     executor->post(action);
 }

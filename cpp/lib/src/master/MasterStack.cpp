@@ -206,7 +206,7 @@ void MasterStack::PerformFunction(const std::string& name,
 void MasterStack::ReadFile(const std::string& sourceFilename, FileOperationTaskCallbackT callback)
 {
     auto add = [self = this->shared_from_this(), sourceFilename, callback]() {
-        return self->mcontext.ReadFile(sourceFilename, callback);
+        return self->mcontext->ReadFile(sourceFilename, callback);
     };
     return this->executor->post(add);
 }
@@ -214,7 +214,7 @@ void MasterStack::ReadFile(const std::string& sourceFilename, FileOperationTaskC
 void MasterStack::WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback)
 {
     auto add = [self = this->shared_from_this(), source, destFilename, callback]() {
-        return self->mcontext.WriteFile(source, destFilename, callback);
+        return self->mcontext->WriteFile(source, destFilename, callback);
     };
     return this->executor->post(add);
 }
@@ -222,7 +222,7 @@ void MasterStack::WriteFile(std::shared_ptr<std::ifstream> source, const std::st
 void MasterStack::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
     auto add = [self = this->shared_from_this(), sourceDirectory, callback]() {
-        return self->mcontext.GetFilesInDirectory(sourceDirectory, callback);
+        return self->mcontext->GetFilesInDirectory(sourceDirectory, callback);
     };
     return this->executor->post(add);
 }
@@ -230,7 +230,7 @@ void MasterStack::GetFilesInDirectory(const std::string& sourceDirectory, const 
 void MasterStack::GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback)
 {
     auto add = [self = this->shared_from_this(), sourceFile, callback]() {
-        return self->mcontext.GetFileInfo(sourceFile, callback);
+        return self->mcontext->GetFileInfo(sourceFile, callback);
     };
     return this->executor->post(add);
 }
@@ -238,7 +238,7 @@ void MasterStack::GetFileInfo(const std::string& sourceFile, const GetFilesInfoT
 void MasterStack::DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback)
 {
     auto add = [self = this->shared_from_this(), filename, callback]() {
-        return self->mcontext.DeleteFileFunction(filename, callback);
+        return self->mcontext->DeleteFileFunction(filename, callback);
     };
     return this->executor->post(add);
 }
@@ -275,7 +275,7 @@ void MasterStack::Select(CommandSet&& commands, const CommandResultCallbackT& ca
     auto set = std::make_shared<CommandSet>(std::move(commands));
 
     auto action = [self = this->shared_from_this(), set, config, callback]() {
-        self->mcontext.Select(std::move(*set), callback, config);
+        self->mcontext->Select(std::move(*set), callback, config);
     };
 
     this->executor->post(action);
@@ -287,7 +287,7 @@ void MasterStack::Operate(CommandSet&& commands, const CommandResultCallbackT& c
     auto set = std::make_shared<CommandSet>(std::move(commands));
 
     auto action = [self = this->shared_from_this(), set, config, callback]() {
-        self->mcontext.Operate(std::move(*set), callback, config);
+        self->mcontext->Operate(std::move(*set), callback, config);
     };
 
     this->executor->post(action);
@@ -295,17 +295,17 @@ void MasterStack::Operate(CommandSet&& commands, const CommandResultCallbackT& c
 
 bool MasterStack::DemandTimeSyncronization()
 {
-    return mcontext.DemandTimeSyncronization();
+    return mcontext->DemandTimeSyncronization();
 }
 
 void MasterStack::AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler)
 {
-    mcontext.AddStatisticsHandler(changeHandler);
+    mcontext->AddStatisticsHandler(changeHandler);
 }
 
 void MasterStack::RemoveStatisticsHandler()
 {
-    mcontext.RemoveStatisticsHandler();
+    mcontext->RemoveStatisticsHandler();
 }
 
 } // namespace opendnp3
