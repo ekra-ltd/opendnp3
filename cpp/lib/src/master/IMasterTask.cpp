@@ -33,7 +33,7 @@ IMasterTask::IMasterTask(std::shared_ptr<TaskContext> context,
                          TaskBehavior behavior,
                          const Logger& logger,
                          TaskConfig config)
-    : context(std::move(context)), application(&app), logger(logger), config(config), behavior(std::move(behavior))
+    : context(std::move(context)), application(&app), logger(logger), config(std::move(config)), behavior(std::move(behavior))
 {
 }
 
@@ -91,9 +91,38 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
     // back-off exponentially using the task retry
     case (TaskCompletion::FAILURE_RESPONSE_TIMEOUT):
     {
-        this->behavior.OnResponseTimeout(now);
-        if (this->BlocksLowerPriority())
+        const auto timeoutStats = this->behavior.OnResponseTimeout(now);
+        if (this->BlocksLowerPriority()) {
             this->context->AddBlock(*this);
+        }
+        if (timeoutStats.IsFixedRetriesCount) {
+            if (!timeoutStats.IsFinished) {
+                FORMAT_LOG_BLOCK(
+                    logger,
+                    flags::WARN,
+                    "Task '%s' completed with timeout, current retry is '%llu' out of '%llu'",
+                    Name(),
+                    timeoutStats.CurrentRetryNumber,
+                    timeoutStats.MaxRetryNumber
+                )
+                return;
+            }
+            FORMAT_LOG_BLOCK(
+                logger,
+                flags::WARN,
+                "Task '%s' completed with timeout, out of retries (max retries - '%llu')",
+                Name(),
+                timeoutStats.MaxRetryNumber
+            )
+        }
+        else {
+            FORMAT_LOG_BLOCK(
+                logger,
+                flags::WARN,
+                "Task '%s' completed with timeout and the number of retries set to 'infinite'. Each retry is treated as its own task",
+                Name()
+            )
+        }
         break;
     }
 
@@ -110,8 +139,9 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
     default:
     {
         this->behavior.Disable();
-        if (this->BlocksLowerPriority())
+        if (this->BlocksLowerPriority()) {
             this->context->AddBlock(*this);
+        }
     }
     }
 
@@ -178,7 +208,7 @@ bool IMasterTask::ValidateSingleResponse(const APDUResponseHeader& header)
         return true;
     }
 
-    SIMPLE_LOG_BLOCK(logger, flags::WARN, "Ignoring unexpected response FIR/FIN not set");
+    SIMPLE_LOG_BLOCK(logger, flags::WARN, "Ignoring unexpected response FIR/FIN not set")
     return false;
 }
 
@@ -192,7 +222,7 @@ bool IMasterTask::ValidateInternalIndications(const APDUResponseHeader& header)
     if (header.IIN.HasRequestError())
     {
         FORMAT_LOG_BLOCK(logger, flags::WARN, "Task was explicitly rejected via response with error IIN bit(s): %s",
-                         this->Name());
+                         this->Name())
         return false;
     }
 
@@ -206,7 +236,7 @@ bool IMasterTask::ValidateNoObjects(const ser4cpp::rseq_t& objects)
         return true;
     }
 
-    FORMAT_LOG_BLOCK(logger, flags::WARN, "Received unexpected response object headers for task: %s", this->Name());
+    FORMAT_LOG_BLOCK(logger, flags::WARN, "Received unexpected response object headers for task: %s", this->Name())
     return false;
 }
 

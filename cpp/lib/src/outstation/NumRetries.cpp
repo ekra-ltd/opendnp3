@@ -30,12 +30,12 @@ NumRetries::NumRetries(std::size_t maxNumRetries, bool isInfinite)
 
 NumRetries NumRetries::Fixed(std::size_t maxNumRetries)
 {
-    return NumRetries(maxNumRetries, false);
+    return { maxNumRetries, false };
 }
 
 NumRetries NumRetries::Infinite()
 {
-    return NumRetries(0, true);
+    return { 0, true };
 }
 
 bool NumRetries::Retry()
@@ -53,6 +53,16 @@ void NumRetries::Reset()
 bool NumRetries::IsFixed() const
 {
     return !isInfinite;
+}
+
+std::size_t NumRetries::CurrentRetry() const
+{
+    return numRetries;
+}
+
+std::size_t NumRetries::MaximumRetries() const
+{
+    return maxNumRetries;
 }
 
 }; // namespace opendnp3
