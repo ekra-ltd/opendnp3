@@ -666,9 +666,9 @@ MContext::TaskState MContext::OnResponse_WaitForResponse(const APDUResponseHeade
 
 MContext::TaskState MContext::OnResponseTimeout_WaitForResponse()
 {
-    SIMPLE_LOG_BLOCK(logger, flags::WARN, "Timeout waiting for response");
+    FORMAT_LOG_BLOCK(logger, flags::WARN, "Timeout waiting for response, task - %s", this->activeTask->Name());
 
-    auto now = Timestamp(this->executor->get_time());
+    const auto now = Timestamp(this->executor->get_time());
     this->activeTask->OnResponseTimeout(now);
     this->solSeq.Increment();
     this->CompleteActiveTask();

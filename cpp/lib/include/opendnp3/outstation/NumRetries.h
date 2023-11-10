@@ -39,6 +39,9 @@ public:
 
     bool IsFixed() const;
 
+    std::size_t CurrentRetry() const;
+    std::size_t MaximumRetries() const;
+
 private:
     NumRetries(std::size_t maxNumRetries, bool isInfinite);
 

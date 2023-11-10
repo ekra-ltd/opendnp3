@@ -88,21 +88,26 @@ TaskBehavior::TaskBehavior(const TimeDuration& period,
 
 void TaskBehavior::OnSuccess(const Timestamp& now)
 {
+    _retryCount.Reset();
     this->currentRetryDelay = this->minRetryDelay;
     this->expiration = this->period.IsNegative() ? Timestamp::Max() : now + this->period;
 }
 
-void TaskBehavior::OnResponseTimeout(const Timestamp& now)
+TaskTimeoutStats TaskBehavior::OnResponseTimeout(const Timestamp& now)
 {
+    auto finished = false;
     if (_retryCount.Retry()) {
         this->expiration = now + this->currentRetryDelay;
         this->currentRetryDelay = this->CalcNextRetryTimeout();
     }
     else {
-        _retryCount.Reset();
         this->currentRetryDelay = this->minRetryDelay;
         this->expiration = this->period.IsNegative() ? Timestamp::Max() : now + this->period;
+        _retryCount.Reset();
+        finished = true;
     }
+
+    return { _retryCount.MaximumRetries(), _retryCount.CurrentRetry(), finished, _retryCount.IsFixed() };
 }
 
 void TaskBehavior::Reset()

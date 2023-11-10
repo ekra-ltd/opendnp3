@@ -28,6 +28,28 @@
 namespace opendnp3
 {
 
+struct TaskTimeoutStats
+{
+    TaskTimeoutStats() = default;
+
+    TaskTimeoutStats(
+        const std::size_t maxRetryNumber,
+        const std::size_t currentRetryNumber,
+        const bool isFinished,
+        const bool isFixedRetriesCount
+    )
+        : MaxRetryNumber(maxRetryNumber)
+        , CurrentRetryNumber(currentRetryNumber)
+        , IsFinished(isFinished)
+        , IsFixedRetriesCount(isFixedRetriesCount)
+    {}
+
+    std::size_t MaxRetryNumber{ 0 };
+    std::size_t CurrentRetryNumber{ 0 };
+    bool IsFinished{ false };
+    bool IsFixedRetriesCount{ false };
+};
+
 /**
  *   All of the configuration parameters that control how the task will behave
  */
@@ -57,8 +79,9 @@ public:
 
     /**
      * Called when the task fails due to a response timeout
+     * return the current retry count and retries state
      */
-    void OnResponseTimeout(const Timestamp& now);
+    TaskTimeoutStats OnResponseTimeout(const Timestamp& now);
 
     /**
      * return the current expiration time
