@@ -33,8 +33,13 @@ SerialIOHandler::SerialIOHandler(const Logger& logger,
                                  const std::shared_ptr<IChannelListener>& listener,
                                  const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                  const ChannelRetry& retry,
-                                 SerialSettings settings)
-    : IOHandler(logger, false, listener), executor(executor), retry(retry), settings(std::move(settings))
+                                 SerialSettings settings,
+                                 std::shared_ptr<ISharedChannelData> sessionsManager,
+                                 ConnectionFailureCallback_t connectionFailureCallback)
+    : IOHandler(logger, false, listener, std::move(sessionsManager), std::move(connectionFailureCallback))
+    , executor(executor)
+    , retry(retry)
+    , settings(std::move(settings))
 {
 }
 
@@ -55,8 +60,16 @@ void SerialIOHandler::SuspendChannelAccept()
 
 void SerialIOHandler::OnChannelShutdown()
 {
-    this->retrytimer = this->executor->start(this->retry.reconnectDelay.value,
-                                             [this, self = shared_from_this()]() { this->BeginChannelAccept(); });
+    if (this->retry.InfiniteTries())
+    {
+        this->retrytimer = this->executor->start(this->retry.reconnectDelay.value,
+            [this, self = shared_from_this()]() { this->BeginChannelAccept(); });
+    }
+    else if (_connectionFailureCallback)
+    {
+        _openingChannel.exchange(false);
+        _connectionFailureCallback();
+    }
 }
 
 void SerialIOHandler::TryOpen(const TimeDuration& timeout)
@@ -72,7 +85,17 @@ void SerialIOHandler::TryOpen(const TimeDuration& timeout)
 
         ++this->statistics.numOpenFail;
 
-        auto callback = [this, timeout, self = shared_from_this()]() { this->TryOpen(this->retry.NextDelay(timeout)); };
+        auto callback = [this, timeout, self = shared_from_this()] {
+            if (this->retry.InfiniteTries())
+            {
+                this->TryOpen(this->retry.NextDelay(timeout));
+            }
+            else if (_connectionFailureCallback)
+            {
+                _openingChannel.exchange(false);
+                _connectionFailureCallback();
+            }
+        };
 
         this->retrytimer = this->executor->start(timeout.value, callback);
     }

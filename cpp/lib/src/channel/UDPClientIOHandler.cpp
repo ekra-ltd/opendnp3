@@ -32,12 +32,14 @@ UDPClientIOHandler::UDPClientIOHandler(const Logger& logger,
                                        const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                        const ChannelRetry& retry,
                                        const IPEndpoint& localEndpoint,
-                                       const IPEndpoint& remoteEndpoint)
-    : IOHandler(logger, false, listener),
-      executor(executor),
-      retry(retry),
-      localEndpoint(localEndpoint),
-      remoteEndpoint(remoteEndpoint)
+                                       const IPEndpoint& remoteEndpoint,
+                                       std::shared_ptr<ISharedChannelData> sessionsManager,
+                                       ConnectionFailureCallback_t connectionFailureCallback)
+    : IOHandler(logger, false, listener, std::move(sessionsManager), std::move(connectionFailureCallback))
+    , executor(executor)
+    , retry(retry)
+    , localEndpoint(localEndpoint)
+    , remoteEndpoint(remoteEndpoint)
 {
 }
 
@@ -59,9 +61,17 @@ void UDPClientIOHandler::SuspendChannelAccept()
 
 void UDPClientIOHandler::OnChannelShutdown()
 {
-    this->retrytimer = this->executor->start(this->retry.reconnectDelay.value, [this, self = shared_from_this()]() {
-        this->BeginChannelAccept();
-    });
+    if (this->retry.InfiniteTries())
+    {
+        this->retrytimer = this->executor->start(this->retry.reconnectDelay.value, [this, self = shared_from_this()]() {
+            this->BeginChannelAccept();
+        });
+    }
+    else if (_connectionFailureCallback)
+    {
+        _openingChannel.exchange(false);
+        _connectionFailureCallback();
+    }
 }
 
 bool UDPClientIOHandler::TryOpen(const TimeDuration& delay)
@@ -83,7 +93,17 @@ bool UDPClientIOHandler::TryOpen(const TimeDuration& delay)
 
             if (client)
             {
-                auto retry_cb = [self, newDelay, this]() { this->TryOpen(newDelay); };
+                auto retry_cb = [self, newDelay, this]() {
+                    if (this->retry.InfiniteTries())
+                    {
+                        this->TryOpen(newDelay);
+                    }
+                    else if (_connectionFailureCallback)
+                    {
+                        _openingChannel.exchange(false);
+                        _connectionFailureCallback();
+                    }
+                };
 
                 this->retrytimer = this->executor->start(delay.value, retry_cb);
             }

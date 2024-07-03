@@ -35,47 +35,47 @@ public:
     SerialTimeSyncTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
                        TimeDuration period, TimeDuration mixRetryTimeout, TimeDuration maxRetryTimeout);
 
-    virtual char const* Name() const override final
+    char const* Name() const final
     {
         return "serial time sync";
     }
 
-    virtual int Priority() const override final
+    int Priority() const final
     {
         return priority::TIME_SYNC;
     }
 
-    virtual bool BlocksLowerPriority() const override final
+    bool BlocksLowerPriority() const final
     {
         return true;
     }
 
-    virtual bool IsRecurring() const override final
+    bool IsRecurring() const final
     {
         return true;
     }
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override final;
+    bool BuildRequest(APDURequest& request, uint8_t seq) final;
 
-private:
-    virtual MasterTaskType GetTaskType() const override final
+    MasterTaskType GetTaskType() const final
     {
         return MasterTaskType::NON_LAN_TIME_SYNC;
     }
 
-    virtual bool IsEnabled() const override final
+private:
+    bool IsEnabled() const final
     {
         return true;
     }
 
-    virtual ResponseResult ProcessResponse(const APDUResponseHeader& response,
-                                           const ser4cpp::rseq_t& objects) override final;
+    ResponseResult ProcessResponse(const APDUResponseHeader& response,
+                                   const ser4cpp::rseq_t& objects) final;
 
     ResponseResult OnResponseDelayMeas(const APDUResponseHeader& response, const ser4cpp::rseq_t& objects);
 
     ResponseResult OnResponseWriteTime(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
 
-    virtual void Initialize() override final;
+    void Initialize() final;
 
     // < 0 implies the delay measure hasn't happened yet
     int64_t delay;

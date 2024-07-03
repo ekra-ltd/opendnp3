@@ -37,6 +37,8 @@ public:
     virtual bool OnLowerLayerUp() = 0;
 
     virtual bool OnLowerLayerDown() = 0;
+
+    virtual void OnResponseTimeout() = 0;
 };
 
 } // namespace opendnp3

@@ -35,8 +35,9 @@ TLSClientIOHandler::TLSClientIOHandler(const Logger& logger,
                                        TLSConfig config,
                                        const ChannelRetry& retry,
                                        const IPEndpointsList& remotes,
-                                       std::string adapter)
-    : IOHandler(logger, false, listener),
+                                       std::string adapter,
+                                       std::shared_ptr<ILinkSessionsManager> sessionsManager)
+    : IOHandler(logger, false, listener, std::move(sessionManager)),
       executor(executor),
       config(std::move(config)),
       retry(retry),

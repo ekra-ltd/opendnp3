@@ -20,6 +20,7 @@
 #include "master/MasterStack.h"
 
 #include "app/APDUBuilders.h"
+#include "logging/LogMacros.h"
 #include "master/HeaderConversions.h"
 #include "master/MasterContext.h"
 
@@ -31,14 +32,14 @@ MasterStack::MasterStack(const Logger& logger,
                          const std::shared_ptr<ISOEHandler>& SOEHandler,
                          const std::shared_ptr<IMasterApplication>& application,
                          const std::shared_ptr<IMasterScheduler>& scheduler,
-                         const std::shared_ptr<IOHandler>& iohandler,
+                         const std::shared_ptr<IOHandlersManager>& iohandlersManager,
                          const std::shared_ptr<IResourceManager>& manager,
                          const MasterStackConfig& config,
                          const LinkLayerConfig& linkConfig)
     : StackBase(logger,
                 executor,
                 application,
-                iohandler,
+                iohandlersManager,
                 manager,
                 config.master.maxRxFragSize,
                 linkConfig),
@@ -49,20 +50,21 @@ MasterStack::MasterStack(const Logger& logger,
                SOEHandler,
                application,
                scheduler,
-               config.master))
+               config.master,
+               iohandlersManager))
 {
     tstack.transport->SetAppLayer(*mcontext);
 }
 
 bool MasterStack::Enable()
 {
-    auto action = [self = shared_from_this()] { return self->iohandler->Enable(self); };
+    auto action = [self = shared_from_this()] { return self->iohandlersManager->Enable(self); };
     return this->executor->return_from<bool>(action);
 }
 
 bool MasterStack::Disable()
 {
-    auto action = [self = shared_from_this()] { return self->iohandler->Disable(self); };
+    auto action = [self = shared_from_this()] { return self->iohandlersManager->Disable(self); };
     return this->executor->return_from<bool>(action);
 }
 
@@ -75,6 +77,30 @@ StackStatistics MasterStack::GetStackStatistics()
 {
     auto get = [self = shared_from_this()]() -> StackStatistics { return self->CreateStatistics(); };
     return this->executor->return_from<StackStatistics>(get);
+}
+
+bool MasterStack::BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& /*context*/)
+{
+    if (this->iohandlersManager)
+    {
+        if (!this->iohandlersManager->PrepareChannel(true))
+        {
+            FORMAT_LOG_BLOCK(logger, flags::INFO, "Cannot transmit data on this connection")
+            return false;
+        }
+        if (const auto current = this->iohandlersManager->GetCurrent())
+        {
+            return current->BeginTransmit(shared_from_this(), buffer);
+        }
+    }
+    return false;
+}
+
+void MasterStack::OnResponseTimeout()
+{
+    if (this->iohandlersManager) {
+        iohandlersManager->NotifyTaskResult(false, false);
+    }
 }
 
 void MasterStack::SetLogFilters(const LogLevels& filters)

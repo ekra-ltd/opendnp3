@@ -29,6 +29,8 @@
 #endif
 
 #include "channel/DNP3Channel.h"
+#include "channel/IOHandlersManager.h"
+#include "channel/SharedChannelData.h"
 #include "channel/SerialIOHandler.h"
 #include "channel/TCPClientIOHandler.h"
 #include "channel/TCPServerIOHandler.h"
@@ -71,13 +73,41 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddTCPClient(const std::string& id,
                                                         const ChannelRetry& retry,
                                                         const std::vector<IPEndpoint>& hosts,
                                                         const std::string& local,
-                                                        std::shared_ptr<IChannelListener> listener)
+                                                        std::shared_ptr<IChannelListener> listener) const
 {
     auto create = [&]() -> std::shared_ptr<IChannel> {
-        auto clogger = this->logger.detach(id, levels);
-        auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = TCPClientIOHandler::Create(clogger, listener, executor, retry, IPEndpointsList(hosts), local);
-        return DNP3Channel::Create(clogger, executor, iohandler, this->resources);
+        const auto clogger = this->logger.detach(id, levels);
+        const auto executor = exe4cpp::StrandExecutor::create(this->io);
+        ChannelConnectionOptions primary{ IPEndpointsList(hosts) };
+        const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, listener, executor, retry, primary, boost::none, local);
+        return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
+    };
+
+    auto channel = this->resources->Bind<IChannel>(create);
+
+    if (!channel)
+    {
+        throw DNP3Error(Error::SHUTTING_DOWN);
+    }
+
+    return channel;
+}
+
+std::shared_ptr<IChannel> DNP3ManagerImpl::AddClientWithBackupChannel(
+    const std::string& id,
+    const opendnp3::LogLevels& levels,
+    const ChannelRetry& retry,
+    const ChannelConnectionOptions& primary,
+    const boost::optional<ChannelConnectionOptions>& backup,
+    const std::string& local,
+    std::shared_ptr<IChannelListener> listener
+) const
+{
+    auto create = [&]() -> std::shared_ptr<IChannel> {
+        const auto clogger = this->logger.detach(id, levels);
+        const auto executor = exe4cpp::StrandExecutor::create(this->io);
+        const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, listener, executor, retry, primary, backup, local);
+        return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
     };
 
     auto channel = this->resources->Bind<IChannel>(create);
@@ -94,18 +124,20 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddTCPServer(const std::string& id,
                                                         const LogLevels& levels,
                                                         ServerAcceptMode mode,
                                                         const IPEndpoint& endpoint,
-                                                        std::shared_ptr<IChannelListener> listener)
+                                                        std::shared_ptr<IChannelListener> listener) const
 {
     auto create = [&]() -> std::shared_ptr<IChannel> {
         std::error_code ec;
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = TCPServerIOHandler::Create(clogger, mode, listener, executor, endpoint, ec);
+        auto sessionManager = std::make_shared<SharedChannelData>(clogger);
+        auto iohandler = TCPServerIOHandler::Create(clogger, mode, listener, executor, endpoint, ec, sessionManager);
         if (ec)
         {
             throw DNP3Error(Error::UNABLE_TO_BIND_SERVER, ec);
         }
-        return DNP3Channel::Create(clogger, executor, iohandler, this->resources);
+        const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, iohandler, sessionManager);
+        return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
     };
 
     auto channel = this->resources->Bind<IChannel>(create);
@@ -123,13 +155,14 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddUDPChannel(const std::string& id,
                                                          const ChannelRetry& retry,
                                                          const IPEndpoint& localEndpoint,
                                                          const IPEndpoint& remoteEndpoint,
-                                                         std::shared_ptr<IChannelListener> listener)
+                                                         std::shared_ptr<IChannelListener> listener) const
 {
     auto create = [&]() -> std::shared_ptr<IChannel> {
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = UDPClientIOHandler::Create(clogger, listener, executor, retry, localEndpoint, remoteEndpoint);
-        return DNP3Channel::Create(clogger, executor, iohandler, this->resources);
+        ChannelConnectionOptions primary{ UDPSettings(localEndpoint, remoteEndpoint) };
+        const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, listener, executor, retry, primary, boost::none);
+        return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
     };
 
     auto channel = this->resources->Bind<IChannel>(create);
@@ -146,13 +179,14 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddSerial(const std::string& id,
                                                      const LogLevels& levels,
                                                      const ChannelRetry& retry,
                                                      SerialSettings settings,
-                                                     std::shared_ptr<IChannelListener> listener)
+                                                     std::shared_ptr<IChannelListener> listener) const
 {
     auto create = [&]() -> std::shared_ptr<IChannel> {
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = SerialIOHandler::Create(clogger, listener, executor, retry, settings);
-        return DNP3Channel::Create(clogger, executor, iohandler, this->resources);
+        ChannelConnectionOptions primary(settings);
+        const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, listener, executor, retry, primary);
+        return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
     };
 
     auto channel = this->resources->Bind<IChannel>(create);
@@ -178,8 +212,10 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddTLSClient(const std::string& id,
     auto create = [&]() -> std::shared_ptr<IChannel> {
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = TLSClientIOHandler::Create(clogger, listener, executor, config, retry, hosts, local);
-        return DNP3Channel::Create(clogger, executor, iohandler, this->resources);
+        auto sessionManager = std::make_shared<SharedChannelData>(clogger);
+        auto iohandler = TLSClientIOHandler::Create(clogger, listener, executor, config, retry, IPEndpointsList{ hosts }, local, sessionManager);
+        const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, iohandler, sessionManager);
+        return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
     };
 
     auto channel = this->resources->Bind<IChannel>(create);
@@ -208,12 +244,14 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddTLSServer(const std::string& id,
         std::error_code ec;
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
-        auto iohandler = TLSServerIOHandler::Create(clogger, mode, listener, executor, endpoint, config, ec);
+        auto sessionManager = std::make_shared<SharedChannelData>(clogger);
+        auto iohandler = TLSServerIOHandler::Create(clogger, mode, listener, executor, endpoint, config, ec, sessionManager);
         if (ec)
         {
             throw DNP3Error(Error::UNABLE_TO_BIND_SERVER, ec);
         }
-        return DNP3Channel::Create(clogger, executor, iohandler, this->resources);
+        const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, iohandler, sessionManager);
+        return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
     };
 
     auto channel = this->resources->Bind<IChannel>(create);
@@ -233,7 +271,7 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddTLSServer(const std::string& id,
 std::shared_ptr<IListener> DNP3ManagerImpl::CreateListener(std::string loggerid,
                                                            const LogLevels& levels,
                                                            const IPEndpoint& endpoint,
-                                                           const std::shared_ptr<IListenCallbacks>& callbacks)
+                                                           const std::shared_ptr<IListenCallbacks>& callbacks) const
 {
     auto create = [&]() -> std::shared_ptr<IListener> {
         std::error_code ec;

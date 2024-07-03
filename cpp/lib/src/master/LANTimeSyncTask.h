@@ -41,47 +41,47 @@ public:
     LANTimeSyncTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
                     TimeDuration period, TimeDuration mixRetryTimeout, TimeDuration maxRetryTimeout);
 
-    virtual char const* Name() const override final
+    char const* Name() const final
     {
         return "LAN time sync";
     }
 
-    virtual int Priority() const override final
+    int Priority() const final
     {
         return priority::TIME_SYNC;
     }
 
-    virtual bool BlocksLowerPriority() const override final
+    bool BlocksLowerPriority() const final
     {
         return true;
     }
 
-    virtual bool IsRecurring() const override final
+    bool IsRecurring() const final
     {
         return true;
     }
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override final;
+    bool BuildRequest(APDURequest& request, uint8_t seq) final;
 
-private:
-    virtual MasterTaskType GetTaskType() const override final
+    MasterTaskType GetTaskType() const final
     {
         return MasterTaskType::LAN_TIME_SYNC;
     }
 
-    virtual bool IsEnabled() const override final
+private:
+    bool IsEnabled() const final
     {
         return true;
     }
 
-    virtual ResponseResult ProcessResponse(const APDUResponseHeader& response,
-                                           const ser4cpp::rseq_t& objects) override final;
+    ResponseResult ProcessResponse(const APDUResponseHeader& response,
+                                   const ser4cpp::rseq_t& objects) final;
 
     ResponseResult OnResponseRecordCurrentTime(const APDUResponseHeader& response, const ser4cpp::rseq_t& objects);
 
     ResponseResult OnResponseWriteTime(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
 
-    virtual void Initialize() override final;
+    void Initialize() final;
 
     State state = State::RECORD_CURRENT_TIME;
 

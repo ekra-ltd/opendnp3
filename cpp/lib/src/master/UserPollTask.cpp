@@ -32,10 +32,35 @@ UserPollTask::UserPollTask(const std::shared_ptr<TaskContext>& context,
                            std::shared_ptr<ISOEHandler> soeHandler,
                            const Logger& logger,
                            TaskConfig config)
-    : PollTaskBase(context, app, std::move(soeHandler), behavior, logger, config),
+    : PollTaskBase(context, app, std::move(soeHandler), behavior, logger, std::move(config)),
       builder(std::move(builder)),
       recurring(recurring)
 {
+}
+
+int UserPollTask::Priority() const
+{
+    return priority::USER_POLL;
+}
+
+bool UserPollTask::BlocksLowerPriority() const
+{
+    return false;
+}
+
+bool UserPollTask::IsRecurring() const
+{
+    return recurring;
+}
+
+bool UserPollTask::IsEnabled() const
+{
+    return true;
+}
+
+MasterTaskType UserPollTask::GetTaskType() const
+{
+    return MasterTaskType::USER_POLL;
 }
 
 bool UserPollTask::BuildRequest(APDURequest& request, uint8_t seq)

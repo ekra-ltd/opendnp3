@@ -101,4 +101,9 @@ bool LinkLayer::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& u
     return ret;
 }
 
+void LinkLayer::OnResponseTimeout()
+{
+    // do nothing
+}
+
 } // namespace opendnp3

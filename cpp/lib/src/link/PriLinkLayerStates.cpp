@@ -91,17 +91,24 @@ PriStateBase& PLLS_Idle::TrySendUnconfirmed(LinkContext& ctx, ITransportSegment&
 {
     auto first = segments.GetSegment();
     auto output = ctx.FormatPrimaryBufferWithUnconfirmed(segments.GetAddresses(), first);
-    ctx.QueueTransmit(output, true);
-    return PLLS_SendUnconfirmedTransmitWait::Instance();
+    if (ctx.QueueTransmit(output, true))
+    {
+        return PLLS_SendUnconfirmedTransmitWait::Instance();
+    }
+    return *this;
 }
 
 PriStateBase& PLLS_Idle::TrySendRequestLinkStatus(LinkContext& ctx)
 {
     ctx.keepAliveTimeout = false;
-    ctx.QueueRequestLinkStatus(ctx.config.RemoteAddr);
-    ctx.listener->OnKeepAliveInitiated();
-    ctx.StartResponseTimer();
-    return PLLS_RequestLinkStatusWait::Instance();
+    if (ctx.QueueRequestLinkStatus(ctx.config.RemoteAddr))
+    {
+        ctx.listener->OnKeepAliveInitiated();
+        ctx.StartResponseTimer();
+        return PLLS_RequestLinkStatusWait::Instance();
+    }
+    ctx.listener->OnKeepAliveFailure();
+    return *this;
 }
 
 ////////////////////////////////////////////////////////

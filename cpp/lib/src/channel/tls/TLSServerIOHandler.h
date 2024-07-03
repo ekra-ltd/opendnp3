@@ -80,9 +80,10 @@ public:
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       const IPEndpoint& endpoint,
                                                       const TLSConfig& config,
-                                                      std::error_code& ec)
+                                                      std::error_code& ec,
+                                                      std::shared_ptr<ILinkSessionsManager> sessionsManager)
     {
-        return std::make_shared<TLSServerIOHandler>(logger, mode, listener, executor, endpoint, config, ec);
+        return std::make_shared<TLSServerIOHandler>(logger, mode, listener, executor, endpoint, config, ec, std::move(sessionManager));
     }
 
     TLSServerIOHandler(const Logger& logger,
@@ -91,7 +92,8 @@ public:
                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                        IPEndpoint endpoint,
                        TLSConfig config,
-                       std::error_code& ec);
+                       std::error_code& ec,
+                       std::shared_ptr<ILinkSessionsManager> sessionsManager);
 
 protected:
     virtual void ShutdownImpl() override;

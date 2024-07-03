@@ -24,6 +24,7 @@
 #include "opendnp3/master/TaskId.h"
 
 #include <memory>
+#include <utility>
 
 namespace opendnp3
 {
@@ -34,18 +35,22 @@ namespace opendnp3
 class TaskConfig
 {
 public:
-    TaskConfig(TaskId taskId, std::shared_ptr<ITaskCallback> pCallback) : taskId(taskId), pCallback(pCallback) {}
+    TaskConfig(TaskId taskId, std::shared_ptr<ITaskCallback> pCallback, bool canUseBackupChannel = true)
+        : taskId(taskId)
+        , pCallback(std::move(pCallback))
+        , canUseBackupChannel(canUseBackupChannel)
+    {}
 
     static TaskConfig Default()
     {
-        return TaskConfig(TaskId::Undefined(), nullptr);
+        return { TaskId::Undefined(), nullptr, true };
     }
 
     ///  --- syntax sugar for building configs -----
 
-    static TaskConfig With(std::shared_ptr<ITaskCallback> callback)
+    static TaskConfig With(std::shared_ptr<ITaskCallback> callback, bool canUseBackupChannel = true)
     {
-        return TaskConfig(TaskId::Undefined(), callback);
+        return { TaskId::Undefined(), std::move(callback), canUseBackupChannel };
     }
 
     TaskConfig() = delete;
@@ -53,6 +58,7 @@ public:
 public:
     TaskId taskId;
     std::shared_ptr<ITaskCallback> pCallback;
+    bool canUseBackupChannel{ true };
 };
 
 } // namespace opendnp3

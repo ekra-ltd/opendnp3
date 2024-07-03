@@ -35,35 +35,35 @@ public:
                            const TaskBehavior& behavior,
                            const Logger& logger);
 
-    virtual char const* Name() const override
+    char const* Name() const override
     {
         return "Disable Unsolicited";
     }
 
-    virtual bool IsRecurring() const override
+    bool IsRecurring() const override
     {
         return true;
     }
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override;
+    bool BuildRequest(APDURequest& request, uint8_t seq) override;
 
-    virtual int Priority() const override
+    int Priority() const override
     {
         return priority::DISABLE_UNSOLICITED;
     }
 
-    virtual bool BlocksLowerPriority() const override
+    bool BlocksLowerPriority() const override
     {
         return true;
     }
 
-private:
-    virtual MasterTaskType GetTaskType() const override
+    MasterTaskType GetTaskType() const override
     {
         return MasterTaskType::DISABLE_UNSOLICITED;
     }
 
-    virtual ResponseResult ProcessResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects) override;
+private:
+    ResponseResult ProcessResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects) override;
 };
 
 } // namespace opendnp3

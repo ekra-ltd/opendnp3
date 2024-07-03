@@ -33,14 +33,13 @@ namespace opendnp3
 
 DNP3Channel::DNP3Channel(const Logger& logger,
                          const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
-                         std::shared_ptr<IOHandler> iohandler,
+                         std::shared_ptr<IOHandlersManager> iohandlersManager,
                          std::shared_ptr<IResourceManager> manager)
     :
-
       logger(logger),
       executor(executor),
       scheduler(std::make_shared<MasterSchedulerBackend>(executor)),
-      iohandler(std::move(iohandler)),
+      iohandlersManager(std::move(iohandlersManager)),
       manager(std::move(manager)),
       resources(ResourceManager::Create())
 {
@@ -65,8 +64,8 @@ void DNP3Channel::ShutdownImpl()
         return;
 
     // shutdown the IO handler
-    this->iohandler->Shutdown();
-    this->iohandler.reset();
+    this->iohandlersManager->Shutdown();
+    this->iohandlersManager.reset();
 
     this->scheduler->Shutdown();
     this->scheduler.reset();
@@ -87,7 +86,7 @@ void DNP3Channel::ShutdownImpl()
 
 LinkStatistics DNP3Channel::GetStatistics()
 {
-    auto get = [this]() { return this->iohandler->Statistics(); };
+    auto get = [this]() { return this->iohandlersManager->Statistics(); };
     return this->executor->return_from<LinkStatistics>(get);
 }
 
@@ -109,7 +108,7 @@ std::shared_ptr<IMaster> DNP3Channel::AddMaster(const std::string& id,
                                                 const MasterStackConfig& config)
 {
     auto stack = MasterStack::Create(this->logger.detach(id), this->executor, SOEHandler, application, this->scheduler,
-                                     this->iohandler, this->resources, config);
+                                     this->iohandlersManager, this->resources, config);
 
     return this->AddStack(config.link, stack);
 }
@@ -120,26 +119,26 @@ std::shared_ptr<IOutstation> DNP3Channel::AddOutstation(const std::string& id,
                                                         const OutstationStackConfig& config)
 {
     auto stack = OutstationStack::Create(this->logger.detach(id), this->executor, commandHandler, application,
-                                         this->iohandler, this->resources, config);
+                                         this->iohandlersManager, this->resources, config);
 
     return this->AddStack(config.link, stack);
 }
 
 void DNP3Channel::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
-    this->iohandler->AddStatisticsHandler(statisticsChangeHandler);
+    this->iohandlersManager->AddStatisticsHandler(statisticsChangeHandler);
 }
 
 void DNP3Channel::RemoveStatisticsHandler()
 {
-    this->iohandler->RemoveStatisticsHandler();
+    this->iohandlersManager->RemoveStatisticsHandler();
 }
 
 template<class T> std::shared_ptr<T> DNP3Channel::AddStack(const LinkConfig& link, const std::shared_ptr<T>& stack)
 {
 
     auto create = [stack, route = Addresses(link.RemoteAddr, link.LocalAddr), self = this->shared_from_this()]() {
-        auto add = [stack, route, self]() -> bool { return self->iohandler->AddContext(stack, route); };
+        auto add = [stack, route, self]() -> bool { return self->iohandlersManager->AddContext(stack, route); };
 
         return self->executor->return_from<bool>(add) ? stack : nullptr;
     };

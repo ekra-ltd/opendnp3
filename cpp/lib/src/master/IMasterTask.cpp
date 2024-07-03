@@ -95,8 +95,10 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
         if (this->BlocksLowerPriority()) {
             this->context->AddBlock(*this);
         }
+        _retriesFinished = true;
         if (timeoutStats.IsFixedRetriesCount) {
             if (!timeoutStats.IsFinished) {
+                _retriesFinished = false;
                 FORMAT_LOG_BLOCK(
                     logger,
                     flags::WARN,
@@ -157,6 +159,11 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
     this->OnTaskComplete(result, now);
 }
 
+bool IMasterTask::IsEnabled() const
+{
+    return true;
+}
+
 void IMasterTask::OnResponseTimeout(Timestamp now)
 {
     this->CompleteTask(TaskCompletion::FAILURE_RESPONSE_TIMEOUT, now);
@@ -199,6 +206,21 @@ bool IMasterTask::OnStart(Timestamp now)
 void IMasterTask::SetMinExpiration()
 {
     this->behavior.Reset();
+}
+
+bool IMasterTask::IsBlocked() const
+{
+    return this->context->IsBlocked(*this);
+}
+
+bool IMasterTask::CanBeExecutedOnBackupChannel() const
+{
+    return config.canUseBackupChannel;
+}
+
+bool IMasterTask::OutOfRetries() const
+{
+    return _retriesFinished;
 }
 
 bool IMasterTask::ValidateSingleResponse(const APDUResponseHeader& header)

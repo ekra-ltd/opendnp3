@@ -22,6 +22,7 @@
 
 #include "LayerInterfaces.h"
 #include "app/AppSeqNum.h"
+#include "channel/IOHandlersManager.h"
 #include "master/HeaderBuilder.h"
 #include "master/IMasterScheduler.h"
 #include "master/MasterTasks.h"
@@ -55,12 +56,13 @@ class MContext final : public IUpperLayer, public std::enable_shared_from_this<M
 private:
     MContext(const Addresses& addresses,
              const Logger& logger,
-             const std::shared_ptr<exe4cpp::IExecutor>& executor,
+             std::shared_ptr<exe4cpp::IExecutor> executor,
              std::shared_ptr<ILowerLayer> lower,
              const std::shared_ptr<ISOEHandler>& SOEHandler,
              const std::shared_ptr<IMasterApplication>& application,
              std::shared_ptr<IMasterScheduler> scheduler,
-             const MasterParams& params);
+             const MasterParams& params,
+             std::shared_ptr<IOHandlersManager> iohandlersManager);
 
 public:
     enum class TaskState
@@ -78,7 +80,8 @@ public:
         const std::shared_ptr<ISOEHandler>& SOEHandler,
         const std::shared_ptr<IMasterApplication>& application,
         std::shared_ptr<IMasterScheduler> scheduler,
-        const MasterParams& params
+        const MasterParams& params,
+        const std::shared_ptr<IOHandlersManager>& iohandlersManager = nullptr
     );
 
     Logger logger;
@@ -116,10 +119,6 @@ public:
     bool OnTxReady() final;
 
     // additional virtual methods that can be overriden to implement secure authentication
-
-    virtual void OnParsedHeader(const ser4cpp::rseq_t& apdu,
-                                const APDUResponseHeader& header,
-                                const ser4cpp::rseq_t& objects);
 
     virtual void RecordLastRequest(const ser4cpp::rseq_t& apdu) {}
 
@@ -190,24 +189,6 @@ public:
 
     /// public state manipulation actions
 
-    TaskState ResumeActiveTask();
-
-    void CompleteActiveTask();
-
-    void QueueConfirm(const APDUHeader& header);
-
-    void StartResponseTimer();
-
-    void ProcessAPDU(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
-
-    bool CheckConfirmTransmit();
-
-    void ProcessResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
-
-    void ProcessUnsolicitedResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
-
-    void Transmit(const ser4cpp::rseq_t& data);
-
     bool DemandTimeSyncronization();
 
     bool ReadFile(const std::string& sourceFile, FileOperationTaskCallbackT callback);
@@ -230,8 +211,29 @@ private:
 
     void OnResponseTimeout();
 
+    void StartResponseTimer();
+
+    void CompleteActiveTask();
+
+    TaskState ResumeActiveTask();
+
+    void ProcessResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
+
+    void ProcessUnsolicitedResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
+
+    bool CheckConfirmTransmit();
+
+    void QueueConfirm(const APDUHeader& header);
+
+    void ProcessAPDU(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
+
+    void Transmit(const ser4cpp::rseq_t& data);
+
 protected:
     void ScheduleAdhocTask(const std::shared_ptr<IMasterTask>& task);
+    virtual void OnParsedHeader(const ser4cpp::rseq_t& apdu,
+        const APDUResponseHeader& header,
+        const ser4cpp::rseq_t& objects);
 
     // state switch lookups
 
@@ -255,6 +257,10 @@ private:
 
     /// file tx transfer block size
     uint32_t FileTransferMaxTxBlockSize;
+
+    std::shared_ptr<IOHandlersManager> iohandlersManager;
+
+    std::mutex _mtx;
 };
 
 } // namespace opendnp3

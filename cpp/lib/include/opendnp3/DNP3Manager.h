@@ -20,6 +20,7 @@
 #ifndef OPENDNP3_DNP3MANAGER_H
 #define OPENDNP3_DNP3MANAGER_H
 
+#include "channel/ChannelConnectionOptions.h"
 #include "opendnp3/ErrorCodes.h"
 #include "opendnp3/channel/ChannelRetry.h"
 #include "opendnp3/channel/IChannel.h"
@@ -34,6 +35,7 @@
 #include "opendnp3/logging/LogLevels.h"
 #include "opendnp3/master/IListenCallbacks.h"
 #include "opendnp3/util/TimeDuration.h"
+#include <boost/optional/optional.hpp>
 
 #include <memory>
 #include <system_error>
@@ -88,7 +90,27 @@ public:
                                            const ChannelRetry& retry,
                                            const std::vector<IPEndpoint>& hosts,
                                            const std::string& local,
-                                           std::shared_ptr<IChannelListener> listener);
+                                           std::shared_ptr<IChannelListener> listener) const;
+
+    /**
+     * Add a client with channel. Switches to and from backup channel on fail/success
+     *
+     * @param id Alias that will be used for logging purposes with this channel
+     * @param levels Bitfield that describes the logging level for this channel and associated sessions
+     * @param retry Retry parameters for failed channels
+     * @param primary Primary host address to use to connect to the remote outstation
+     * @param backup Backup host address to use to connect to the remote outstation
+     * @param local adapter address on which to attempt the connection (use 0.0.0.0 for all adapters)
+     * @param listener optional callback interface (can be nullptr) for info about the running channel
+     * @return shared_ptr to a channel interface
+     */
+    std::shared_ptr<IChannel> AddClientWithBackupChannel(const std::string& id,
+                                           const opendnp3::LogLevels& levels,
+                                           const ChannelRetry& retry,
+                                           const ChannelConnectionOptions& primary,
+                                           const boost::optional<ChannelConnectionOptions>& backup,
+                                           const std::string& local,
+                                           std::shared_ptr<IChannelListener> listener) const;
 
     /**
      * Add a persistent TCP server channel. Only accepts a single connection at a time.
@@ -105,7 +127,7 @@ public:
                                            const opendnp3::LogLevels& levels,
                                            ServerAcceptMode mode,
                                            const IPEndpoint& endpoint,
-                                           std::shared_ptr<IChannelListener> listener);
+                                           std::shared_ptr<IChannelListener> listener) const;
 
     /**
      * Add a persistent UDP channel.
@@ -124,7 +146,7 @@ public:
                                             const ChannelRetry& retry,
                                             const IPEndpoint& localEndpoint,
                                             const IPEndpoint& remoteEndpoint,
-                                            std::shared_ptr<IChannelListener> listener);
+                                            std::shared_ptr<IChannelListener> listener) const;
 
     /**
      * Add a persistent serial channel
@@ -141,7 +163,7 @@ public:
                                         const opendnp3::LogLevels& levels,
                                         const ChannelRetry& retry,
                                         SerialSettings settings,
-                                        std::shared_ptr<IChannelListener> listener);
+                                        std::shared_ptr<IChannelListener> listener) const;
 
     /**
      * Add a TLS client channel
@@ -164,7 +186,7 @@ public:
                                            const std::vector<IPEndpoint>& hosts,
                                            const std::string& local,
                                            const TLSConfig& config,
-                                           std::shared_ptr<IChannelListener> listener);
+                                           std::shared_ptr<IChannelListener> listener) const;
 
     /**
      * Add a TLS server channel
@@ -186,7 +208,7 @@ public:
                                            ServerAcceptMode mode,
                                            const IPEndpoint& endpoint,
                                            const TLSConfig& config,
-                                           std::shared_ptr<IChannelListener> listener);
+                                           std::shared_ptr<IChannelListener> listener) const;
 
     /**
      * Create a TCP listener that will be used to accept incoming connections
@@ -195,7 +217,7 @@ public:
     std::shared_ptr<IListener> CreateListener(std::string loggerid,
                                               const opendnp3::LogLevels& loglevel,
                                               const IPEndpoint& endpoint,
-                                              const std::shared_ptr<IListenCallbacks>& callback);
+                                              const std::shared_ptr<IListenCallbacks>& callback) const;
 
     /**
      * Create a TLS listener that will be used to accept incoming connections
@@ -206,7 +228,7 @@ public:
                                               const opendnp3::LogLevels& loglevel,
                                               const IPEndpoint& endpoint,
                                               const TLSConfig& config,
-                                              const std::shared_ptr<IListenCallbacks>& callbacks);
+                                              const std::shared_ptr<IListenCallbacks>& callbacks) const;
 
 private:
     std::unique_ptr<DNP3ManagerImpl> impl;

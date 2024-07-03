@@ -36,9 +36,12 @@ set(opendnp3_public_headers
     ./include/opendnp3/channel/IListener.h
     ./include/opendnp3/channel/IOpenDelayStrategy.h
     ./include/opendnp3/channel/IPEndpoint.h
+    ./include/opendnp3/channel/IPEndpointsList.h
     ./include/opendnp3/channel/PrintingChannelListener.h
     ./include/opendnp3/channel/SerialSettings.h
     ./include/opendnp3/channel/TLSConfig.h
+    ./include/opendnp3/channel/UDPSettings.h
+    ./include/opendnp3/channel/ChannelConnectionOptions.h
 
     ./include/opendnp3/decoder/Decoder.h
     ./include/opendnp3/decoder/IDecoderCallbacks.h
@@ -165,7 +168,7 @@ set(opendnp3_public_headers
     ./include/opendnp3/util/StaticOnly.h
     ./include/opendnp3/util/TimeDuration.h
     ./include/opendnp3/util/Timestamp.h
-	./include/opendnp3/util/Uncopyable.h
+    ./include/opendnp3/util/Uncopyable.h
     ./include/opendnp3/util/UTCTimestamp.h
 )
 
@@ -231,7 +234,6 @@ set(opendnp3_private_headers
     ./src/channel/IAsyncChannel.h
     ./src/channel/IChannelCallbacks.h
     ./src/channel/IOHandler.h
-    ./src/channel/IPEndpointsList.h
     ./src/channel/LoggingConnectionCondition.h
     ./src/channel/SerialChannel.h
     ./src/channel/SerialIOHandler.h
@@ -244,11 +246,16 @@ set(opendnp3_private_headers
     ./src/channel/UDPClient.h
     ./src/channel/UDPClientIOHandler.h
     ./src/channel/UDPSocketChannel.h
+    ./src/channel/IOHandlersManager.h
+    ./src/channel/IoSessionDescriptor.h
+    ./src/channel/ISharedChannelData.h
+    ./src/channel/SharedChannelData.h
+    ./src/channel/SharedTransmission.h
 
     ./src/decoder/DecoderImpl.h
     ./src/decoder/Indent.h
     ./src/decoder/LoggingHandler.h
-        
+
     ./src/gen/CommandStatusSerialization.h
     ./src/gen/DoubleBitSerialization.h
     ./src/gen/FlagsTypeSerialization.h
@@ -475,6 +482,12 @@ set(opendnp3_src
     ./src/channel/UDPClient.cpp
     ./src/channel/UDPClientIOHandler.cpp
     ./src/channel/UDPSocketChannel.cpp
+    ./src/channel/UDPSettings.cpp
+    ./src/channel/ChannelConnectionOptions.cpp
+    ./src/channel/IOHandlersManager.cpp
+    ./src/channel/IoSessionDescriptor.cpp
+    ./src/channel/SharedChannelData.cpp
+    ./src/channel/SharedTransmission.cpp
 
     ./src/decoder/Decoder.cpp
     ./src/decoder/DecoderImpl.cpp

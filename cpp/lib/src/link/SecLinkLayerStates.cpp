@@ -59,15 +59,21 @@ SecStateBase& SLLS_NotReset::OnConfirmedUserData(
 
 SecStateBase& SLLS_NotReset::OnResetLinkStates(LinkContext& ctx, uint16_t source)
 {
-    ctx.QueueAck(source);
-    ctx.ResetReadFCB();
-    return SLLS_TransmitWaitReset::Instance();
+    if (ctx.QueueAck(source))
+    {
+        ctx.ResetReadFCB();
+        return SLLS_TransmitWaitReset::Instance();
+    }
+    return *this;
 }
 
 SecStateBase& SLLS_NotReset::OnRequestLinkStatus(LinkContext& ctx, uint16_t source)
 {
-    ctx.QueueLinkStatus(source);
-    return SLLS_TransmitWaitNotReset::Instance();
+    if (ctx.QueueLinkStatus(source))
+    {
+        return SLLS_TransmitWaitNotReset::Instance();
+    }
+    return *this;
 }
 
 ////////////////////////////////////////////////////////
@@ -79,9 +85,12 @@ SecStateBase& SLLS_Reset::OnTestLinkStatus(LinkContext& ctx, uint16_t source, bo
 {
     if (ctx.nextReadFCB == fcb)
     {
-        ctx.QueueAck(source);
-        ctx.ToggleReadFCB();
-        return SLLS_TransmitWaitReset::Instance();
+        if (ctx.QueueAck(source))
+        {
+            ctx.ToggleReadFCB();
+            return SLLS_TransmitWaitReset::Instance();
+        }
+        return *this;
     }
 
     // "Re-transmit most recent response that contained function code 0 (ACK) or 1 (NACK)."
@@ -96,7 +105,10 @@ SecStateBase& SLLS_Reset::OnConfirmedUserData(
 {
     if (!isBroadcast)
     {
-        ctx.QueueAck(source);
+        if (!ctx.QueueAck(source))
+        {
+            return *this;
+        }
     }
 
     if (ctx.nextReadFCB == fcb)
@@ -114,15 +126,21 @@ SecStateBase& SLLS_Reset::OnConfirmedUserData(
 
 SecStateBase& SLLS_Reset::OnResetLinkStates(LinkContext& ctx, uint16_t source)
 {
-    ctx.QueueAck(source);
-    ctx.ResetReadFCB();
-    return SLLS_TransmitWaitReset::Instance();
+    if (ctx.QueueAck(source))
+    {
+        ctx.ResetReadFCB();
+        return SLLS_TransmitWaitReset::Instance();
+    }
+    return *this;
 }
 
 SecStateBase& SLLS_Reset::OnRequestLinkStatus(LinkContext& ctx, uint16_t source)
 {
-    ctx.QueueLinkStatus(source);
-    return SLLS_TransmitWaitReset::Instance();
+    if (ctx.QueueLinkStatus(source))
+    {
+        return SLLS_TransmitWaitReset::Instance();
+    }
+    return *this;
 }
 
 ////////////////////////////////////////////////////////

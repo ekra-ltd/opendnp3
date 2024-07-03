@@ -107,9 +107,9 @@ void LinkSession::OnWriteComplete(const std::error_code& ec, size_t /*num*/)
     }
 }
 
-void LinkSession::BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& /*session*/)
+bool LinkSession::BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& /*session*/)
 {
-    this->channel->BeginWrite(buffer);
+    return this->channel->BeginWrite(buffer);
 }
 
 bool LinkSession::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata)

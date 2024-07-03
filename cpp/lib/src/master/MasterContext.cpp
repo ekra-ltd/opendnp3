@@ -19,8 +19,6 @@
  */
 #include "MasterContext.h"
 
-
-
 #include "DeleteFileTask.h"
 #include "GetFileInfoTask.h"
 #include "GetFilesInDirectoryTask.h"
@@ -47,14 +45,15 @@ namespace opendnp3
 {
 MContext::MContext(const Addresses& addresses,
                    const Logger& logger,
-                   const std::shared_ptr<exe4cpp::IExecutor>& executor,
+                   std::shared_ptr<exe4cpp::IExecutor> executor,
                    std::shared_ptr<ILowerLayer> lower,
                    const std::shared_ptr<ISOEHandler>& SOEHandler,
                    const std::shared_ptr<IMasterApplication>& application,
                    std::shared_ptr<IMasterScheduler> scheduler,
-                   const MasterParams& params)
+                   const MasterParams& params,
+                   std::shared_ptr<IOHandlersManager> iohandlersManager)
     : logger(logger),
-      executor(executor),
+      executor(std::move(executor)),
       lower(std::move(lower)),
       addresses(addresses),
       params(params),
@@ -63,7 +62,8 @@ MContext::MContext(const Addresses& addresses,
       scheduler(std::move(scheduler)),
       tasks(params, logger, *application, SOEHandler),
       txBuffer(params.maxTxFragSize),
-      tstate(TaskState::IDLE)
+      tstate(TaskState::IDLE),
+      iohandlersManager(std::move(iohandlersManager))
 {
     FileTransferMaxRxBlockSize = params.maxRxFragSize
                                - LinkHeader::HEADER_SIZE
@@ -86,13 +86,26 @@ std::shared_ptr<MContext> MContext::Create(
     const std::shared_ptr<ISOEHandler>& SOEHandler,
     const std::shared_ptr<IMasterApplication>& application,
     std::shared_ptr<IMasterScheduler> scheduler,
-    const MasterParams& params)
+    const MasterParams& params,
+    const std::shared_ptr<IOHandlersManager>& iohandlersManager)
 {
-    return std::shared_ptr<MContext>(new MContext(addresses, logger, executor, lower, SOEHandler, application, scheduler, params));
+    auto ptr = std::shared_ptr<MContext>(new MContext(addresses, logger, executor, std::move(lower), SOEHandler, application, std::move(scheduler), params, iohandlersManager));
+    std::weak_ptr<MContext> weakPtr = ptr;
+    ptr->iohandlersManager->SetShutdownCallback([weakPtr] {
+        const auto shared = weakPtr.lock();
+        if (!shared)
+        {
+            return;
+        }
+        shared->isSending = false;
+        shared->tstate = TaskState::IDLE;
+    });
+    return ptr;
 }
 
 bool MContext::OnLowerLayerUp()
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     if (isOnline)
     {
         return false;
@@ -109,6 +122,7 @@ bool MContext::OnLowerLayerUp()
 
 bool MContext::OnLowerLayerDown()
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     if (!isOnline)
     {
         return false;
@@ -128,6 +142,7 @@ bool MContext::OnLowerLayerDown()
 
 bool MContext::OnReceive(const Message& message)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     if (!this->isOnline)
     {
         SIMPLE_LOG_BLOCK(this->logger, flags::ERR, "Ignorning rx data while offline");
@@ -161,6 +176,7 @@ bool MContext::OnReceive(const Message& message)
 
 bool MContext::OnTxReady()
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     if (!this->isOnline || !this->isSending)
     {
         return false;
@@ -203,6 +219,7 @@ void MContext::OnParsedHeader(const ser4cpp::rseq_t& /*apdu*/,
 
 void MContext::DirectOperate(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     this->ScheduleAdhocTask(CommandTask::CreateDirectOperate(this->tasks.context, std::move(commands),
                                                              this->params.controlQualifierMode, *application, callback,
@@ -211,6 +228,7 @@ void MContext::DirectOperate(CommandSet&& commands, const CommandResultCallbackT
 
 void MContext::SelectAndOperate(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     this->ScheduleAdhocTask(CommandTask::CreateSelectAndOperate(this->tasks.context, std::move(commands),
                                                                 this->params.controlQualifierMode, *application,
@@ -219,6 +237,7 @@ void MContext::SelectAndOperate(CommandSet&& commands, const CommandResultCallba
 
 void MContext::Select(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     this->ScheduleAdhocTask(CommandTask::CreateSelect(this->tasks.context, std::move(commands),
                                                       this->params.controlQualifierMode, *application, callback,
@@ -227,6 +246,7 @@ void MContext::Select(CommandSet&& commands, const CommandResultCallbackT& callb
 
 void MContext::Operate(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     this->ScheduleAdhocTask(CommandTask::CreateOperate(this->tasks.context, std::move(commands),
                                                       this->params.controlQualifierMode, *application, callback,
@@ -313,7 +333,7 @@ void MContext::QueueConfirm(const APDUHeader& header)
 
 bool MContext::CheckConfirmTransmit()
 {
-    if (this->isSending || this->confirmQueue.empty())
+    if (this->isSending || this->confirmQueue.empty() || !iohandlersManager->PrepareChannel(true))
     {
         return false;
     }
@@ -323,7 +343,7 @@ bool MContext::CheckConfirmTransmit()
     wrapper.SetFunction(confirm.function);
     wrapper.SetControl(confirm.control);
     if (statisticsChangeHandler) {
-        statisticsChangeHandler(StatisticsValueType::ConfirmationsSent, 1);
+        statisticsChangeHandler(iohandlersManager->IsBackupChannelUsed(), StatisticsValueType::ConfirmationsSent, 1);
     }
     this->Transmit(wrapper.ToRSeq());
     this->confirmQueue.pop_front();
@@ -332,14 +352,16 @@ bool MContext::CheckConfirmTransmit()
 
 void MContext::Transmit(const ser4cpp::rseq_t& data)
 {
-    logging::ParseAndLogRequestTx(this->logger, data);
-    assert(!this->isSending);
-    this->isSending = true;
-    this->lower->BeginTransmit(Message(this->addresses, data));
+    if (iohandlersManager->PrepareChannel(true)) {
+        logging::ParseAndLogRequestTx(this->logger, data);
+        assert(!this->isSending);
+        this->isSending = this->lower->BeginTransmit(Message(this->addresses, data));
+    }
 }
 
 bool MContext::DemandTimeSyncronization()
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const bool result = this->tasks.DemandTimeSync();
     if (result) {
         this->scheduler->Evaluate();
@@ -349,6 +371,7 @@ bool MContext::DemandTimeSyncronization()
 
 bool MContext::ReadFile(const std::string& sourceFile, FileOperationTaskCallbackT callback)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile,
                                                      callback, FileTransferMaxRxBlockSize);
     this->ScheduleAdhocTask(task);
@@ -357,6 +380,7 @@ bool MContext::ReadFile(const std::string& sourceFile, FileOperationTaskCallback
 
 bool MContext::WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger,
                                                       source, destFilename, FileTransferMaxTxBlockSize, callback);
     this->ScheduleAdhocTask(task);
@@ -365,6 +389,7 @@ bool MContext::WriteFile(std::shared_ptr<std::ifstream> source, const std::strin
 
 void MContext::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto task = std::make_shared<GetFilesInDirectoryTask>(this->tasks.context, *this->application, this->logger, sourceDirectory,
                                                                 callback, FileTransferMaxRxBlockSize);
     return this->ScheduleAdhocTask(task);
@@ -372,23 +397,27 @@ void MContext::GetFilesInDirectory(const std::string& sourceDirectory, const Get
 
 void MContext::GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto task = std::make_shared<GetFileInfoTask>(this->tasks.context, *this->application, this->logger, sourceFile, callback);
     return this->ScheduleAdhocTask(task);
 }
 
 void MContext::DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto task = std::make_shared<DeleteFileTask>(this->tasks.context, *this->application, this->logger, filename, callback);
     return this->ScheduleAdhocTask(task);
 }
 
 void MContext::AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     statisticsChangeHandler = changeHandler;
 }
 
 void MContext::RemoveStatisticsHandler()
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     statisticsChangeHandler = nullptr;
 }
 
@@ -406,7 +435,8 @@ std::shared_ptr<IMasterTask> MContext::AddScan(TimeDuration period,
     auto task = std::make_shared<UserPollTask>(
         this->tasks.context, builder,
         TaskBehavior::ImmediatePeriodic(period, params.taskRetryPeriod, params.maxTaskRetryPeriod, params.retryCount), true, *application,
-        soe_handler, logger, config);
+        soe_handler, logger, config
+    );
     this->ScheduleRecurringPollTask(task);
     return task;
 }
@@ -477,6 +507,7 @@ void MContext::ScanRange(
 
 void MContext::Write(const TimeAndInterval& value, uint16_t index, TaskConfig config)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     auto builder = [value, index](HeaderWriter& writer) -> bool {
         return writer.WriteSingleIndexedValue<ser4cpp::UInt16, TimeAndInterval>(QualifierCode::UINT16_CNT_UINT16_INDEX,
                                                                                 Group50Var4::Inst(), value, index);
@@ -490,6 +521,7 @@ void MContext::Write(const TimeAndInterval& value, uint16_t index, TaskConfig co
 
 void MContext::Restart(RestartType op, const RestartOperationCallbackT& callback, TaskConfig config)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     auto task = std::make_shared<RestartOperationTask>(this->tasks.context, *this->application, timeout, op, callback,
                                                        this->logger, config);
@@ -501,6 +533,7 @@ void MContext::PerformFunction(const std::string& name,
                                const HeaderBuilderT& builder,
                                TaskConfig config)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
     auto task = std::make_shared<EmptyResponseTask>(this->tasks.context, *this->application, name, func, builder,
                                                     timeout, this->logger, config);
@@ -510,11 +543,23 @@ void MContext::PerformFunction(const std::string& name,
 bool MContext::Run(const std::shared_ptr<IMasterTask>& task)
 {
     if (this->activeTask || this->tstate != TaskState::IDLE)
+    {
         return false;
+    }
 
+    if (this->iohandlersManager)
+    {
+        if (!this->iohandlersManager->PrepareChannel(task->CanBeExecutedOnBackupChannel()))
+        {
+            FORMAT_LOG_BLOCK(logger, flags::INFO, "Cannot run task: %s on this connection", task->Name())
+            this->CompleteActiveTask();
+            this->tstate = TaskState::IDLE;
+            return false;
+        }
+    }
     this->tstate = TaskState::TASK_READY;
     this->activeTask = task;
-    bool isTaskStarted = this->activeTask->OnStart(Timestamp(executor->get_time()));
+    const bool isTaskStarted = this->activeTask->OnStart(Timestamp(executor->get_time()));
     if (!isTaskStarted) {
         this->CompleteActiveTask();
         this->tstate = TaskState::IDLE;
@@ -640,7 +685,7 @@ MContext::TaskState MContext::OnResponse_WaitForResponse(const APDUResponseHeade
     auto now = Timestamp(this->executor->get_time());
 
     if (header.function == FunctionCode::CONFIRM && statisticsChangeHandler) {
-        statisticsChangeHandler(StatisticsValueType::ConfirmationsReceived, 1);
+        statisticsChangeHandler(iohandlersManager->IsBackupChannelUsed(), StatisticsValueType::ConfirmationsReceived, 1);
     }
 
     const auto result = this->activeTask->OnResponse(header, objects, now);
@@ -658,6 +703,12 @@ MContext::TaskState MContext::OnResponse_WaitForResponse(const APDUResponseHeade
     case (IMasterTask::ResponseResult::OK_REPEAT):
         return StartTask_TaskReady();
     default:
+        if (this->iohandlersManager) {
+            this->iohandlersManager->NotifyTaskResult(
+                true,
+                this->activeTask->GetTaskType() == MasterTaskType::USER_POLL
+            );
+        }
         // task completed or failed, either way go back to idle
         this->CompleteActiveTask();
         return TaskState::IDLE;
@@ -671,6 +722,10 @@ MContext::TaskState MContext::OnResponseTimeout_WaitForResponse()
     const auto now = Timestamp(this->executor->get_time());
     this->activeTask->OnResponseTimeout(now);
     this->solSeq.Increment();
+    if (this->activeTask->OutOfRetries() && this->iohandlersManager)
+    {
+        this->iohandlersManager->NotifyTaskResult(false, this->activeTask ? this->activeTask->GetTaskType() == MasterTaskType::USER_POLL : false);
+    }
     this->CompleteActiveTask();
     return TaskState::IDLE;
 }

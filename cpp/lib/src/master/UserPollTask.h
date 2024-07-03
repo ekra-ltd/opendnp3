@@ -50,34 +50,19 @@ public:
                  const Logger& logger,
                  TaskConfig config);
 
-    virtual int Priority() const override
-    {
-        return priority::USER_POLL;
-    }
+    int Priority() const override;
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override;
+    bool BuildRequest(APDURequest& request, uint8_t seq) override;
 
-    virtual bool BlocksLowerPriority() const override
-    {
-        return false;
-    }
+    bool BlocksLowerPriority() const override;
 
-    virtual bool IsRecurring() const override
-    {
-        return recurring;
-    }
+    bool IsRecurring() const override;
 
-    virtual bool IsEnabled() const override
-    {
-        return true;
-    }
+    bool IsEnabled() const override;
+
+    MasterTaskType GetTaskType() const override;
 
 private:
-    virtual MasterTaskType GetTaskType() const override
-    {
-        return MasterTaskType::USER_POLL;
-    }
-
     HeaderBuilderT builder;
     const bool recurring;
 };

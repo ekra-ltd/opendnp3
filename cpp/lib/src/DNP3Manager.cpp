@@ -46,16 +46,29 @@ std::shared_ptr<IChannel> DNP3Manager::AddTCPClient(const std::string& id,
                                                     const ChannelRetry& retry,
                                                     const std::vector<IPEndpoint>& hosts,
                                                     const std::string& local,
-                                                    std::shared_ptr<IChannelListener> listener)
+                                                    std::shared_ptr<IChannelListener> listener) const
 {
     return this->impl->AddTCPClient(id, levels, retry, hosts, local, std::move(listener));
+}
+
+std::shared_ptr<IChannel> DNP3Manager::AddClientWithBackupChannel(
+    const std::string& id,
+    const opendnp3::LogLevels& levels,
+    const ChannelRetry& retry,
+    const ChannelConnectionOptions& primary,
+    const boost::optional<ChannelConnectionOptions>& backup,
+    const std::string& local,
+    std::shared_ptr<IChannelListener> listener
+) const
+{
+    return this->impl->AddClientWithBackupChannel(id, levels, retry, primary, backup, local, std::move(listener));
 }
 
 std::shared_ptr<IChannel> DNP3Manager::AddTCPServer(const std::string& id,
                                                     const LogLevels& levels,
                                                     ServerAcceptMode mode,
                                                     const IPEndpoint& endpoint,
-                                                    std::shared_ptr<IChannelListener> listener)
+                                                    std::shared_ptr<IChannelListener> listener) const
 {
     return this->impl->AddTCPServer(id, levels, mode, endpoint, std::move(listener));
 }
@@ -65,7 +78,7 @@ std::shared_ptr<IChannel> DNP3Manager::AddUDPChannel(const std::string& id,
                                                      const ChannelRetry& retry,
                                                      const IPEndpoint& localEndpoint,
                                                      const IPEndpoint& remoteEndpoint,
-                                                     std::shared_ptr<IChannelListener> listener)
+                                                     std::shared_ptr<IChannelListener> listener) const
 {
     return this->impl->AddUDPChannel(id, levels, retry, localEndpoint, remoteEndpoint, std::move(listener));
 }
@@ -74,7 +87,7 @@ std::shared_ptr<IChannel> DNP3Manager::AddSerial(const std::string& id,
                                                  const LogLevels& levels,
                                                  const ChannelRetry& retry,
                                                  SerialSettings settings,
-                                                 std::shared_ptr<IChannelListener> listener)
+                                                 std::shared_ptr<IChannelListener> listener) const
 {
     return this->impl->AddSerial(id, levels, retry, std::move(settings), std::move(listener));
 }
@@ -85,7 +98,7 @@ std::shared_ptr<IChannel> DNP3Manager::AddTLSClient(const std::string& id,
                                                     const std::vector<IPEndpoint>& hosts,
                                                     const std::string& local,
                                                     const TLSConfig& config,
-                                                    std::shared_ptr<IChannelListener> listener)
+                                                    std::shared_ptr<IChannelListener> listener) const
 {
     return this->impl->AddTLSClient(id, levels, retry, hosts, local, config, std::move(listener));
 }
@@ -95,7 +108,7 @@ std::shared_ptr<IChannel> DNP3Manager::AddTLSServer(const std::string& id,
                                                     ServerAcceptMode mode,
                                                     const IPEndpoint& endpoint,
                                                     const TLSConfig& config,
-                                                    std::shared_ptr<IChannelListener> listener)
+                                                    std::shared_ptr<IChannelListener> listener) const
 {
     return this->impl->AddTLSServer(id, levels, mode, endpoint, config, std::move(listener));
 }
@@ -103,7 +116,7 @@ std::shared_ptr<IChannel> DNP3Manager::AddTLSServer(const std::string& id,
 std::shared_ptr<IListener> DNP3Manager::CreateListener(std::string loggerid,
                                                        const LogLevels& loglevel,
                                                        const IPEndpoint& endpoint,
-                                                       const std::shared_ptr<IListenCallbacks>& callbacks)
+                                                       const std::shared_ptr<IListenCallbacks>& callbacks) const
 {
     return impl->CreateListener(std::move(loggerid), loglevel, endpoint, callbacks);
 }
@@ -112,7 +125,7 @@ std::shared_ptr<IListener> DNP3Manager::CreateListener(std::string loggerid,
                                                        const LogLevels& loglevel,
                                                        const IPEndpoint& endpoint,
                                                        const TLSConfig& config,
-                                                       const std::shared_ptr<IListenCallbacks>& callbacks)
+                                                       const std::shared_ptr<IListenCallbacks>& callbacks) const
 {
     return impl->CreateListener(std::move(loggerid), loglevel, endpoint, config, callbacks);
 }

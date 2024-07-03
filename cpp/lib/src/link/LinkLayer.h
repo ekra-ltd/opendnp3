@@ -43,10 +43,11 @@ public:
 
     // ---- Events from below: ILinkSession / IFrameSink  ----
 
-    virtual bool OnLowerLayerUp() override;
-    virtual bool OnLowerLayerDown() override;
-    virtual bool OnTxReady() override;
-    virtual bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) override;
+    bool OnLowerLayerUp() override;
+    bool OnLowerLayerDown() override;
+    bool OnTxReady() override;
+    bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) override;
+    void OnResponseTimeout() override;
 
     // ---- Events from above: ILinkLayer ----
 

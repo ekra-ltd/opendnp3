@@ -40,22 +40,34 @@ public:
                                                    const std::shared_ptr<IChannelListener>& listener,
                                                    const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                    const ChannelRetry& retry,
-                                                   const SerialSettings& settings)
+                                                   const SerialSettings& settings,
+                                                   std::shared_ptr<ISharedChannelData> sessionsManager,
+                                                   ConnectionFailureCallback_t connectionFailureCallback = []{})
     {
-        return std::make_shared<SerialIOHandler>(logger, listener, executor, retry, settings);
+        return std::make_shared<SerialIOHandler>(
+            logger,
+            listener,
+            executor,
+            retry,
+            settings,
+            std::move(sessionsManager),
+            std::move(connectionFailureCallback)
+        );
     }
 
     SerialIOHandler(const Logger& logger,
                     const std::shared_ptr<IChannelListener>& listener,
                     const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                     const ChannelRetry& retry,
-                    SerialSettings settings);
+                    SerialSettings settings,
+                    std::shared_ptr<ISharedChannelData> sessionsManager,
+                    ConnectionFailureCallback_t connectionFailureCallback = []{});
 
 protected:
-    virtual void ShutdownImpl() override;
-    virtual void BeginChannelAccept() override;
-    virtual void SuspendChannelAccept() override;
-    virtual void OnChannelShutdown() override;
+    void ShutdownImpl() override;
+    void BeginChannelAccept() override;
+    void SuspendChannelAccept() override;
+    void OnChannelShutdown() override;
 
 private:
     void TryOpen(const TimeDuration& timeout);

@@ -63,9 +63,9 @@ public:
 
     bool IsAllowed(uint32_t headerCount, GroupVariation gv, QualifierCode qc) override;
 
-private:
     MasterTaskType GetTaskType() const override;
 
+private:
     IINField ProcessHeader(const CountHeader& header, const ICollection<Group52Var1>& values) override;
     IINField ProcessHeader(const CountHeader& header, const ICollection<Group52Var2>& values) override;
 

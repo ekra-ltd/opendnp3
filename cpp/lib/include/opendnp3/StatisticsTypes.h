@@ -20,55 +20,57 @@ namespace opendnp3
         LostConnections
     };
 
-    using StatisticsChangeHandler_t = std::function<void(StatisticsValueType, long long)>;
+    using StatisticsChangeHandler_t = std::function<void(bool, StatisticsValueType, long long)>;
 
     struct StatisticValueWithEvent
     {
-        StatisticValueWithEvent(uint64_t value = 0,
+        StatisticValueWithEvent(
+            int64_t value = 0,
             StatisticsValueType valueType = StatisticsValueType::None,
-            StatisticsChangeHandler_t handler = nullptr)
-            : value(value),
-            valueType(valueType),
-            changeHandler(std::move(handler))
+            StatisticsChangeHandler_t handler = nullptr
+        )
+            : _value(value)
+            , _valueType(valueType)
+            , _changeHandler(std::move(handler))
         { }
 
-        uint64_t value;
-        StatisticsValueType valueType;
+        int64_t _value;
+        StatisticsValueType _valueType;
 
-        uint64_t& operator++()
+        int64_t& operator++()
         {
-            ++value;
-            if (changeHandler) {
-                changeHandler(valueType, 1);
+            ++_value;
+            if (_changeHandler) {
+                _changeHandler(false, _valueType, 1);
             }
-            return value;
+            return _value;
         }
 
-        uint64_t operator++(int)
+        int64_t operator++(int /*v*/)
         {
-            const uint64_t old = value;
+            const int64_t old = _value;
             operator++();
-            if (changeHandler) {
-                changeHandler(valueType, 1);
+            if (_changeHandler) {
+                _changeHandler(false, _valueType, 1);
             }
             return old;
         }
 
-        uint64_t& operator+=(const uint64_t& rhs)
+        int64_t& operator+=(const int64_t& rhs)
         {
-            value += rhs;
-            if (changeHandler) {
-                changeHandler(valueType, rhs);
+            _value += rhs;
+            if (_changeHandler) {
+                _changeHandler(false, _valueType, rhs);
             }
-            return value;
+            return _value;
         }
 
-        StatisticValueWithEvent& operator=(const uint64_t& other)
+        StatisticValueWithEvent& operator=(const int64_t& other)
         {
-            value = other;
+            _value = other;
             return *this;
         }
 
-        StatisticsChangeHandler_t changeHandler;
+        StatisticsChangeHandler_t _changeHandler;
     };
 }

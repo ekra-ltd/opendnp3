@@ -64,19 +64,19 @@ public:
         return false;
     }
 
-private:
     MasterTaskType GetTaskType() const override
     {
         return MasterTaskType::USER_TASK;
     }
 
+private:
     const std::string name;
 
     FunctionCode func;
     HeaderBuilderT format;
 
     IMasterTask::ResponseResult ProcessResponse(const APDUResponseHeader& header,
-                                                const ser4cpp::rseq_t& objects) override final;
+                                                const ser4cpp::rseq_t& objects) override;
 };
 
 } // namespace opendnp3

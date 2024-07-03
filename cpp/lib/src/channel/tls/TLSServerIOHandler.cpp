@@ -43,8 +43,9 @@ TLSServerIOHandler::TLSServerIOHandler(const Logger& logger,
                                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                                        IPEndpoint endpoint,
                                        TLSConfig config,
-                                       std::error_code& ec)
-    : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener),
+                                       std::error_code& ec,
+                                       std::shared_ptr<ILinkSessionsManager> sessionsManager)
+    : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener, std::move(sessionManager)),
       executor(std::move(executor)),
       endpoint(std::move(endpoint)),
       config(std::move(config)),

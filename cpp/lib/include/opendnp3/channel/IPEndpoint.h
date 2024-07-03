@@ -21,6 +21,7 @@
 #define OPENDNP3_IPENDPOINT_H
 
 #include <cstdint>
+#include <ostream>
 #include <string>
 
 namespace opendnp3
@@ -28,7 +29,8 @@ namespace opendnp3
 
 struct IPEndpoint
 {
-    IPEndpoint(const std::string& address, uint16_t port) : address(address), port(port) {}
+    IPEndpoint() = default;
+    IPEndpoint(std::string address, uint16_t port) : address(std::move(address)), port(port), initialized(true) {}
 
     static IPEndpoint AllAdapters(uint16_t port)
     {
@@ -41,7 +43,26 @@ struct IPEndpoint
     }
 
     std::string address;
-    uint16_t port;
+    uint16_t port{ 0 };
+    bool initialized{ false };
+
+    friend bool operator==(const IPEndpoint& lhs, const IPEndpoint& rhs)
+    {
+        return lhs.address == rhs.address
+            && lhs.port == rhs.port
+            && lhs.initialized == rhs.initialized;
+    }
+
+    friend bool operator!=(const IPEndpoint& lhs, const IPEndpoint& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const IPEndpoint& obj)
+    {
+        return os << "address: " << obj.address
+            << " port: " << obj.port;
+    }
 };
 
 } // namespace opendnp3

@@ -21,6 +21,7 @@
 #ifndef OPENDNP3_TLS_CONFIG_H
 #define OPENDNP3_TLS_CONFIG_H
 
+#include "opendnp3/channel/IPEndpointsList.h"
 #include <string>
 
 namespace opendnp3
@@ -49,22 +50,22 @@ struct TLSConfig
      * data.
      *
      */
-    TLSConfig(const std::string& peerCertFilePath,
-              const std::string& localCertFilePath,
-              const std::string& privateKeyFilePath,
+    TLSConfig(std::string peerCertFilePath,
+              std::string localCertFilePath,
+              std::string privateKeyFilePath,
               bool allowTLSv10 = false,
               bool allowTLSv11 = false,
               bool allowTLSv12 = true,
               bool allowTLSv13 = true,
-              const std::string& cipherList = "")
-        : peerCertFilePath(peerCertFilePath),
-          localCertFilePath(localCertFilePath),
-          privateKeyFilePath(privateKeyFilePath),
+              std::string cipherList = "")
+        : peerCertFilePath(std::move(peerCertFilePath)),
+          localCertFilePath(std::move(localCertFilePath)),
+          privateKeyFilePath(std::move(privateKeyFilePath)),
           allowTLSv10(allowTLSv10),
           allowTLSv11(allowTLSv11),
           allowTLSv12(allowTLSv12),
           allowTLSv13(allowTLSv13),
-          cipherList(cipherList)
+          cipherList(std::move(cipherList))
     {
     }
 
@@ -93,6 +94,25 @@ struct TLSConfig
 
     /// openssl format cipher list
     std::string cipherList;
+
+    IPEndpointsList hosts;
+
+    friend bool operator==(const TLSConfig& lhs, const TLSConfig& rhs)
+    {
+        return lhs.peerCertFilePath == rhs.peerCertFilePath
+            && lhs.localCertFilePath == rhs.localCertFilePath
+            && lhs.privateKeyFilePath == rhs.privateKeyFilePath
+            && lhs.allowTLSv10 == rhs.allowTLSv10
+            && lhs.allowTLSv11 == rhs.allowTLSv11
+            && lhs.allowTLSv12 == rhs.allowTLSv12
+            && lhs.allowTLSv13 == rhs.allowTLSv13
+            && lhs.cipherList == rhs.cipherList;
+    }
+
+    friend bool operator!=(const TLSConfig& lhs, const TLSConfig& rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 } // namespace opendnp3

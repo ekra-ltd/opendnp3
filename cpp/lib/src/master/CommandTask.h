@@ -87,45 +87,45 @@ public:
                                                       Logger logger);
 
 
-    virtual char const* Name() const override final
+    char const* Name() const final
     {
         return "Command Task";
     }
 
-    virtual int Priority() const override final
+    int Priority() const final
     {
         return priority::COMMAND;
     }
 
-    virtual bool BlocksLowerPriority() const override final
+    bool BlocksLowerPriority() const final
     {
         return false;
     }
 
-    virtual bool IsRecurring() const override final
+    bool IsRecurring() const final
     {
         return false;
     }
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override final;
+    bool BuildRequest(APDURequest& request, uint8_t seq) final;
 
-private:
-    virtual bool IsEnabled() const override final
-    {
-        return true;
-    }
-
-    virtual MasterTaskType GetTaskType() const override final
+    MasterTaskType GetTaskType() const final
     {
         return MasterTaskType::USER_TASK;
     }
 
-    virtual void Initialize() override final;
+private:
+    bool IsEnabled() const final
+    {
+        return true;
+    }
 
-    virtual ResponseResult ProcessResponse(const APDUResponseHeader& header,
-                                           const ser4cpp::rseq_t& objects) override final;
+    void Initialize() final;
 
-    virtual void OnTaskComplete(TaskCompletion result, Timestamp now) override final;
+    ResponseResult ProcessResponse(const APDUResponseHeader& header,
+                                   const ser4cpp::rseq_t& objects) final;
+
+    void OnTaskComplete(TaskCompletion result, Timestamp now) final;
 
     ResponseResult ProcessResponse(const ser4cpp::rseq_t& objects);
 

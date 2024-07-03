@@ -291,8 +291,7 @@ void OContext::BeginUnsolTx(APDUResponse& response)
 void OContext::BeginTx(uint16_t destination, const ser4cpp::rseq_t& message)
 {
     logging::ParseAndLogResponseTx(this->logger, message);
-    this->isTransmitting = true;
-    this->lower->BeginTransmit(Message(Addresses(this->addresses.source, destination), message));
+    this->isTransmitting = this->lower->BeginTransmit(Message(Addresses(this->addresses.source, destination), message));
 }
 
 void OContext::CheckForTaskStart()

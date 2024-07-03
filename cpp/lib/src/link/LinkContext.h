@@ -91,11 +91,11 @@ public:
     ser4cpp::rseq_t FormatPrimaryBufferWithUnconfirmed(const Addresses& addr, const ser4cpp::rseq_t& tpdu);
 
     // --- Helpers for queueing frames ---
-    void QueueAck(uint16_t destination);
-    void QueueLinkStatus(uint16_t destination);
-    void QueueRequestLinkStatus(uint16_t destination);
+    bool QueueAck(uint16_t destination);
+    bool QueueLinkStatus(uint16_t destination);
+    bool QueueRequestLinkStatus(uint16_t destination);
 
-    void QueueTransmit(const ser4cpp::rseq_t& buffer, bool primary);
+    bool QueueTransmit(const ser4cpp::rseq_t& buffer, bool primary);
 
     // --- public members ----
 

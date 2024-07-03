@@ -37,8 +37,14 @@ EventScanTask::EventScanTask(const std::shared_ptr<TaskContext>& context,
                              ClassField classes,
                              const Logger& logger)
     : PollTaskBase(
-          context, application, std::move(soeHandler), TaskBehavior::ReactsToIINOnly(), logger, TaskConfig::Default()),
-      classes(classes.OnlyEventClasses())
+          context,
+        application,
+        std::move(soeHandler),
+        TaskBehavior::ReactsToIINOnly(),
+        logger,
+        TaskConfig::Default()
+    )
+    , classes(classes.OnlyEventClasses())
 {
 }
 

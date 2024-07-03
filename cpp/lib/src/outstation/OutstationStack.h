@@ -22,6 +22,7 @@
 
 #include "StackBase.h"
 #include "channel/IOHandler.h"
+#include "logging/LogMacros.h"
 #include "outstation/OutstationContext.h"
 #include "transport/TransportStack.h"
 
@@ -47,7 +48,7 @@ public:
                     const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                     const std::shared_ptr<ICommandHandler>& commandHandler,
                     const std::shared_ptr<IOutstationApplication>& application,
-                    const std::shared_ptr<IOHandler>& iohandler,
+                    const std::shared_ptr<IOHandlersManager>& iohandlersManager,
                     const std::shared_ptr<IResourceManager>& manager,
                     const OutstationStackConfig& config,
                     const LinkLayerConfig& linkConfig);
@@ -56,12 +57,12 @@ public:
                                                    const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                    const std::shared_ptr<ICommandHandler>& commandHandler,
                                                    const std::shared_ptr<IOutstationApplication>& application,
-                                                   const std::shared_ptr<IOHandler>& iohandler,
+                                                   const std::shared_ptr<IOHandlersManager>& iohandlersManager,
                                                    const std::shared_ptr<IResourceManager>& manager,
                                                    const OutstationStackConfig& config)
     {
         const auto lc = LinkLayerConfig(config.link, config.outstation.params.respondToAnyMaster);
-        auto ret = std::make_shared<OutstationStack>(logger, executor, commandHandler, application, iohandler, manager,
+        auto ret = std::make_shared<OutstationStack>(logger, executor, commandHandler, application, iohandlersManager, manager,
                                                      config, lc);
 
         ret->tstack.link->SetRouter(*ret);
@@ -101,10 +102,25 @@ public:
         return this->tstack.link->OnFrame(header, userdata);
     }
 
-    void BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& context) final
+    bool BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& /*context*/) final
     {
-        this->iohandler->BeginTransmit(shared_from_this(), buffer);
+        if (this->iohandlersManager)
+        {
+            if (!this->iohandlersManager->PrepareChannel(true))
+            {
+                FORMAT_LOG_BLOCK(logger, flags::INFO, "Cannot transmit data on this connection")
+                return false;
+            }
+            if (const auto current = this->iohandlersManager->GetCurrent())
+            {
+                return current->BeginTransmit(shared_from_this(), buffer);
+            }
+        }
+        
+        return false;
     }
+
+    void OnResponseTimeout() override;
 
     // --------- Implement IOutstation ---------
 
