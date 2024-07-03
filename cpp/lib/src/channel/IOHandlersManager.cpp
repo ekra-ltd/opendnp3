@@ -253,6 +253,7 @@ namespace opendnp3
 
     void IOHandlersManager::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler) const
     {
+        std::lock_guard<std::mutex> lock{ _mtx };
         auto primaryHandler = [statisticsChangeHandler](const bool /*isBackupChannel*/, StatisticsValueType type, int64_t value) {
             if (statisticsChangeHandler) {
                 statisticsChangeHandler(false, type, value);
@@ -272,6 +273,7 @@ namespace opendnp3
 
     void IOHandlersManager::RemoveStatisticsHandler() const
     {
+        std::lock_guard<std::mutex> lock{ _mtx };
         _primaryChannel->RemoveStatisticsHandler();
         if (_backupChannel)
         {
