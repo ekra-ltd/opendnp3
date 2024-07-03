@@ -25,6 +25,7 @@
 #include "opendnp3/StatisticsTypes.h"
 #include "opendnp3/gen/StopBits.h"
 #include "opendnp3/util/TimeDuration.h"
+#include <ostream>
 #include <string>
 
 namespace opendnp3
