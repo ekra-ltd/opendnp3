@@ -65,6 +65,60 @@ struct SerialSettings
 
     /// Some physical layers need time to "settle" so that the first tx isn't lost
     TimeDuration asyncOpenDelay;
+
+    friend bool operator==(const SerialSettings& lhs, const SerialSettings& rhs)
+    {
+        return lhs.deviceName == rhs.deviceName
+            && lhs.baud == rhs.baud
+            && lhs.dataBits == rhs.dataBits
+            && lhs.stopBits == rhs.stopBits
+            && lhs.parity == rhs.parity
+            && lhs.flowType == rhs.flowType
+            && lhs.asyncOpenDelay == rhs.asyncOpenDelay;
+    }
+
+    friend bool operator!=(const SerialSettings& lhs, const SerialSettings& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    friend std::ostream& operator <<(std::ostream& cout, const SerialSettings& obj)
+    {
+        cout << "com-port, name = " << obj.deviceName << ", baudrate = " << obj.baud << ", parity = ";
+        switch (obj.parity) {
+            case Parity::Even:
+                cout << "even";
+                break;
+            case Parity::Odd:
+                cout << "odd";
+                break;
+            case Parity::None:
+                cout << "none";
+                break;
+            default:
+                cout << "undefined";
+                break;
+        }
+        cout << ", stopbits = ";
+        switch (obj.stopBits) {
+            case StopBits::One:
+                cout << "1";
+                break;
+            case StopBits::OnePointFive:
+                cout << "1.5";
+                break;
+            case StopBits::Two:
+                cout << "2";
+                break;
+            case StopBits::None:
+                cout << "none";
+                break;
+            default:
+                cout << "undefined";
+                break;
+        }
+        return cout;
+    }
 };
 
 } // namespace opendnp3

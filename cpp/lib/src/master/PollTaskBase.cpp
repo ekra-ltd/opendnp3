@@ -24,6 +24,8 @@
 
 #include "opendnp3/logging/LogLevels.h"
 
+#include <utility>
+
 namespace opendnp3
 {
 
@@ -33,8 +35,13 @@ PollTaskBase::PollTaskBase(const std::shared_ptr<TaskContext>& context,
                            const TaskBehavior& behavior,
                            const Logger& logger,
                            TaskConfig config)
-    : IMasterTask(context, application, behavior, logger, config), handler(std::move(handler))
+    : IMasterTask(context, application, behavior, logger, std::move(config)), handler(std::move(handler))
 {
+}
+
+const char* PollTaskBase::Name() const
+{
+    return "Application Poll";
 }
 
 void PollTaskBase::Initialize()

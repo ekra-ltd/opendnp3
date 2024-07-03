@@ -41,12 +41,12 @@ namespace opendnp3
 
         bool BuildRequest(APDURequest& request, uint8_t seq) final;
 
-    private:
         MasterTaskType GetTaskType() const final
         {
             return MasterTaskType::READ_FILE_TASK;
         }
 
+    private:
         bool IsEnabled() const final
         {
             return true;

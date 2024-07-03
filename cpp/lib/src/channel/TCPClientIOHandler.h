@@ -21,11 +21,10 @@
 #define OPENDNP3_TCPCLIENTIOHANDLER_H
 
 #include "channel/IOHandler.h"
-#include "channel/IPEndpointsList.h"
 #include "channel/TCPClient.h"
 
 #include "opendnp3/channel/ChannelRetry.h"
-#include "opendnp3/channel/IPEndpoint.h"
+#include "opendnp3/channel/IPEndpointsList.h"
 
 #include <exe4cpp/Timer.h>
 
@@ -41,23 +40,36 @@ public:
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       const ChannelRetry& retry,
                                                       const IPEndpointsList& remotes,
-                                                      const std::string& adapter)
+                                                      const std::string& adapter,
+                                                      std::shared_ptr<ISharedChannelData> sessionsManager,
+                                                      ConnectionFailureCallback_t connectionFailureCallback = []{})
     {
-        return std::make_shared<TCPClientIOHandler>(logger, listener, executor, retry, remotes, adapter);
+        return std::make_shared<TCPClientIOHandler>(
+            logger,
+            listener,
+            executor,
+            retry,
+            remotes,
+            adapter,
+            std::move(sessionsManager),
+            std::move(connectionFailureCallback)
+        );
     }
 
     TCPClientIOHandler(const Logger& logger,
                        const std::shared_ptr<IChannelListener>& listener,
-                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
+                       std::shared_ptr<exe4cpp::StrandExecutor> executor,
                        const ChannelRetry& retry,
                        const IPEndpointsList& remotes,
-                       std::string adapter);
+                       std::string adapter,
+                       std::shared_ptr<ISharedChannelData> sessionsManager,
+                       ConnectionFailureCallback_t connectionFailureCallback);
 
 protected:
-    void ShutdownImpl() final;
-    void BeginChannelAccept() final;
-    void SuspendChannelAccept() final;
-    void OnChannelShutdown() final;
+    void ShutdownImpl() override;
+    void BeginChannelAccept() override;
+    void SuspendChannelAccept() override;
+    void OnChannelShutdown() override;
 
 private:
     bool StartConnect(const TimeDuration& delay);

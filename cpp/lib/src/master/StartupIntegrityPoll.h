@@ -44,37 +44,37 @@ public:
                          const TaskBehavior& behavior,
                          const Logger& logger);
 
-    virtual bool IsRecurring() const override
+    bool IsRecurring() const override
     {
         return true;
     }
 
-    virtual const char* Name() const override
+    const char* Name() const override
     {
         return "Startup Integrity Poll";
     };
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override;
+    bool BuildRequest(APDURequest& request, uint8_t seq) override;
 
-    virtual int Priority() const override
+    int Priority() const override
     {
         return priority::INTEGRITY_POLL;
     }
 
-    virtual bool BlocksLowerPriority() const override
+    bool BlocksLowerPriority() const override
     {
         return true;
+    }
+
+    MasterTaskType GetTaskType() const override
+    {
+        return MasterTaskType::STARTUP_INTEGRITY_POLL;
     }
 
 private:
     ClassField classes;
 
-    virtual bool IsEnabled() const override;
-
-    virtual MasterTaskType GetTaskType() const override
-    {
-        return MasterTaskType::STARTUP_INTEGRITY_POLL;
-    }
+    bool IsEnabled() const override;
 };
 
 } // namespace opendnp3

@@ -38,7 +38,7 @@ public:
     /**
      * Begin transmission of a frame. Callback happens OFF the call stack (via executor)
      */
-    virtual void BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& context) = 0;
+    virtual bool BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& context) = 0;
 };
 
 } // namespace opendnp3

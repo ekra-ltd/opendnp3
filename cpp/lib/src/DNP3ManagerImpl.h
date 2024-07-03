@@ -22,7 +22,7 @@
 #define OPENDNP3_DNP3MANAGERIMPL_H
 
 #include "ResourceManager.h"
-
+#include "opendnp3/channel/ChannelConnectionOptions.h"
 #include "opendnp3/channel/ChannelRetry.h"
 #include "opendnp3/channel/IChannel.h"
 #include "opendnp3/channel/IChannelListener.h"
@@ -34,7 +34,7 @@
 #include "opendnp3/logging/Logger.h"
 #include "opendnp3/master/IListenCallbacks.h"
 #include "opendnp3/util/Uncopyable.h"
-
+#include <boost/optional/optional.hpp>
 #include <exe4cpp/asio/ThreadPool.h>
 
 namespace opendnp3
@@ -49,7 +49,7 @@ public:
                     std::function<void(uint32_t)> onThreadStart,
                     std::function<void(uint32_t)> onThreadExit);
 
-    ~DNP3ManagerImpl();
+    ~DNP3ManagerImpl() override;
 
     void Shutdown();
 
@@ -58,26 +58,35 @@ public:
                                            const ChannelRetry& retry,
                                            const std::vector<IPEndpoint>& hosts,
                                            const std::string& local,
-                                           std::shared_ptr<IChannelListener> listener);
+                                           std::shared_ptr<IChannelListener> listener) const;
+
+    std::shared_ptr<IChannel> AddClientWithBackupChannel(const std::string& id,
+                                           const opendnp3::LogLevels& levels,
+                                           const ChannelRetry& retry,
+                                           const ChannelConnectionOptions& primary,
+                                           const boost::optional<ChannelConnectionOptions>& backup,
+                                           const std::string& local,
+                                           std::shared_ptr<IChannelListener> listener) const;
 
     std::shared_ptr<IChannel> AddTCPServer(const std::string& id,
                                            const opendnp3::LogLevels& levels,
                                            ServerAcceptMode mode,
                                            const IPEndpoint& endpoint,
-                                           std::shared_ptr<IChannelListener> listener);
+                                           std::shared_ptr<IChannelListener> listener) const;
+
 
     std::shared_ptr<IChannel> AddUDPChannel(const std::string& id,
                                             const opendnp3::LogLevels& levels,
                                             const ChannelRetry& retry,
                                             const IPEndpoint& localEndpoint,
                                             const IPEndpoint& remoteEndpoint,
-                                            std::shared_ptr<IChannelListener> listener);
+                                            std::shared_ptr<IChannelListener> listener) const;
 
     std::shared_ptr<IChannel> AddSerial(const std::string& id,
                                         const opendnp3::LogLevels& levels,
                                         const ChannelRetry& retry,
                                         SerialSettings settings,
-                                        std::shared_ptr<IChannelListener> listener);
+                                        std::shared_ptr<IChannelListener> listener) const;
 
     std::shared_ptr<IChannel> AddTLSClient(const std::string& id,
                                            const opendnp3::LogLevels& levels,
@@ -97,7 +106,7 @@ public:
     std::shared_ptr<IListener> CreateListener(std::string loggerid,
                                               const opendnp3::LogLevels& levels,
                                               const IPEndpoint& endpoint,
-                                              const std::shared_ptr<IListenCallbacks>& callbacks);
+                                              const std::shared_ptr<IListenCallbacks>& callbacks) const;
 
     std::shared_ptr<IListener> CreateListener(std::string loggerid,
                                               const opendnp3::LogLevels& levels,

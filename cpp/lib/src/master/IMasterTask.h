@@ -64,7 +64,7 @@ public:
                 const Logger& logger,
                 TaskConfig config);
 
-    virtual ~IMasterTask();
+    ~IMasterTask() override;
 
     /**
      *
@@ -146,10 +146,13 @@ public:
     /**
      * Check if the task is blocked from executing by another task
      */
-    bool IsBlocked() const
-    {
-        return this->context->IsBlocked(*this);
-    }
+    bool IsBlocked() const;
+
+    virtual MasterTaskType GetTaskType() const = 0;
+
+    bool CanBeExecutedOnBackupChannel() const;
+
+    bool OutOfRetries() const;
 
 protected:
     // called during OnStart() to initialize any state for a new run
@@ -161,12 +164,7 @@ protected:
 
     virtual void OnTaskComplete(TaskCompletion result, Timestamp now) {}
 
-    virtual bool IsEnabled() const
-    {
-        return true;
-    }
-
-    virtual MasterTaskType GetTaskType() const = 0;
+    virtual bool IsEnabled() const;
 
     const std::shared_ptr<TaskContext> context;
     IMasterApplication* const application;
@@ -185,10 +183,9 @@ private:
      */
     virtual bool BlocksLowerPriority() const = 0;
 
-    IMasterTask();
-
     TaskConfig config;
     TaskBehavior behavior;
+    bool _retriesFinished{ false };
 };
 
 } // namespace opendnp3

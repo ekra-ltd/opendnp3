@@ -35,39 +35,39 @@ public:
                     const TaskBehavior& behavior,
                     const Logger& logger);
 
-    virtual char const* Name() const override
+    char const* Name() const override
     {
         return "Assign Class";
     }
 
-    virtual bool IsRecurring() const override
+    bool IsRecurring() const override
     {
         return true;
     }
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override;
+    bool BuildRequest(APDURequest& request, uint8_t seq) override;
 
-    virtual int Priority(void) const override
+    int Priority(void) const override
     {
         return priority::ASSIGN_CLASS;
     }
 
-    virtual bool BlocksLowerPriority() const override
+    bool BlocksLowerPriority() const override
     {
         return true;
+    }
+
+    MasterTaskType GetTaskType() const override
+    {
+        return MasterTaskType::ASSIGN_CLASS;
     }
 
 private:
     TimeDuration retryPeriod;
 
-    virtual MasterTaskType GetTaskType() const override
-    {
-        return MasterTaskType::ASSIGN_CLASS;
-    }
+    ResponseResult ProcessResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects) override;
 
-    virtual ResponseResult ProcessResponse(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects) override;
-
-    virtual bool IsEnabled() const override;
+    bool IsEnabled() const override;
 };
 
 } // namespace opendnp3

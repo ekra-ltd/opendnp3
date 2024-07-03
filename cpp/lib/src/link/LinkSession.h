@@ -78,7 +78,7 @@ private:
     void OnWriteComplete(const std::error_code& ec, size_t num) final;
 
     // ILinkTx
-    void BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& session) final;
+    bool BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& session) final;
 
     // IFrameSink
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) final;

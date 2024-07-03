@@ -42,32 +42,32 @@ public:
                   ClassField classes,
                   const Logger& logger);
 
-    virtual bool IsRecurring() const override
+    bool IsRecurring() const override
     {
         return true;
     }
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override;
+    bool BuildRequest(APDURequest& request, uint8_t seq) override;
 
-    virtual int Priority() const override
+    int Priority() const override
     {
         return priority::EVENT_SCAN;
     }
 
-    virtual bool BlocksLowerPriority() const override
+    bool BlocksLowerPriority() const override
     {
         return true;
+    }
+
+    MasterTaskType GetTaskType() const override
+    {
+        return MasterTaskType::AUTO_EVENT_SCAN;
     }
 
 private:
     const ClassField classes;
 
-    virtual MasterTaskType GetTaskType() const override
-    {
-        return MasterTaskType::AUTO_EVENT_SCAN;
-    }
-
-    virtual bool IsEnabled() const override;
+    bool IsEnabled() const override;
 };
 
 } // namespace opendnp3

@@ -37,40 +37,40 @@ public:
                      IMasterApplication& application,
                      const Logger& logger);
 
-    virtual char const* Name() const override
+    char const* Name() const override
     {
         return "Clear Restart IIN";
     }
 
-    virtual bool IsRecurring() const override
+    bool IsRecurring() const override
     {
         return true;
     }
 
-    virtual int Priority() const override
+    int Priority() const override
     {
         return priority::CLEAR_RESTART;
     }
 
-    virtual bool BlocksLowerPriority() const override
+    bool BlocksLowerPriority() const override
     {
         return true;
     }
 
-    virtual bool BuildRequest(APDURequest& request, uint8_t seq) override;
+    bool BuildRequest(APDURequest& request, uint8_t seq) override;
 
-private:
-    virtual MasterTaskType GetTaskType() const override
+    MasterTaskType GetTaskType() const override
     {
         return MasterTaskType::CLEAR_RESTART;
     }
 
-    virtual bool IsEnabled() const override
+private:
+    bool IsEnabled() const override
     {
         return true;
     }
 
-    virtual ResponseResult ProcessResponse(const APDUResponseHeader& response, const ser4cpp::rseq_t& objects) override;
+    ResponseResult ProcessResponse(const APDUResponseHeader& response, const ser4cpp::rseq_t& objects) override;
 };
 
 } // namespace opendnp3

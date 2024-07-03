@@ -26,14 +26,34 @@ namespace opendnp3
 ChannelRetry::ChannelRetry(TimeDuration minOpenRetry_,
                            TimeDuration maxOpenRetry_,
                            TimeDuration reconnectDelay_,
-                           IOpenDelayStrategy& strategy_)
-    : minOpenRetry(minOpenRetry_), maxOpenRetry(maxOpenRetry_), reconnectDelay(reconnectDelay_), strategy(strategy_)
+                           IOpenDelayStrategy& strategy_,
+                           bool infiniteTries)
+    : minOpenRetry(minOpenRetry_)
+    , maxOpenRetry(maxOpenRetry_)
+    , reconnectDelay(reconnectDelay_)
+    , strategy(strategy_)
+    , _infiniteTries(infiniteTries)
 {
 }
 
 ChannelRetry ChannelRetry::Default()
 {
     return ChannelRetry(TimeDuration::Seconds(1), TimeDuration::Minutes(1));
+}
+
+TimeDuration ChannelRetry::NextDelay(const TimeDuration& current) const
+{
+    return strategy.GetNextDelay(current, maxOpenRetry);
+}
+
+void ChannelRetry::InfiniteTries(bool value)
+{
+    _infiniteTries = value;
+}
+
+bool ChannelRetry::InfiniteTries() const
+{
+    return _infiniteTries;
 }
 
 } // namespace opendnp3

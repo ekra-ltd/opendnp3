@@ -21,6 +21,7 @@
 #define OPENDNP3_MASTERSTACK_H
 
 #include "StackBase.h"
+#include "logging/LogMacros.h"
 #include "master/MasterContext.h"
 #include "master/MasterScan.h"
 
@@ -44,7 +45,7 @@ public:
                 const std::shared_ptr<ISOEHandler>& SOEHandler,
                 const std::shared_ptr<IMasterApplication>& application,
                 const std::shared_ptr<IMasterScheduler>& scheduler,
-                const std::shared_ptr<IOHandler>& iohandler,
+                const std::shared_ptr<IOHandlersManager>& iohandlersManager,
                 const std::shared_ptr<IResourceManager>& manager,
                 const MasterStackConfig& config,
                 const LinkLayerConfig& linkConfig);
@@ -54,12 +55,12 @@ public:
                                                const std::shared_ptr<ISOEHandler>& SOEHandler,
                                                const std::shared_ptr<IMasterApplication>& application,
                                                const std::shared_ptr<IMasterScheduler>& scheduler,
-                                               const std::shared_ptr<IOHandler>& iohandler,
+                                               const std::shared_ptr<IOHandlersManager>& iohandlersManager,
                                                const std::shared_ptr<IResourceManager>& manager,
                                                const MasterStackConfig& config)
     {
         const auto lc = LinkLayerConfig(config.link, false);
-        auto ret = std::make_shared<MasterStack>(logger, executor, SOEHandler, application, scheduler, iohandler,
+        auto ret = std::make_shared<MasterStack>(logger, executor, SOEHandler, application, scheduler, iohandlersManager,
                                                  manager, config, lc);
 
         ret->tstack.link->SetRouter(*ret);
@@ -99,10 +100,9 @@ public:
         return this->tstack.link->OnFrame(header, userdata);
     }
 
-    void BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& context) override
-    {
-        this->iohandler->BeginTransmit(shared_from_this(), buffer);
-    }
+    bool BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& context) override;
+
+    void OnResponseTimeout() override;
 
     // --------- Implement IMasterOperations ---------
 

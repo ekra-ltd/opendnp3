@@ -44,18 +44,15 @@ public:
                  const Logger& logger,
                  TaskConfig config);
 
-    virtual const char* Name() const override
-    {
-        return "Application Poll";
-    };
+    const char* Name() const override;
 
 protected:
-    virtual ResponseResult ProcessResponse(const APDUResponseHeader& header,
-                                           const ser4cpp::rseq_t& objects) override final;
+    ResponseResult ProcessResponse(const APDUResponseHeader& header,
+                                   const ser4cpp::rseq_t& objects) final;
 
     ResponseResult ProcessMeasurements(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects);
 
-    virtual void Initialize() override final;
+    void Initialize() final;
 
     uint32_t rxCount = 0;
     std::shared_ptr<ISOEHandler> handler;

@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "channel/IPEndpointsList.h"
+#include "opendnp3/channel/IPEndpointsList.h"
 
 #include <cassert>
 
@@ -25,7 +25,8 @@ namespace opendnp3
 {
 
 IPEndpointsList::IPEndpointsList(const std::vector<IPEndpoint>& endpoints)
-    : endpoints(endpoints), currentEndpoint(this->endpoints.begin())
+    : endpoints(endpoints)
+    , currentEndpoint(this->endpoints.begin())
 {
     assert(!endpoints.empty());
 }
@@ -35,23 +36,75 @@ IPEndpointsList::IPEndpointsList(const IPEndpointsList& rhs)
 {
 }
 
-const IPEndpoint& IPEndpointsList::GetCurrentEndpoint()
+IPEndpointsList::IPEndpointsList(IPEndpointsList&& rhs) noexcept
+    : endpoints(std::move(rhs.endpoints))
+    , currentEndpoint(rhs.currentEndpoint)
+{}
+
+IPEndpointsList& IPEndpointsList::operator=(const IPEndpointsList& rhs)
+{
+    if (this == &rhs)
+    {
+        return *this;
+    }
+    endpoints = rhs.endpoints;
+    currentEndpoint = this->endpoints.begin();;
+    return *this;
+}
+
+IPEndpointsList& IPEndpointsList::operator=(IPEndpointsList&& other) noexcept
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+    endpoints = std::move(other.endpoints);
+    currentEndpoint = other.currentEndpoint;
+    return *this;
+}
+
+const IPEndpoint& IPEndpointsList::GetCurrentEndpoint() const
 {
     return *this->currentEndpoint;
 }
 
-void IPEndpointsList::Next()
+bool IPEndpointsList::Next()
 {
+    auto result = true;
     ++this->currentEndpoint;
     if (this->currentEndpoint == this->endpoints.end())
     {
         Reset();
+        result = false;
     }
+    return result;
 }
 
 void IPEndpointsList::Reset()
 {
     this->currentEndpoint = this->endpoints.begin();
+}
+
+bool operator==(const IPEndpointsList& lhs, const IPEndpointsList& rhs)
+{
+    return lhs.endpoints == rhs.endpoints
+        && lhs.currentEndpoint == rhs.currentEndpoint;
+}
+
+bool operator!=(const IPEndpointsList& lhs, const IPEndpointsList& rhs)
+{
+    return !(lhs == rhs);
+}
+
+std::ostream& operator<<(std::ostream& os, const IPEndpointsList& obj)
+{
+    os << "endpoints: " << std::endl;
+    for (const auto& endpoint : obj.endpoints)
+    {
+        os << "\t" << endpoint;
+    }
+    os << "currentEndpoint: " << *obj.currentEndpoint;
+    return os;
 }
 
 } // namespace opendnp3

@@ -22,6 +22,7 @@
 
 #include "IResourceManager.h"
 #include "channel/IOHandler.h"
+#include "channel/IOHandlersManager.h"
 #include "transport/TransportStack.h"
 
 #include "opendnp3/IStack.h"
@@ -41,14 +42,14 @@ protected:
     StackBase(const Logger& logger,
               const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
               const std::shared_ptr<ILinkListener>& listener,
-              const std::shared_ptr<IOHandler>& iohandler,
-              const std::shared_ptr<IResourceManager>& manager,
+              std::shared_ptr<IOHandlersManager> iohandler,
+              std::shared_ptr<IResourceManager> manager,
               uint32_t maxRxFragSize,
               const LinkLayerConfig& config)
         : logger(logger),
           executor(executor),
-          iohandler(iohandler),
-          manager(manager),
+          iohandlersManager(std::move(iohandler)),
+          manager(std::move(manager)),
           tstack(logger, executor, listener, maxRxFragSize, config)
     {
     }
@@ -62,7 +63,7 @@ protected:
 
     Logger logger;
     const std::shared_ptr<exe4cpp::StrandExecutor> executor;
-    const std::shared_ptr<IOHandler> iohandler;
+    const std::shared_ptr<IOHandlersManager> iohandlersManager;
     const std::shared_ptr<IResourceManager> manager;
     TransportStack tstack;
 };
@@ -70,7 +71,7 @@ protected:
 template<class T> void StackBase::PerformShutdown(const std::shared_ptr<T>& self)
 {
     auto shutdown = [self] {
-        self->iohandler->Remove(self);
+        self->iohandlersManager->Remove(self);
 
         // since posting to a strand from the strand is ordered, posting
         // this forces the MasterStack to hang around long enough for

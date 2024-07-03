@@ -20,10 +20,9 @@
 #ifndef OPENDNP3_DNP3CHANNEL_H
 #define OPENDNP3_DNP3CHANNEL_H
 
+#include "IOHandlersManager.h"
 #include "ResourceManager.h"
-#include "channel/IOHandler.h"
 #include "master/IMasterScheduler.h"
-
 #include "opendnp3/channel/IChannel.h"
 
 namespace opendnp3
@@ -35,18 +34,18 @@ class DNP3Channel final : public IChannel, public std::enable_shared_from_this<D
 public:
     DNP3Channel(const Logger& logger,
                 const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
-                std::shared_ptr<IOHandler> iohandler,
+                std::shared_ptr<IOHandlersManager> iohandlersManager,
                 std::shared_ptr<IResourceManager> manager);
 
     static std::shared_ptr<DNP3Channel> Create(const Logger& logger,
                                                const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
-                                               const std::shared_ptr<IOHandler>& iohandler,
+                                               const std::shared_ptr<IOHandlersManager>& iohandlersManager,
                                                const std::shared_ptr<IResourceManager>& manager)
     {
-        return std::make_shared<DNP3Channel>(logger, executor, iohandler, manager);
+        return std::make_shared<DNP3Channel>(logger, executor, iohandlersManager, manager);
     }
 
-    ~DNP3Channel();
+    ~DNP3Channel() override;
 
     // ----------------------- Implement IChannel -----------------------
 
@@ -81,7 +80,7 @@ private:
     const std::shared_ptr<exe4cpp::StrandExecutor> executor;
     std::shared_ptr<IMasterScheduler> scheduler;
 
-    std::shared_ptr<IOHandler> iohandler;
+    std::shared_ptr<IOHandlersManager> iohandlersManager;
     std::shared_ptr<IResourceManager> manager;
     std::shared_ptr<ResourceManager> resources;
 };

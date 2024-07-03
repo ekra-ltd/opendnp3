@@ -40,7 +40,8 @@ public:
     ChannelRetry(TimeDuration minOpenRetry,
                  TimeDuration maxOpenRetry,
                  TimeDuration reconnectDelay = TimeDuration::Zero(),
-                 IOpenDelayStrategy& strategy = ExponentialBackoffStrategy::Instance());
+                 IOpenDelayStrategy& strategy = ExponentialBackoffStrategy::Instance(),
+                 bool infiniteTries = true);
 
     /// Return the default configuration of exponential backoff from 1 sec to 1 minute
     static ChannelRetry Default();
@@ -52,14 +53,15 @@ public:
     /// reconnect delay (defaults to zero)
     TimeDuration reconnectDelay;
 
-    TimeDuration NextDelay(const TimeDuration& current) const
-    {
-        return strategy.GetNextDelay(current, maxOpenRetry);
-    }
+    TimeDuration NextDelay(const TimeDuration& current) const;
+
+    void InfiniteTries(bool value);
+    bool InfiniteTries() const;
 
 private:
     //// Strategy to use (default to exponential backoff)
     IOpenDelayStrategy& strategy;
+    bool _infiniteTries{ true };
 };
 
 } // namespace opendnp3

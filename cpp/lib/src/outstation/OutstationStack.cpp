@@ -26,7 +26,7 @@ OutstationStack::OutstationStack(const Logger& logger,
                                  const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                  const std::shared_ptr<ICommandHandler>& commandHandler,
                                  const std::shared_ptr<IOutstationApplication>& application,
-                                 const std::shared_ptr<IOHandler>& iohandler,
+                                 const std::shared_ptr<IOHandlersManager>& iohandlersManager,
                                  const std::shared_ptr<IResourceManager>& manager,
                                  const OutstationStackConfig& config,
                                  const LinkLayerConfig& linkConfig)
@@ -34,7 +34,7 @@ OutstationStack::OutstationStack(const Logger& logger,
         StackBase(logger,
                   executor,
                   application,
-                  iohandler,
+                  iohandlersManager,
                   manager,
                   config.outstation.params.maxRxFragSize,
                   linkConfig),
@@ -52,13 +52,13 @@ OutstationStack::OutstationStack(const Logger& logger,
 
 bool OutstationStack::Enable()
 {
-    auto action = [self = shared_from_this()] { return self->iohandler->Enable(self); };
+    auto action = [self = shared_from_this()] { return self->iohandlersManager->Enable(self); };
     return this->executor->return_from<bool>(action);
 }
 
 bool OutstationStack::Disable()
 {
-    auto action = [self = shared_from_this()] { return self->iohandler->Disable(self); };
+    auto action = [self = shared_from_this()] { return self->iohandlersManager->Disable(self); };
     return this->executor->return_from<bool>(action);
 }
 
@@ -71,6 +71,13 @@ StackStatistics OutstationStack::GetStackStatistics()
 {
     auto get = [self = shared_from_this()] { return self->CreateStatistics(); };
     return this->executor->return_from<StackStatistics>(get);
+}
+
+void OutstationStack::OnResponseTimeout()
+{
+    if (this->iohandlersManager) {
+        iohandlersManager->NotifyTaskResult(false, false);
+    }
 }
 
 void OutstationStack::SetLogFilters(const LogLevels& filters)

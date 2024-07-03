@@ -20,9 +20,11 @@
 #ifndef OPENDNP3_IOHANDLER_H
 #define OPENDNP3_IOHANDLER_H
 
+#include "ISharedChannelData.h"
 #include "channel/IAsyncChannel.h"
 #include "link/ILinkTx.h"
 #include "link/LinkLayerParser.h"
+#include "master/IMasterTask.h"
 
 #include "opendnp3/channel/IChannelListener.h"
 #include "opendnp3/link/Addresses.h"
@@ -41,37 +43,36 @@ Manages I/O for a number of link contexts
 */
 class IOHandler : private IFrameSink, public IChannelCallbacks, public std::enable_shared_from_this<IOHandler>
 {
+public:
+    using ConnectionFailureCallback_t = std::function<void()>;
 
 public:
-    IOHandler(const Logger& logger, bool close_existing, std::shared_ptr<IChannelListener> listener);
+    IOHandler(
+        const Logger& logger,
+        bool close_existing,
+        std::shared_ptr<IChannelListener> listener,
+        std::shared_ptr<ISharedChannelData> sessionsManager,
+        ConnectionFailureCallback_t connectionFailureCallback = []{}
+    );
 
-    virtual ~IOHandler() = default;
+    ~IOHandler() override = default;
 
-    LinkStatistics Statistics() const
-    {
-        return LinkStatistics(this->statistics, this->parser.Statistics());
-    }
+    LinkStatistics Statistics() const;
 
-    void Shutdown();
+    void Shutdown(bool onFail = false);
 
     /// --- implement ILinkTx ---
 
-    void BeginTransmit(const std::shared_ptr<ILinkSession>& session, const ser4cpp::rseq_t& data);
-
-    // Bind a link layer session to the handler
-    bool AddContext(const std::shared_ptr<ILinkSession>& session, const Addresses& addresses);
+    bool BeginTransmit(const std::shared_ptr<ILinkSession>& session, const ser4cpp::rseq_t& data);
 
     // Begin sending messages to the context
-    bool Enable(const std::shared_ptr<ILinkSession>& session);
+    bool Prepare();
 
     // Stop sending messages to this session
-    bool Disable(const std::shared_ptr<ILinkSession>& session);
+    void ConditionalClose();
 
     // Remove this session entirely
-    bool Remove(const std::shared_ptr<ILinkSession>& session);
-
-    // Query to see if a route is in use
-    bool IsRouteInUse(const Addresses& addresses) const;
+    bool OnSessionRemoved();
 
     void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler);
     void RemoveStatisticsHandler();
@@ -98,112 +99,35 @@ protected:
     virtual void OnChannelShutdown() = 0;
 
     // Called by the super class when a new channel is available
-    void OnNewChannel(const std::shared_ptr<IAsyncChannel>& channel);
+    void OnNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel);
 
     const bool close_existing;
     Logger logger;
     const std::shared_ptr<IChannelListener> listener;
     LinkStatistics::Channel statistics;
+    ConnectionFailureCallback_t _connectionFailureCallback;
+    std::atomic_bool _openingChannel{ false };
 
 private:
     bool isShutdown = false;
 
-    inline void UpdateListener(ChannelState state)
-    {
-        if (listener)
-            listener->OnStateChange(state);
-    }
+    void UpdateListener(ChannelState state) const;
 
     // called by the parser when a complete frame is read
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) final;
 
-    bool IsSessionInUse(const std::shared_ptr<ILinkSession>& session) const;
-    bool IsAnySessionEnabled() const;
-    void Reset();
+    void Reset(bool onFail = true);
     void BeginRead();
-    void CheckForSend();
-
-    bool SendToSession(const Addresses& addresses, const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata);
-
-    class Session
-    {
-
-    public:
-        Session(const std::shared_ptr<ILinkSession>& session, const Addresses& addresses)
-            : addresses(addresses), session(session)
-        {
-        }
-
-        Session() = default;
-
-        inline bool Matches(const std::shared_ptr<ILinkSession>& session) const
-        {
-            return this->session == session;
-        }
-        inline bool Matches(const Addresses& addresses) const
-        {
-            return this->addresses == addresses;
-        }
-
-        inline bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata)
-        {
-            return this->session->OnFrame(header, userdata);
-        }
-
-        inline bool LowerLayerUp()
-        {
-            if (!online)
-            {
-                online = true;
-                return this->session->OnLowerLayerUp();
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        inline bool LowerLayerDown()
-        {
-            if (online)
-            {
-                online = false;
-                return this->session->OnLowerLayerDown();
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        bool enabled = false;
-
-    private:
-        Addresses addresses;
-        bool online = false;
-        std::shared_ptr<ILinkSession> session;
-    };
-
-    struct Transmission
-    {
-        Transmission(const ser4cpp::rseq_t& txdata, const std::shared_ptr<ILinkSession>& session)
-            : txdata(txdata), session(session)
-        {
-        }
-
-        Transmission() = default;
-
-        ser4cpp::rseq_t txdata;
-        std::shared_ptr<ILinkSession> session;
-    };
-
-    std::vector<Session> sessions;
-    std::deque<Transmission> txQueue;
+    bool CheckForSend();
 
     LinkLayerParser parser;
 
     // current value of the channel, may be empty
     std::shared_ptr<IAsyncChannel> channel;
+
+    std::shared_ptr<ISharedChannelData> _sessionsManager;
+
+    mutable std::mutex _mtx;
 };
 
 } // namespace opendnp3

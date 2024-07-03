@@ -160,50 +160,48 @@ ser4cpp::rseq_t LinkContext::FormatPrimaryBufferWithUnconfirmed(const Addresses&
     return output;
 }
 
-void LinkContext::QueueTransmit(const ser4cpp::rseq_t& buffer, bool primary)
+bool LinkContext::QueueTransmit(const ser4cpp::rseq_t& buffer, bool primary)
 {
     if (txMode == LinkTransmitMode::Idle)
     {
         txMode = primary ? LinkTransmitMode::Primary : LinkTransmitMode::Secondary;
-        linktx->BeginTransmit(buffer, *pSession);
+        return linktx->BeginTransmit(buffer, *pSession);
+    }
+    if (primary)
+    {
+        pendingPriTx.set(buffer);
     }
     else
     {
-        if (primary)
-        {
-            pendingPriTx.set(buffer);
-        }
-        else
-        {
-            pendingSecTx.set(buffer);
-        }
+        pendingSecTx.set(buffer);
     }
+    return true;
 }
 
-void LinkContext::QueueAck(uint16_t destination)
+bool LinkContext::QueueAck(uint16_t destination)
 {
     auto dest = secTxBuffer.as_wseq();
     auto buffer = LinkFrame::FormatAck(dest, config.IsMaster, false, destination, this->config.LocalAddr, &logger);
     FORMAT_HEX_BLOCK(logger, flags::LINK_TX_HEX, buffer, 10, 18);
-    this->QueueTransmit(buffer, false);
+    return this->QueueTransmit(buffer, false);
 }
 
-void LinkContext::QueueLinkStatus(uint16_t destination)
+bool LinkContext::QueueLinkStatus(uint16_t destination)
 {
     auto dest = secTxBuffer.as_wseq();
     auto buffer
         = LinkFrame::FormatLinkStatus(dest, config.IsMaster, false, destination, this->config.LocalAddr, &logger);
     FORMAT_HEX_BLOCK(logger, flags::LINK_TX_HEX, buffer, 10, 18);
-    this->QueueTransmit(buffer, false);
+    return this->QueueTransmit(buffer, false);
 }
 
-void LinkContext::QueueRequestLinkStatus(uint16_t destination)
+bool LinkContext::QueueRequestLinkStatus(uint16_t destination)
 {
     auto dest = priTxBuffer.as_wseq();
     auto buffer
         = LinkFrame::FormatRequestLinkStatus(dest, config.IsMaster, destination, this->config.LocalAddr, &logger);
     FORMAT_HEX_BLOCK(logger, flags::LINK_TX_HEX, buffer, 10, 18);
-    this->QueueTransmit(buffer, true);
+    return this->QueueTransmit(buffer, true);
 }
 
 void LinkContext::PushDataUp(const Message& message)
@@ -251,6 +249,8 @@ void LinkContext::OnKeepAliveTimeout()
 void LinkContext::OnResponseTimeout()
 {
     this->pPriState = &(this->pPriState->OnTimeout(*this));
+
+    pSession->OnResponseTimeout();
 
     this->TryStartTransmission();
 }
@@ -303,6 +303,7 @@ bool LinkContext::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t&
     if (!isOnline)
     {
         SIMPLE_LOG_BLOCK(logger, flags::ERR, "Layer is not online");
+        pPriState = &PLLS_Idle::Instance();
         return false;
     }
 
@@ -384,10 +385,10 @@ bool LinkContext::TryPendingTx(ser4cpp::Settable<ser4cpp::rseq_t>& pending, bool
 {
     if (this->txMode == LinkTransmitMode::Idle && pending.is_set())
     {
-        this->linktx->BeginTransmit(pending.get(), *pSession);
+        const auto res = this->linktx->BeginTransmit(pending.get(), *pSession);
         pending.clear();
         this->txMode = primary ? LinkTransmitMode::Primary : LinkTransmitMode::Secondary;
-        return true;
+        return res;
     }
 
     return false;

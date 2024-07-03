@@ -21,7 +21,7 @@
 #define OPENDNP3_TLSCLIENTIOHANDLER_H
 
 #include "channel/IOHandler.h"
-#include "channel/IPEndpointsList.h"
+#include "opendnp3/channel/IPEndpointsList.h"
 #include "channel/TCPClient.h"
 #include "channel/tls/TLSClient.h"
 
@@ -44,9 +44,10 @@ public:
                                                       const TLSConfig& config,
                                                       const ChannelRetry& retry,
                                                       const IPEndpointsList& remotes,
-                                                      const std::string& adapter)
+                                                      const std::string& adapter,
+                                                      std::shared_ptr<ILinkSessionsManager> sessionsManager)
     {
-        return std::make_shared<TLSClientIOHandler>(logger, listener, executor, config, retry, remotes, adapter);
+        return std::make_shared<TLSClientIOHandler>(logger, listener, executor, config, retry, remotes, adapter, std::move(sessionManager));
     }
 
     TLSClientIOHandler(const Logger& logger,
@@ -55,7 +56,8 @@ public:
                        TLSConfig config,
                        const ChannelRetry& retry,
                        const IPEndpointsList& remotes,
-                       std::string adapter);
+                       std::string adapter,
+                       std::shared_ptr<ILinkSessionsManager> sessionsManager);
 
 protected:
     virtual void ShutdownImpl() override;

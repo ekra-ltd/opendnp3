@@ -40,9 +40,20 @@ public:
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       const ChannelRetry& retry,
                                                       const IPEndpoint& localEndpoint,
-                                                      const IPEndpoint& remoteEndpoint)
+                                                      const IPEndpoint& remoteEndpoint,
+                                                      std::shared_ptr<ISharedChannelData> sessionsManager,
+                                                      ConnectionFailureCallback_t connectionFailureCallback = []{})
     {
-        return std::make_shared<UDPClientIOHandler>(logger, listener, executor, retry, localEndpoint, remoteEndpoint);
+        return std::make_shared<UDPClientIOHandler>(
+            logger,
+            listener,
+            executor,
+            retry,
+            localEndpoint,
+            remoteEndpoint,
+            std::move(sessionsManager),
+            std::move(connectionFailureCallback)
+        );
     }
 
     UDPClientIOHandler(const Logger& logger,
@@ -50,13 +61,15 @@ public:
                        const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                        const ChannelRetry& retry,
                        const IPEndpoint& localEndpoint,
-                       const IPEndpoint& remoteEndpoint);
+                       const IPEndpoint& remoteEndpoint,
+                       std::shared_ptr<ISharedChannelData> sessionsManager,
+                       ConnectionFailureCallback_t connectionFailureCallback = []{});
 
 protected:
-    void ShutdownImpl() final;
-    void BeginChannelAccept() final;
-    void SuspendChannelAccept() final;
-    void OnChannelShutdown() final;
+    void ShutdownImpl() override;
+    void BeginChannelAccept() override;
+    void SuspendChannelAccept() override;
+    void OnChannelShutdown() override;
 
 private:
     bool TryOpen(const TimeDuration& delay);
