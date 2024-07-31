@@ -43,6 +43,12 @@ DNP3Channel::DNP3Channel(const Logger& logger,
       manager(std::move(manager)),
       resources(ResourceManager::Create())
 {
+    this->iohandlersManager->ChannelReservationChanged.connect([masterScheduler = this->scheduler](const bool isBackup) {
+        if (masterScheduler)
+        {
+            masterScheduler->IsBackupChannelUsed(isBackup);
+        }
+    });
 }
 
 DNP3Channel::~DNP3Channel()

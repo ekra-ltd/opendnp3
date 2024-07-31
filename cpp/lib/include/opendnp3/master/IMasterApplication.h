@@ -70,6 +70,8 @@ public:
     /// "AssignClassDuringStartup" returns true
     /// The user only needs to call the function for each header type to be written
     virtual void ConfigureAssignClassRequest(const WriteHeaderFunT& fun) {}
+
+    virtual void OnChannelReservationChanged(bool isBackup) {}
 };
 
 } // namespace opendnp3

@@ -23,6 +23,7 @@ namespace opendnp3
         , _primarySettings(std::move(primarySettings))
         , _backupSettings(std::move(backupSettings))
         , _sessionsManager( std::make_shared<SharedChannelData>(_logger) )
+        , _executor(executor)
     {
         IOHandler::ConnectionFailureCallback_t callback = [this] {
             NotifyTaskResult(false, false);
@@ -176,6 +177,7 @@ namespace opendnp3
         }
 
         // if we using backup channel - check the number of successful data reading (interrogations) to determine the necessity of switching to primary channel
+        const auto oldBackupChannelUsed = _backupChannelUsed;
         if (_backupChannelUsed) {
             if (_succeededReadingCount >= _backupSettings->ReadingCountBeforeReturnToPrimary()) {
                 FORMAT_LOG_BLOCK(_logger, flags::DBG, R"(try switch to primary connection, {%s})", _primarySettings.ToString().c_str())
@@ -188,14 +190,17 @@ namespace opendnp3
         if (_currentChannel != newChannel)
         {
             _currentChannel->Shutdown();
-            if (_afterCurrentChannelShutdown)
+            if (_executor && _afterCurrentChannelShutdown)
             {
-                _afterCurrentChannelShutdown();
+                _executor->post(_afterCurrentChannelShutdown);
             }
             newChannel->Prepare();
             _currentChannel = newChannel;
         }
 
+        if (oldBackupChannelUsed != _backupChannelUsed) {
+            ChannelReservationChanged(_backupChannelUsed);
+        }
         return _currentChannel;
     }
 
@@ -235,13 +240,14 @@ namespace opendnp3
             if (_currentChannel != newChannel)
             {
                 _currentChannel->Shutdown(true);
-                if (_afterCurrentChannelShutdown)
+                if (_executor && _afterCurrentChannelShutdown)
                 {
-                    _afterCurrentChannelShutdown();
+                    _executor->post(_afterCurrentChannelShutdown);
                 }
                 newChannel->Prepare();
                 _currentChannel = newChannel;
             }
+            ChannelReservationChanged(_backupChannelUsed);
         }
     }
 
@@ -286,11 +292,13 @@ namespace opendnp3
         std::lock_guard<std::mutex> lock{ _mtx };
         _backupChannelUsed = false;
         _succeededReadingCount = 0;
+        ChannelReservationChanged(false);
         Shutdown();
     }
 
-    void IOHandlersManager::Shutdown() const
+    void IOHandlersManager::Shutdown()
     {
+        ChannelReservationChanged.disconnect_all_slots();
         _primaryChannel->Shutdown(false);
         if (_backupChannel)
         {

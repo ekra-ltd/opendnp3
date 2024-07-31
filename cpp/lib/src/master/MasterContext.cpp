@@ -76,6 +76,12 @@ MContext::MContext(const Addresses& addresses,
                                - TransportHeader::HEADER_SIZE
                                - APDUHeader::REQUEST_SIZE
                                - 3;
+    this->iohandlersManager->ChannelReservationChanged.connect([app = this->application](const bool isBackup) {
+        if (app)
+        {
+            app->OnChannelReservationChanged(isBackup);
+        }
+    });
 }
 
 std::shared_ptr<MContext> MContext::Create(
@@ -546,7 +552,8 @@ bool MContext::Run(const std::shared_ptr<IMasterTask>& task)
     {
         return false;
     }
-
+    this->tstate = TaskState::TASK_READY;
+    this->activeTask = task;
     if (this->iohandlersManager)
     {
         if (!this->iohandlersManager->PrepareChannel(task->CanBeExecutedOnBackupChannel()))
@@ -557,8 +564,6 @@ bool MContext::Run(const std::shared_ptr<IMasterTask>& task)
             return false;
         }
     }
-    this->tstate = TaskState::TASK_READY;
-    this->activeTask = task;
     const bool isTaskStarted = this->activeTask->OnStart(Timestamp(executor->get_time()));
     if (!isTaskStarted) {
         this->CompleteActiveTask();

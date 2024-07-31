@@ -7,6 +7,7 @@
 #include "opendnp3/link/LinkStatistics.h"
 #include "opendnp3/logging/Logger.h"
 #include <boost/optional/optional.hpp>
+#include <boost/signals2/signal.hpp>
 
 #include <mutex>
 
@@ -53,11 +54,15 @@ namespace opendnp3
         void RemoveStatisticsHandler() const;
 
         void Reset();
-        void Shutdown() const;
+        void Shutdown();
 
         void SetShutdownCallback(const Callback_t& afterCurrentChannelShutdown);
 
         bool IsBackupChannelUsed() const;
+
+        using ChannelReservationChangedHandler_t = void(bool isBackup);
+        using ChannelReservationChangedSignal_t = boost::signals2::signal<ChannelReservationChangedHandler_t>;
+        ChannelReservationChangedSignal_t ChannelReservationChanged;
 
     private:
         mutable std::mutex _mtx;
@@ -71,6 +76,7 @@ namespace opendnp3
         std::shared_ptr<IOHandler> _currentChannel;
         std::shared_ptr<ISharedChannelData> _sessionsManager;
         Callback_t _afterCurrentChannelShutdown;
+        std::shared_ptr<exe4cpp::StrandExecutor> _executor;
     };
 
 } // namespace opendnp3
