@@ -71,6 +71,8 @@ public:
         for (auto& task : tasks)
             this->Add(task, runner);
     }
+
+    virtual void IsBackupChannelUsed(bool value) = 0;
 };
 
 } // namespace opendnp3

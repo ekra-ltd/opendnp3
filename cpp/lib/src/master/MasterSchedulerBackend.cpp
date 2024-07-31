@@ -114,6 +114,11 @@ void MasterSchedulerBackend::Evaluate()
     this->PostCheckForTaskRun();
 }
 
+void MasterSchedulerBackend::IsBackupChannelUsed(bool value)
+{
+    isBackupChannelUsed = value;
+}
+
 void MasterSchedulerBackend::PostCheckForTaskRun()
 {
     if (!this->taskCheckPending)
@@ -138,29 +143,33 @@ bool MasterSchedulerBackend::CheckForTaskRun()
     const auto now = Timestamp(this->executor->get_time());
 
     // try to find a task that can run
-    auto current = this->tasks.begin();
-    auto best_task = current;
-    if (current == this->tasks.end())
+    auto currentIt = this->tasks.begin();
+    auto best_task = currentIt;
+    if (currentIt == this->tasks.end())
         return false;
-    ++current;
+    ++currentIt;
 
-    while (current != this->tasks.end())
+    while (currentIt != this->tasks.end())
     {
-        if (GetBestTaskToRun(now, *best_task, *current) == Comparison::RIGHT)
+        if (GetBestTaskToRun(now, *best_task, *currentIt, this->isBackupChannelUsed) == Comparison::RIGHT)
         {
-            best_task = current;
+            best_task = currentIt;
         }
 
-        ++current;
+        ++currentIt;
     }
 
     // is the task runnable now?
-    const auto is_expired = now >= best_task->task->ExpirationTime();
+    const auto isRunnable = !isBackupChannelUsed || best_task->task->CanBeExecutedOnBackupChannel();
+    const auto is_expired = isRunnable && now >= best_task->task->ExpirationTime();
     if (is_expired)
     {
         this->current = *best_task;
         this->tasks.erase(best_task);
-        this->current.runner->Run(this->current.task);
+        if (!this->current.runner->Run(this->current.task))
+        {
+            this->current.Clear();
+        }
 
         return true;
     }
@@ -180,7 +189,7 @@ void MasterSchedulerBackend::RestartTimeoutTimer()
 
     auto min = Timestamp::Max();
 
-    for (auto& record : this->tasks)
+    for (const auto& record : this->tasks)
     {
         if (!record.task->IsRecurring() && (record.task->StartExpirationTime() < min))
         {
@@ -222,8 +231,14 @@ void MasterSchedulerBackend::TimeoutTasks()
 
 MasterSchedulerBackend::Comparison MasterSchedulerBackend::GetBestTaskToRun(const Timestamp& now,
                                                                             const Record& left,
-                                                                            const Record& right)
+                                                                            const Record& right,
+                                                                            const bool isBackupChannelUsed)
 {
+    if (!left.task->CanBeExecutedOnBackupChannel() && isBackupChannelUsed)
+    {
+        return Comparison::RIGHT;
+    }
+
     const auto BEST_ENABLED_STATUS = CompareEnabledStatus(left, right);
 
     if (BEST_ENABLED_STATUS != Comparison::SAME)

@@ -65,23 +65,26 @@ class MasterSchedulerBackend final : public IMasterScheduler,
 public:
     explicit MasterSchedulerBackend(const std::shared_ptr<exe4cpp::IExecutor>& executor);
 
-    virtual void Shutdown() override;
+    void Shutdown() override;
 
     // ------- implement IMasterScheduler --------
 
-    virtual void Add(const std::shared_ptr<IMasterTask>& task, IMasterTaskRunner& runner) override;
+    void Add(const std::shared_ptr<IMasterTask>& task, IMasterTaskRunner& runner) override;
 
-    virtual void SetRunnerOffline(const IMasterTaskRunner& runner) override;
+    void SetRunnerOffline(const IMasterTaskRunner& runner) override;
 
-    virtual bool CompleteCurrentFor(const IMasterTaskRunner& runner) override;
+    bool CompleteCurrentFor(const IMasterTaskRunner& runner) override;
 
-    virtual void Demand(const std::shared_ptr<IMasterTask>& task) override;
+    void Demand(const std::shared_ptr<IMasterTask>& task) override;
 
-    virtual void Evaluate() override;
+    void Evaluate() override;
+
+    void IsBackupChannelUsed(bool value) override;
 
 private:
     bool isShutdown = false;
     bool taskCheckPending = false;
+    bool isBackupChannelUsed = false;
 
     Record current;
     std::vector<Record> tasks;
@@ -105,7 +108,7 @@ private:
         SAME
     };
 
-    static Comparison GetBestTaskToRun(const Timestamp& now, const Record& left, const Record& right);
+    static Comparison GetBestTaskToRun(const Timestamp& now, const Record& left, const Record& right, bool isBackupChannelUsed);
 
     static Comparison CompareEnabledStatus(const Record& left, const Record& right);
 
