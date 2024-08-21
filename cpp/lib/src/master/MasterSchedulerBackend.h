@@ -79,12 +79,12 @@ public:
 
     void Evaluate() override;
 
-    void IsBackupChannelUsed(bool value) override;
+    void ChannelChanging(bool value) override;
 
 private:
     bool isShutdown = false;
     bool taskCheckPending = false;
-    bool isBackupChannelUsed = false;
+    bool tasksPaused = false;
 
     Record current;
     std::vector<Record> tasks;
@@ -97,6 +97,8 @@ private:
 
     void TimeoutTasks();
 
+    void add(const std::shared_ptr<IMasterTask>& task, IMasterTaskRunner& runner);
+
     std::shared_ptr<exe4cpp::IExecutor> executor;
     exe4cpp::Timer taskTimer;
     exe4cpp::Timer taskStartTimeout;
@@ -108,7 +110,7 @@ private:
         SAME
     };
 
-    static Comparison GetBestTaskToRun(const Timestamp& now, const Record& left, const Record& right, bool isBackupChannelUsed);
+    static Comparison GetBestTaskToRun(const Timestamp& now, const Record& left, const Record& right);
 
     static Comparison CompareEnabledStatus(const Record& left, const Record& right);
 
@@ -117,6 +119,9 @@ private:
     static Comparison ComparePriority(const Record& left, const Record& right);
 
     static Comparison CompareTime(const Timestamp& now, const Record& left, const Record& right);
+
+private:
+    std::mutex _mtx;
 };
 
 } // namespace opendnp3

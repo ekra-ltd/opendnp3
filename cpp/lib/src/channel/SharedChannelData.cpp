@@ -39,7 +39,7 @@ namespace opendnp3
             return false;
         }
 
-        iter->LowerLayerDown();
+        iter->LowerLayerDown(LinkStateChangeSource::Unconditional);
 
         _sessions.erase(iter);
         return true;
@@ -82,7 +82,7 @@ namespace opendnp3
         }
 
         iter->Enabled(false);
-        iter->LowerLayerDown();
+        iter->LowerLayerDown(LinkStateChangeSource::Unconditional);
         return true;
     }
 
@@ -110,13 +110,13 @@ namespace opendnp3
         return accepted;
     }
 
-    void SharedChannelData::LowerLayerUp()
+    void SharedChannelData::LowerLayerUp(LinkStateChangeSource source)
     {
         for (auto& session : _sessions)
         {
             if (session.Enabled())
             {
-                session.LowerLayerUp();
+                session.LowerLayerUp(source);
             }
         }
     }
@@ -133,13 +133,13 @@ namespace opendnp3
         return std::find_if(_sessions.begin(), _sessions.end(), matches) != _sessions.end();
     }
 
-    void SharedChannelData::LowerLayerDown()
+    void SharedChannelData::LowerLayerDown(LinkStateChangeSource source)
     {
         for (auto& session : _sessions)
         {
             if (session.Enabled())
             {
-                session.LowerLayerDown();
+                session.LowerLayerDown(source);
             }
         }
     }

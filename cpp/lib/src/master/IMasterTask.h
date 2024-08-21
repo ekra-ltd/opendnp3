@@ -154,6 +154,8 @@ public:
 
     bool OutOfRetries() const;
 
+    void DelayByPeriod(const Timestamp& now);
+
 protected:
     // called during OnStart() to initialize any state for a new run
     virtual void Initialize() {}
@@ -169,6 +171,7 @@ protected:
     const std::shared_ptr<TaskContext> context;
     IMasterApplication* const application;
     Logger logger;
+    TaskConfig config;
 
     // Validation helpers for various behaviors to avoid deep inheritance
     bool ValidateSingleResponse(const APDUResponseHeader& header);
@@ -183,7 +186,6 @@ private:
      */
     virtual bool BlocksLowerPriority() const = 0;
 
-    TaskConfig config;
     TaskBehavior behavior;
     bool _retriesFinished{ false };
 };

@@ -63,14 +63,14 @@ bool LinkLayer::Send(ITransportSegment& segments)
 // ILinkSession
 ////////////////////////////////
 
-bool LinkLayer::OnLowerLayerUp()
+bool LinkLayer::OnLowerLayerUp(LinkStateChangeSource source)
 {
-    return ctx->OnLowerLayerUp();
+    return ctx->OnLowerLayerUp(source);
 }
 
-bool LinkLayer::OnLowerLayerDown()
+bool LinkLayer::OnLowerLayerDown(LinkStateChangeSource source)
 {
-    return ctx->OnLowerLayerDown();
+    return ctx->OnLowerLayerDown(source);
 }
 
 bool LinkLayer::OnTxReady()

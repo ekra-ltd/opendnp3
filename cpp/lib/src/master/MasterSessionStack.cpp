@@ -76,22 +76,22 @@ void MasterSessionStack::RemoveStatisticsHandler()
     context->RemoveStatisticsHandler();
 }
 
-void MasterSessionStack::OnLowerLayerUp()
+void MasterSessionStack::OnLowerLayerUp(LinkStateChangeSource source) const
 {
-    stack.link->OnLowerLayerUp();
+    stack.link->OnLowerLayerUp(source);
 }
 
-void MasterSessionStack::OnLowerLayerDown()
+void MasterSessionStack::OnLowerLayerDown(LinkStateChangeSource source) const
 {
-    stack.link->OnLowerLayerDown();
+    stack.link->OnLowerLayerDown(source);
 }
 
-bool MasterSessionStack::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata)
+bool MasterSessionStack::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) const
 {
     return stack.link->OnFrame(header, userdata);
 }
 
-void MasterSessionStack::OnTxReady()
+void MasterSessionStack::OnTxReady() const
 {
     this->stack.link->OnTxReady();
 }

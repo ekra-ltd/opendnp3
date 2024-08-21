@@ -1,4 +1,5 @@
 #include "channel/IoSessionDescriptor.h"
+#include "opendnp3/link/LinkStateChangeSource.h"
 
 namespace opendnp3
 {
@@ -23,22 +24,22 @@ namespace opendnp3
         return this->_session->OnFrame(header, userdata);
     }
 
-    bool IoSessionDescriptor::LowerLayerUp()
+    bool IoSessionDescriptor::LowerLayerUp(LinkStateChangeSource source)
     {
         if (!_online)
         {
             _online = true;
-            return this->_session->OnLowerLayerUp();
+            return this->_session->OnLowerLayerUp(source);
         }
         return false;
     }
 
-    bool IoSessionDescriptor::LowerLayerDown()
+    bool IoSessionDescriptor::LowerLayerDown(LinkStateChangeSource source)
     {
         if (_online)
         {
             _online = false;
-            return this->_session->OnLowerLayerDown();
+            return this->_session->OnLowerLayerDown(source);
         }
         return false;
     }

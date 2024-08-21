@@ -42,6 +42,7 @@ public:
                                                    const ChannelRetry& retry,
                                                    const SerialSettings& settings,
                                                    std::shared_ptr<ISharedChannelData> sessionsManager,
+                                                   bool isPrimary,
                                                    ConnectionFailureCallback_t connectionFailureCallback = []{})
     {
         return std::make_shared<SerialIOHandler>(
@@ -51,6 +52,7 @@ public:
             retry,
             settings,
             std::move(sessionsManager),
+            isPrimary,
             std::move(connectionFailureCallback)
         );
     }
@@ -61,6 +63,7 @@ public:
                     const ChannelRetry& retry,
                     SerialSettings settings,
                     std::shared_ptr<ISharedChannelData> sessionsManager,
+                    bool isPrimary,
                     ConnectionFailureCallback_t connectionFailureCallback = []{});
 
 protected:

@@ -34,6 +34,7 @@ IOHandler::IOHandler(
     bool close_existing,
     std::shared_ptr<IChannelListener> listener,
     std::shared_ptr<ISharedChannelData> sessionsManager,
+    bool isPrimary,
     ConnectionFailureCallback_t connectionFailureCallback
 )
     : close_existing(close_existing)
@@ -42,6 +43,7 @@ IOHandler::IOHandler(
     , _connectionFailureCallback(std::move(connectionFailureCallback))
     , parser(logger)
     , _sessionsManager(std::move(sessionsManager))
+    , _isPrimary(isPrimary)
 {
 }
 
@@ -51,18 +53,21 @@ LinkStatistics IOHandler::Statistics() const
     return { this->statistics, this->parser.Statistics() };
 }
 
-void IOHandler::Shutdown(bool onFail)
+void IOHandler::Shutdown(bool onFail, bool doNotNotify)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     if (!isShutdown)
     {
         this->isShutdown = true;
 
-        this->Reset(onFail);
+        this->Reset(onFail, doNotNotify);
 
         this->ShutdownImpl();
 
-        this->UpdateListener(ChannelState::SHUTDOWN);
+        if (!doNotNotify)
+        {
+            this->UpdateListener(ChannelState::SHUTDOWN);
+        }
     }
 }
 
@@ -123,13 +128,14 @@ bool IOHandler::BeginTransmit(const std::shared_ptr<ILinkSession>& session, cons
     return false;
 }
 
-bool IOHandler::Prepare()
+bool IOHandler::Prepare(NewChannelOpenedCallback_t channelOpenedCallback)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     if (_openingChannel)
     {
         return false;
     }
+    _channelOpenedCallback = channelOpenedCallback;
     this->isShutdown = false;
     if (!this->channel)
     {
@@ -137,6 +143,8 @@ bool IOHandler::Prepare()
         this->UpdateListener(ChannelState::OPENING);
 
         this->BeginChannelAccept();
+
+        return false;
     }
     return true;
 }
@@ -176,6 +184,11 @@ void IOHandler::OnNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel)
 
     ++this->statistics.numOpen;
 
+    if (_channelOpenedCallback)
+    {
+        _channelOpenedCallback();
+    }
+
     this->Reset(false);
 
     this->channel = newChannel;
@@ -186,7 +199,8 @@ void IOHandler::OnNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel)
 
     this->BeginRead();
 
-    _sessionsManager->LowerLayerUp();
+    _sessionsManager->LowerLayerUp(_isPrimary ? LinkStateChangeSource::PrimaryChannel : LinkStateChangeSource::BackupChannel);
+
     SIMPLE_LOG_BLOCK(logger, flags::DBG, "IOHandler, new channel opened")
 }
 
@@ -243,7 +257,7 @@ void IOHandler::RemoveStatisticsHandler()
     this->parser.AddStatisticsHandler(nullptr);
 }
 
-void IOHandler::Reset(bool onFail)
+void IOHandler::Reset(bool onFail, bool doNotNotify)
 {
     if (this->channel)
     {
@@ -256,10 +270,18 @@ void IOHandler::Reset(bool onFail)
             ++this->statistics.numClose;
         }
 
-        this->UpdateListener(ChannelState::CLOSED);
-
         // notify any sessions that are online that this layer is offline
-        _sessionsManager->LowerLayerDown();
+        LinkStateChangeSource source = _isPrimary ? LinkStateChangeSource::PrimaryChannel : LinkStateChangeSource::BackupChannel;
+        if (doNotNotify)
+        {
+            source = LinkStateChangeSource::Ignore;
+        }
+        _sessionsManager->LowerLayerDown(source);
+
+        if (!doNotNotify)
+        {
+            this->UpdateListener(ChannelState::CLOSED);
+        }
     }
 
     // reset the state of the parser

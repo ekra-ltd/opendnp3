@@ -28,11 +28,11 @@ namespace opendnp3
             const ser4cpp::rseq_t& userdata
         ) override;
 
-        void LowerLayerUp() override;
+        void LowerLayerUp(LinkStateChangeSource source) override;
 
         bool IsAnySessionEnabled() const override;
 
-        void LowerLayerDown() override;
+        void LowerLayerDown(LinkStateChangeSource source) override;
 
         std::deque<SharedTransmission>& TxQueue() override;
 

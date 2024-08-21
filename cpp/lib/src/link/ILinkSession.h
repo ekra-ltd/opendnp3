@@ -21,6 +21,7 @@
 #define OPENDNP3_ILINKSESSION_H
 
 #include "IFrameSink.h"
+#include "opendnp3/link/LinkStateChangeSource.h"
 
 namespace opendnp3
 {
@@ -34,9 +35,9 @@ public:
     // lower layer informs this layer that it is ready to transmit again
     virtual bool OnTxReady() = 0;
 
-    virtual bool OnLowerLayerUp() = 0;
+    virtual bool OnLowerLayerUp(LinkStateChangeSource source) = 0;
 
-    virtual bool OnLowerLayerDown() = 0;
+    virtual bool OnLowerLayerDown(LinkStateChangeSource source) = 0;
 
     virtual void OnResponseTimeout() = 0;
 };

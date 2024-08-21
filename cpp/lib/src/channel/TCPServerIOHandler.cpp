@@ -44,7 +44,7 @@ TCPServerIOHandler::TCPServerIOHandler(const Logger& logger,
                                        IPEndpoint endpoint,
                                        std::error_code& ec,
                                        std::shared_ptr<ISharedChannelData> sessionsManager)
-    : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener, std::move(sessionsManager)),
+    : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener, std::move(sessionsManager), true),
       executor(std::move(executor)),
       endpoint(std::move(endpoint)),
       server(std::make_shared<Server>(this->logger, this->executor, this->endpoint, ec))

@@ -42,6 +42,7 @@ public:
                                                       const IPEndpoint& localEndpoint,
                                                       const IPEndpoint& remoteEndpoint,
                                                       std::shared_ptr<ISharedChannelData> sessionsManager,
+                                                      bool isPrimary,
                                                       ConnectionFailureCallback_t connectionFailureCallback = []{})
     {
         return std::make_shared<UDPClientIOHandler>(
@@ -52,6 +53,7 @@ public:
             localEndpoint,
             remoteEndpoint,
             std::move(sessionsManager),
+            isPrimary,
             std::move(connectionFailureCallback)
         );
     }
@@ -63,6 +65,7 @@ public:
                        const IPEndpoint& localEndpoint,
                        const IPEndpoint& remoteEndpoint,
                        std::shared_ptr<ISharedChannelData> sessionsManager,
+                       bool isPrimary,
                        ConnectionFailureCallback_t connectionFailureCallback = []{});
 
 protected:

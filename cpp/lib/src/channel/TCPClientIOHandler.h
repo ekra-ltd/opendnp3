@@ -42,6 +42,7 @@ public:
                                                       const IPEndpointsList& remotes,
                                                       const std::string& adapter,
                                                       std::shared_ptr<ISharedChannelData> sessionsManager,
+                                                      bool isPrimary,
                                                       ConnectionFailureCallback_t connectionFailureCallback = []{})
     {
         return std::make_shared<TCPClientIOHandler>(
@@ -52,6 +53,7 @@ public:
             remotes,
             adapter,
             std::move(sessionsManager),
+            isPrimary,
             std::move(connectionFailureCallback)
         );
     }
@@ -63,6 +65,7 @@ public:
                        const IPEndpointsList& remotes,
                        std::string adapter,
                        std::shared_ptr<ISharedChannelData> sessionsManager,
+                       bool isPrimary,
                        ConnectionFailureCallback_t connectionFailureCallback);
 
 protected:

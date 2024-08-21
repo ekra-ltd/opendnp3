@@ -30,6 +30,7 @@ MasterSchedulerBackend::MasterSchedulerBackend(const std::shared_ptr<exe4cpp::IE
 
 void MasterSchedulerBackend::Shutdown()
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     this->isShutdown = true;
     this->tasks.clear();
     this->current.Clear();
@@ -40,15 +41,13 @@ void MasterSchedulerBackend::Shutdown()
 
 void MasterSchedulerBackend::Add(const std::shared_ptr<IMasterTask>& task, IMasterTaskRunner& runner)
 {
-    if (this->isShutdown)
-        return;
-
-    this->tasks.emplace_back(task, runner);
-    this->PostCheckForTaskRun();
+    std::lock_guard<std::mutex> lock{ _mtx };
+    add(task, runner);
 }
 
 void MasterSchedulerBackend::SetRunnerOffline(const IMasterTaskRunner& runner)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     if (this->isShutdown)
         return;
 
@@ -79,6 +78,7 @@ void MasterSchedulerBackend::SetRunnerOffline(const IMasterTaskRunner& runner)
 
 bool MasterSchedulerBackend::CompleteCurrentFor(const IMasterTaskRunner& runner)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     // no active task
     if (!this->current)
         return false;
@@ -89,7 +89,7 @@ bool MasterSchedulerBackend::CompleteCurrentFor(const IMasterTaskRunner& runner)
 
     if (this->current.task->IsRecurring())
     {
-        this->Add(this->current.task, *this->current.runner);
+        this->add(this->current.task, *this->current.runner);
     }
 
     this->current.Clear();
@@ -101,6 +101,7 @@ bool MasterSchedulerBackend::CompleteCurrentFor(const IMasterTaskRunner& runner)
 
 void MasterSchedulerBackend::Demand(const std::shared_ptr<IMasterTask>& task)
 {
+    std::lock_guard<std::mutex> lock{ _mtx };
     auto callback = [this, task, self = shared_from_this()]() {
         task->SetMinExpiration();
         this->CheckForTaskRun();
@@ -114,9 +115,10 @@ void MasterSchedulerBackend::Evaluate()
     this->PostCheckForTaskRun();
 }
 
-void MasterSchedulerBackend::IsBackupChannelUsed(bool value)
+void MasterSchedulerBackend::ChannelChanging(bool value)
 {
-    isBackupChannelUsed = value;
+    std::lock_guard<std::mutex> lock{ _mtx };
+    tasksPaused = value;
 }
 
 void MasterSchedulerBackend::PostCheckForTaskRun()
@@ -151,7 +153,7 @@ bool MasterSchedulerBackend::CheckForTaskRun()
 
     while (currentIt != this->tasks.end())
     {
-        if (GetBestTaskToRun(now, *best_task, *currentIt, this->isBackupChannelUsed) == Comparison::RIGHT)
+        if (GetBestTaskToRun(now, *best_task, *currentIt) == Comparison::RIGHT)
         {
             best_task = currentIt;
         }
@@ -160,9 +162,8 @@ bool MasterSchedulerBackend::CheckForTaskRun()
     }
 
     // is the task runnable now?
-    const auto isRunnable = !isBackupChannelUsed || best_task->task->CanBeExecutedOnBackupChannel();
-    const auto is_expired = isRunnable && now >= best_task->task->ExpirationTime();
-    if (is_expired)
+    const auto is_expired = now >= best_task->task->ExpirationTime();
+    if (is_expired && !this->tasksPaused)
     {
         this->current = *best_task;
         this->tasks.erase(best_task);
@@ -200,7 +201,6 @@ void MasterSchedulerBackend::RestartTimeoutTimer()
     this->taskStartTimeout.cancel();
     if (min != Timestamp::Max())
     {
-        this->taskStartTimeout.cancel();
         this->taskStartTimeout
             = this->executor->start(min.value, [this, self = shared_from_this()]() { this->TimeoutTasks(); });
     }
@@ -210,6 +210,8 @@ void MasterSchedulerBackend::TimeoutTasks()
 {
     if (this->isShutdown)
         return;
+
+    //this->current.Clear();
 
     // find the minimum start timeout value
     auto isTimedOut = [now = Timestamp(this->executor->get_time())](const Record& record) -> bool {
@@ -229,16 +231,19 @@ void MasterSchedulerBackend::TimeoutTasks()
     this->RestartTimeoutTimer();
 }
 
+void MasterSchedulerBackend::add(const std::shared_ptr<IMasterTask>& task, IMasterTaskRunner& runner)
+{
+    if (this->isShutdown)
+        return;
+
+    this->tasks.emplace_back(task, runner);
+    this->PostCheckForTaskRun();
+}
+
 MasterSchedulerBackend::Comparison MasterSchedulerBackend::GetBestTaskToRun(const Timestamp& now,
                                                                             const Record& left,
-                                                                            const Record& right,
-                                                                            const bool isBackupChannelUsed)
+                                                                            const Record& right)
 {
-    if (!left.task->CanBeExecutedOnBackupChannel() && isBackupChannelUsed)
-    {
-        return Comparison::RIGHT;
-    }
-
     const auto BEST_ENABLED_STATUS = CompareEnabledStatus(left, right);
 
     if (BEST_ENABLED_STATUS != Comparison::SAME)

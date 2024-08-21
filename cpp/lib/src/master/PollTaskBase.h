@@ -56,6 +56,8 @@ protected:
 
     uint32_t rxCount = 0;
     std::shared_ptr<ISOEHandler> handler;
+private:
+    std::string _taskName;
 };
 
 } // namespace opendnp3

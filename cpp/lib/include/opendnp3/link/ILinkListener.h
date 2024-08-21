@@ -21,6 +21,7 @@
 #ifndef OPENDNP3_ILINK_LISTENER_H
 #define OPENDNP3_ILINK_LISTENER_H
 
+#include "LinkStateChangeSource.h"
 #include "opendnp3/gen/LinkStatus.h"
 
 namespace opendnp3
@@ -33,7 +34,7 @@ class ILinkListener
 {
 public:
     /// Called when a the reset/unreset status of the link layer changes
-    virtual void OnStateChange(LinkStatus value) {}
+    virtual void OnStateChange(LinkStatus value, LinkStateChangeSource source) {}
 
     /// Called when a link-layer frame is received from an unknown destination address
     virtual void OnUnknownDestinationAddress(uint16_t destination) {}

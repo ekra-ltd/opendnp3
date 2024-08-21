@@ -82,8 +82,8 @@ public:
     }
 
     // --- helpers for dealing with layer state transitations ---
-    bool OnLowerLayerUp();
-    bool OnLowerLayerDown();
+    bool OnLowerLayerUp(LinkStateChangeSource source);
+    bool OnLowerLayerDown(LinkStateChangeSource source);
     bool OnTxReady();
     bool SetTxSegment(ITransportSegment& segments);
 

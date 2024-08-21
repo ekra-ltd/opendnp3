@@ -97,14 +97,13 @@ std::shared_ptr<MContext> MContext::Create(
 {
     auto ptr = std::shared_ptr<MContext>(new MContext(addresses, logger, executor, std::move(lower), SOEHandler, application, std::move(scheduler), params, iohandlersManager));
     std::weak_ptr<MContext> weakPtr = ptr;
-    ptr->iohandlersManager->SetShutdownCallback([weakPtr] {
+    ptr->iohandlersManager->SetChannelStateChangedCallback([weakPtr](const bool channelDown) {
         const auto shared = weakPtr.lock();
         if (!shared)
         {
             return;
         }
-        shared->isSending = false;
-        shared->tstate = TaskState::IDLE;
+        shared->application->OnStateChange(channelDown ? LinkStatus::UNRESET : LinkStatus::RESET, LinkStateChangeSource::Unconditional);
     });
     return ptr;
 }
@@ -206,11 +205,9 @@ void MContext::OnResponseTimeout()
 
 void MContext::CompleteActiveTask()
 {
-    if (this->activeTask)
-    {
-        this->activeTask.reset();
-        this->scheduler->CompleteCurrentFor(*this);
-    }
+    FORMAT_LOG_BLOCK(logger, flags::INFO, "!!! CompleteActiveTask %s", this->activeTask ? this->activeTask->Name() : "NONE")
+    this->activeTask.reset();
+    this->scheduler->CompleteCurrentFor(*this);
 }
 
 void MContext::OnParsedHeader(const ser4cpp::rseq_t& /*apdu*/,
@@ -362,6 +359,7 @@ void MContext::Transmit(const ser4cpp::rseq_t& data)
         logging::ParseAndLogRequestTx(this->logger, data);
         assert(!this->isSending);
         this->isSending = this->lower->BeginTransmit(Message(this->addresses, data));
+        FORMAT_LOG_BLOCK(logger, flags::INFO, "!!! transmitting = %d, name = %s", this->isSending, this->activeTask ? this->activeTask->Name() : "NONE")
     }
 }
 
@@ -558,7 +556,17 @@ bool MContext::Run(const std::shared_ptr<IMasterTask>& task)
     {
         if (!this->iohandlersManager->PrepareChannel(task->CanBeExecutedOnBackupChannel()))
         {
-            FORMAT_LOG_BLOCK(logger, flags::INFO, "Cannot run task: %s on this connection", task->Name())
+            FORMAT_LOG_BLOCK(
+                logger,
+                flags::INFO,
+                "Cannot run task on %s connection",
+                this->iohandlersManager->IsBackupChannelUsed() ? "backup" : "primary"
+            )
+            if (this->iohandlersManager->IsBackupChannelUsed() && !task->CanBeExecutedOnBackupChannel())
+            {
+                const auto now = Timestamp(this->executor->get_time());
+                this->activeTask->DelayByPeriod(now);
+            }
             this->CompleteActiveTask();
             this->tstate = TaskState::IDLE;
             return false;
@@ -570,7 +578,7 @@ bool MContext::Run(const std::shared_ptr<IMasterTask>& task)
         this->tstate = TaskState::IDLE;
     }
     else {
-        FORMAT_LOG_BLOCK(logger, flags::INFO, "Begining task: %s", this->activeTask->Name());
+        FORMAT_LOG_BLOCK(logger, flags::INFO, "Begining task: %s", this->activeTask->Name())
 
         if (!this->isSending)
         {
@@ -602,6 +610,12 @@ void MContext::ScheduleAdhocTask(const std::shared_ptr<IMasterTask>& task)
     {
         // can't run this task since we're offline so fail it immediately
         task->OnLowerLayerClose(Timestamp(this->executor->get_time()));
+        if (this->iohandlersManager) {
+            this->iohandlersManager->NotifyTaskResult(
+                false,
+                task->GetTaskType() == MasterTaskType::USER_POLL
+            );
+        }
     }
 }
 

@@ -20,9 +20,9 @@ namespace opendnp3
 
         bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) const;
 
-        bool LowerLayerUp();
+        bool LowerLayerUp(LinkStateChangeSource source);
 
-        bool LowerLayerDown();
+        bool LowerLayerDown(LinkStateChangeSource source);
 
         bool Enabled() const;
         void Enabled(bool value);

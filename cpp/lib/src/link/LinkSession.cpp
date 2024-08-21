@@ -62,7 +62,7 @@ void LinkSession::ShutdownImpl()
 
     if (this->stack)
     {
-        this->stack->OnLowerLayerDown();
+        this->stack->OnLowerLayerDown(LinkStateChangeSource::Unconditional);
         this->stack->BeginShutdown();
     }
 
@@ -126,7 +126,7 @@ bool LinkSession::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t&
 
         if (this->stack)
         {
-            this->stack->OnLowerLayerUp();
+            this->stack->OnLowerLayerUp(LinkStateChangeSource::Unconditional);
 
             // push the frame into the newly created stack
             this->stack->OnFrame(header, userdata);

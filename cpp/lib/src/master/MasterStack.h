@@ -85,14 +85,14 @@ public:
         return this->tstack.link->OnTxReady();
     }
 
-    bool OnLowerLayerUp() override
+    bool OnLowerLayerUp(LinkStateChangeSource source) override
     {
-        return this->tstack.link->OnLowerLayerUp();
+        return this->tstack.link->OnLowerLayerUp(source);
     }
 
-    bool OnLowerLayerDown() override
+    bool OnLowerLayerDown(LinkStateChangeSource source) override
     {
-        return this->tstack.link->OnLowerLayerDown();
+        return this->tstack.link->OnLowerLayerDown(source);
     }
 
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) override

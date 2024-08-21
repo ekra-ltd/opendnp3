@@ -30,31 +30,32 @@ namespace opendnp3
 class DefaultMasterApplication final : public IMasterApplication
 {
 public:
-    DefaultMasterApplication() {}
+    DefaultMasterApplication() = default;
 
     static std::shared_ptr<IMasterApplication> Create()
     {
         return std::make_shared<DefaultMasterApplication>();
     }
 
-    virtual void OnReceiveIIN(const IINField& iin) final {}
+    void OnReceiveIIN(const IINField& iin) override {}
 
-    virtual bool OnTaskStart(MasterTaskType type, TaskId id) final {
+    bool OnTaskStart(MasterTaskType type, TaskId id) override
+    {
         return true;
     }
 
-    virtual void OnTaskComplete(const TaskInfo& info) final {}
+    void OnTaskComplete(const TaskInfo& info) override {}
 
-    virtual bool AssignClassDuringStartup() final
+    bool AssignClassDuringStartup() override
     {
         return false;
     }
 
-    virtual void ConfigureAssignClassRequest(const WriteHeaderFunT& fun) final {}
+    void ConfigureAssignClassRequest(const WriteHeaderFunT& fun) override {}
 
-    virtual UTCTimestamp Now() final;
+    UTCTimestamp Now() override;
 
-    virtual void OnStateChange(LinkStatus value) final {}
+    void OnStateChange(LinkStatus value, LinkStateChangeSource source) override {}
 };
 
 } // namespace opendnp3

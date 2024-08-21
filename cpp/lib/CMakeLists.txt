@@ -108,6 +108,7 @@ set(opendnp3_public_headers
     ./include/opendnp3/link/LinkConfig.h
     ./include/opendnp3/link/LinkHeaderFields.h
     ./include/opendnp3/link/LinkStatistics.h
+    ./include/opendnp3/link/LinkStateChangeSource.h
 
     ./include/opendnp3/logging/ILogHandler.h
     ./include/opendnp3/logging/LogLevels.h
