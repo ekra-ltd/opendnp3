@@ -123,6 +123,13 @@ void TaskBehavior::Disable()
     this->expiration = Timestamp::Max();
 }
 
+void TaskBehavior::DelayByPeriod(const Timestamp& now)
+{
+    this->currentRetryDelay = this->minRetryDelay;
+    this->expiration = this->period.IsNegative() ? Timestamp::Max() : now + this->period;
+    _retryCount.Reset();
+}
+
 TimeDuration TaskBehavior::CalcNextRetryTimeout()
 {
     if (_retryCount.IsFixed()) {

@@ -22,16 +22,12 @@
 
 #include "ISharedChannelData.h"
 #include "channel/IAsyncChannel.h"
-#include "link/ILinkTx.h"
 #include "link/LinkLayerParser.h"
-#include "master/IMasterTask.h"
 
 #include "opendnp3/channel/IChannelListener.h"
-#include "opendnp3/link/Addresses.h"
 #include "opendnp3/logging/Logger.h"
 
-#include <deque>
-#include <vector>
+#include <boost/signals2/signal.hpp>
 
 namespace opendnp3
 {
@@ -45,6 +41,7 @@ class IOHandler : private IFrameSink, public IChannelCallbacks, public std::enab
 {
 public:
     using ConnectionFailureCallback_t = std::function<void()>;
+    using NewChannelOpenedCallback_t = std::function<void()>;
 
 public:
     IOHandler(
@@ -52,6 +49,7 @@ public:
         bool close_existing,
         std::shared_ptr<IChannelListener> listener,
         std::shared_ptr<ISharedChannelData> sessionsManager,
+        bool isPrimary,
         ConnectionFailureCallback_t connectionFailureCallback = []{}
     );
 
@@ -59,14 +57,14 @@ public:
 
     LinkStatistics Statistics() const;
 
-    void Shutdown(bool onFail = false);
+    void Shutdown(bool onFail = false, bool doNotNotify = false);
 
     /// --- implement ILinkTx ---
 
     bool BeginTransmit(const std::shared_ptr<ILinkSession>& session, const ser4cpp::rseq_t& data);
 
     // Begin sending messages to the context
-    bool Prepare();
+    bool Prepare(NewChannelOpenedCallback_t channelOpenedCallback = nullptr);
 
     // Stop sending messages to this session
     void ConditionalClose();
@@ -107,6 +105,7 @@ protected:
     LinkStatistics::Channel statistics;
     ConnectionFailureCallback_t _connectionFailureCallback;
     std::atomic_bool _openingChannel{ false };
+    NewChannelOpenedCallback_t _channelOpenedCallback;
 
 private:
     bool isShutdown = false;
@@ -116,7 +115,7 @@ private:
     // called by the parser when a complete frame is read
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) final;
 
-    void Reset(bool onFail = true);
+    void Reset(bool onFail = true, bool doNotNotify = false);
     void BeginRead();
     bool CheckForSend();
 
@@ -128,6 +127,8 @@ private:
     std::shared_ptr<ISharedChannelData> _sessionsManager;
 
     mutable std::mutex _mtx;
+
+    bool _isPrimary{ true };
 };
 
 } // namespace opendnp3

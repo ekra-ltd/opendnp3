@@ -24,6 +24,8 @@
 #include "link/PriLinkLayerStates.h"
 #include "link/SecLinkLayerStates.h"
 
+#include <utility>
+
 namespace opendnp3
 {
 
@@ -57,10 +59,10 @@ std::shared_ptr<LinkContext> LinkContext::Create(const Logger& logger,
                                                  ILinkSession& session,
                                                  const LinkLayerConfig& config)
 {
-    return std::shared_ptr<LinkContext>(new LinkContext(logger, executor, upper, listener, session, config));
+    return std::shared_ptr<LinkContext>(new LinkContext(logger, executor, std::move(upper), std::move(listener), session, config));
 }
 
-bool LinkContext::OnLowerLayerUp()
+bool LinkContext::OnLowerLayerUp(LinkStateChangeSource source)
 {
     if (this->isOnline)
     {
@@ -72,13 +74,13 @@ bool LinkContext::OnLowerLayerUp()
 
     this->RestartKeepAliveTimer();
 
-    listener->OnStateChange(LinkStatus::RESET);
+    listener->OnStateChange(LinkStatus::RESET, source);
     upper->OnLowerLayerUp();
 
     return true;
 }
 
-bool LinkContext::OnLowerLayerDown()
+bool LinkContext::OnLowerLayerDown(LinkStateChangeSource source)
 {
     if (!isOnline)
     {
@@ -99,7 +101,7 @@ bool LinkContext::OnLowerLayerDown()
     pPriState = &PLLS_Idle::Instance();
     pSecState = &SLLS_NotReset::Instance();
 
-    listener->OnStateChange(LinkStatus::UNRESET);
+    listener->OnStateChange(LinkStatus::UNRESET, source);
     upper->OnLowerLayerDown();
 
     return true;

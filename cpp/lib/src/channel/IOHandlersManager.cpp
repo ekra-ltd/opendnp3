@@ -26,7 +26,27 @@ namespace opendnp3
         , _executor(executor)
     {
         IOHandler::ConnectionFailureCallback_t callback = [this] {
-            NotifyTaskResult(false, false);
+            std::lock_guard<std::mutex> lock{ _mtx };
+            _succeededReadingCount = 0;
+            (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Error;
+            if (_primaryChannelState == Error && _backupChannelState == Error)
+            {
+                if (_channelStateChanged)
+                {
+                    _channelStateChanged(true);
+                }
+            }
+            if (_backupSettings)
+            {
+                _backupChannelUsed = !_backupChannelUsed;
+                if (_currentChannel)
+                {
+                    _currentChannel->Shutdown(false, true);
+                    _currentChannel.reset();
+                }
+                trySwitchChannel(false);
+                ChannelReservationChanged(_backupChannelUsed);
+            }
         };
         auto retrySetting = retry;
         retrySetting.InfiniteTries(!_backupSettings.has_value());
@@ -40,6 +60,7 @@ namespace opendnp3
                 _primarySettings.TcpPortParameters(),
                 adapter,
                 _sessionsManager,
+                true,
                 callback
             );
         }
@@ -52,6 +73,7 @@ namespace opendnp3
                 retrySetting,
                 _primarySettings.SerialPortParameters(),
                 _sessionsManager,
+                true,
                 callback
             );
         }
@@ -66,6 +88,7 @@ namespace opendnp3
                 udpSettings.Local,
                 udpSettings.Remote,
                 _sessionsManager,
+                true,
                 callback
             );
         }
@@ -73,6 +96,7 @@ namespace opendnp3
 
         if (!_backupSettings || !_backupSettings->IsBackupChannel())
         {
+            _backupChannelState = Error;
             _backupSettings = boost::none;
             return;
         }
@@ -87,6 +111,7 @@ namespace opendnp3
                 _backupSettings->TcpPortParameters(),
                 adapter,
                 _sessionsManager,
+                false,
                 callback
             );
         }
@@ -99,6 +124,7 @@ namespace opendnp3
                 retrySetting,
                 _backupSettings->SerialPortParameters(),
                 _sessionsManager,
+                false,
                 callback
             );
         }
@@ -113,6 +139,7 @@ namespace opendnp3
                 udpSettings.Local,
                 udpSettings.Remote,
                 _sessionsManager,
+                false,
                 callback
             );
         }
@@ -169,6 +196,53 @@ namespace opendnp3
         return result;
     }
 
+    void IOHandlersManager::trySwitchChannel(bool onFail)
+    {
+        if (!_backupSettings)
+        {
+            return;
+        }
+
+        FORMAT_LOG_BLOCK(
+            _logger,
+            flags::DBG,
+            R"(%strying to switch to %s connection)",
+            onFail ? "connection error, " : "",
+            !_backupChannelUsed ? "primary" : "backup"
+        )
+        const auto settings = _backupChannelUsed ? *_backupSettings : _primarySettings;
+        FORMAT_LOG_BLOCK(_logger, flags::DBG, R"(channel settings - %s)", settings.ToString().c_str())
+
+        const auto newChannel = _backupChannelUsed ? _backupChannel : _primaryChannel;
+
+        if (_currentChannel != newChannel)
+        {
+            ChannelChanging(true);
+            _oldChannel = _currentChannel;
+            const auto handler = [onFail, newChannel, self = shared_from_this()] {
+                (self->_backupChannelUsed ? self->_backupChannelState : self->_primaryChannelState) = Working;
+                (!self->_backupChannelUsed ? self->_backupChannelState : self->_primaryChannelState) = Undecided;
+                self->_succeededReadingCount = 0;
+                if (self->_oldChannel)
+                {
+                    // shutdown without notifications
+                    self->_oldChannel->Shutdown(onFail, true);
+                    self->_oldChannel.reset();
+                }
+                self->_currentChannel = newChannel;
+                self->ChannelChanging(false);
+                if (self->_channelStateChanged)
+                {
+                    self->_channelStateChanged(false);
+                }
+            };
+            if (newChannel->Prepare(handler))
+            {
+                handler();
+            }
+        }
+    }
+
     std::shared_ptr<IOHandler> IOHandlersManager::GetCurrent()
     {
         std::lock_guard<std::mutex> lock{ _mtx };
@@ -180,25 +254,20 @@ namespace opendnp3
         const auto oldBackupChannelUsed = _backupChannelUsed;
         if (_backupChannelUsed) {
             if (_succeededReadingCount >= _backupSettings->ReadingCountBeforeReturnToPrimary()) {
-                FORMAT_LOG_BLOCK(_logger, flags::DBG, R"(try switch to primary connection, {%s})", _primarySettings.ToString().c_str())
+                FORMAT_LOG_BLOCK(
+                    _logger,
+                    flags::DBG,
+                    R"(Succeeded reading count %d >= %d)",
+                    _succeededReadingCount,
+                    _backupSettings->ReadingCountBeforeReturnToPrimary()
+                )
                 _backupChannelUsed = false;
                 _succeededReadingCount = 0;
             }
         }
 
-        const auto newChannel = _backupChannelUsed ? _backupChannel : _primaryChannel;
-        if (_currentChannel != newChannel)
-        {
-            _currentChannel->Shutdown();
-            if (_executor && _afterCurrentChannelShutdown)
-            {
-                _executor->post(_afterCurrentChannelShutdown);
-            }
-            newChannel->Prepare();
-            _currentChannel = newChannel;
-        }
-
         if (oldBackupChannelUsed != _backupChannelUsed) {
+            trySwitchChannel(false);
             ChannelReservationChanged(_backupChannelUsed);
         }
         return _currentChannel;
@@ -232,21 +301,9 @@ namespace opendnp3
                 return;
             }
 
-            FORMAT_LOG_BLOCK(_logger, flags::DBG, R"(connection error, try switch to %s connection)", _backupChannelUsed ? "primary" : "backup")
+            (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Error;
             _backupChannelUsed = !_backupChannelUsed;
-            const auto settings = _backupChannelUsed ? *_backupSettings : _primarySettings;
-            FORMAT_LOG_BLOCK(_logger, flags::DBG, R"(channel settings - %s)", settings.ToString().c_str())
-            const auto newChannel = _backupChannelUsed ? _backupChannel : _primaryChannel;
-            if (_currentChannel != newChannel)
-            {
-                _currentChannel->Shutdown(true);
-                if (_executor && _afterCurrentChannelShutdown)
-                {
-                    _executor->post(_afterCurrentChannelShutdown);
-                }
-                newChannel->Prepare();
-                _currentChannel = newChannel;
-            }
+            trySwitchChannel(true);
             ChannelReservationChanged(_backupChannelUsed);
         }
     }
@@ -306,9 +363,9 @@ namespace opendnp3
         }
     }
 
-    void IOHandlersManager::SetShutdownCallback(const Callback_t& afterCurrentChannelShutdown)
+    void IOHandlersManager::SetChannelStateChangedCallback(const Callback_t& afterCurrentChannelShutdown)
     {
-        _afterCurrentChannelShutdown = afterCurrentChannelShutdown;
+        _channelStateChanged = afterCurrentChannelShutdown;
     }
 
     bool IOHandlersManager::IsBackupChannelUsed() const

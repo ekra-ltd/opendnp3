@@ -149,7 +149,7 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
 
     if (config.pCallback)
     {
-        config.pCallback->OnComplete(result);
+        config.pCallback->OnComplete(result, Name());
     }
 
     // notify the application
@@ -188,7 +188,7 @@ bool IMasterTask::OnStart(Timestamp now)
 {
     if (config.pCallback)
     {
-        config.pCallback->OnStart();
+        config.pCallback->OnStart(Name());
     }
 
     bool isTaskStarted = this->application->OnTaskStart(this->GetTaskType(), config.taskId);
@@ -221,6 +221,11 @@ bool IMasterTask::CanBeExecutedOnBackupChannel() const
 bool IMasterTask::OutOfRetries() const
 {
     return _retriesFinished;
+}
+
+void IMasterTask::DelayByPeriod(const Timestamp& now)
+{
+    this->behavior.DelayByPeriod(now);
 }
 
 bool IMasterTask::ValidateSingleResponse(const APDUResponseHeader& header)

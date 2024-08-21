@@ -23,6 +23,8 @@
 #include "opendnp3/master/ITaskCallback.h"
 #include "opendnp3/master/TaskId.h"
 
+#include <boost/optional/optional.hpp>
+
 #include <memory>
 #include <utility>
 
@@ -35,22 +37,28 @@ namespace opendnp3
 class TaskConfig
 {
 public:
-    TaskConfig(TaskId taskId, std::shared_ptr<ITaskCallback> pCallback, bool canUseBackupChannel = true)
+    TaskConfig(
+        TaskId taskId,
+        std::shared_ptr<ITaskCallback> pCallback,
+        boost::optional<std::string> taskName = boost::none,
+        bool canUseBackupChannel = true
+    )
         : taskId(taskId)
         , pCallback(std::move(pCallback))
         , canUseBackupChannel(canUseBackupChannel)
+        , taskName(std::move(taskName))
     {}
 
     static TaskConfig Default()
     {
-        return { TaskId::Undefined(), nullptr, true };
+        return { TaskId::Undefined(), nullptr, boost::none, true };
     }
 
     ///  --- syntax sugar for building configs -----
 
-    static TaskConfig With(std::shared_ptr<ITaskCallback> callback, bool canUseBackupChannel = true)
+    static TaskConfig With(std::shared_ptr<ITaskCallback> callback, boost::optional<std::string> taskName = boost::none, bool canUseBackupChannel = true)
     {
-        return { TaskId::Undefined(), std::move(callback), canUseBackupChannel };
+        return { TaskId::Undefined(), std::move(callback), taskName, canUseBackupChannel };
     }
 
     TaskConfig() = delete;
@@ -59,6 +67,7 @@ public:
     TaskId taskId;
     std::shared_ptr<ITaskCallback> pCallback;
     bool canUseBackupChannel{ true };
+    boost::optional<std::string> taskName;
 };
 
 } // namespace opendnp3

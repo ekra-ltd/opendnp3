@@ -87,14 +87,14 @@ public:
         return this->tstack.link->OnTxReady();
     }
 
-    bool OnLowerLayerUp() final
+    bool OnLowerLayerUp(LinkStateChangeSource /*source*/) final
     {
-        return this->tstack.link->OnLowerLayerUp();
+        return this->tstack.link->OnLowerLayerUp(LinkStateChangeSource::Unconditional);
     }
 
-    bool OnLowerLayerDown() final
+    bool OnLowerLayerDown(LinkStateChangeSource /*source*/) final
     {
-        return this->tstack.link->OnLowerLayerDown();
+        return this->tstack.link->OnLowerLayerDown(LinkStateChangeSource::Unconditional);
     }
 
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) final

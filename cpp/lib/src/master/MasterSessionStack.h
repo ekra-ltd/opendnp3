@@ -51,13 +51,13 @@ public:
                                                       ILinkTx& linktx,
                                                       const MasterStackConfig& config);
 
-    void OnLowerLayerUp();
+    void OnLowerLayerUp(LinkStateChangeSource source) const;
 
-    void OnLowerLayerDown();
+    void OnLowerLayerDown(LinkStateChangeSource source) const;
 
-    bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata);
+    bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) const;
 
-    void OnTxReady();
+    void OnTxReady() const;
 
     void SetLogFilters(const opendnp3::LogLevels& filters) final;
 

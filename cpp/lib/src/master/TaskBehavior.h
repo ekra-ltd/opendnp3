@@ -109,6 +109,8 @@ public:
      */
     void Disable();
 
+    void DelayByPeriod(const Timestamp& now);
+
 private:
     TimeDuration CalcNextRetryTimeout();
 

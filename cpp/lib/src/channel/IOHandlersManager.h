@@ -16,7 +16,7 @@ namespace opendnp3
 
     class IOHandlersManager final : public std::enable_shared_from_this<IOHandlersManager>
     {
-        using Callback_t = std::function<void()>;
+        using Callback_t = std::function<void(bool)>;
 
     public:
         IOHandlersManager(
@@ -56,7 +56,7 @@ namespace opendnp3
         void Reset();
         void Shutdown();
 
-        void SetShutdownCallback(const Callback_t& afterCurrentChannelShutdown);
+        void SetChannelStateChangedCallback(const Callback_t& afterCurrentChannelShutdown);
 
         bool IsBackupChannelUsed() const;
 
@@ -64,7 +64,21 @@ namespace opendnp3
         using ChannelReservationChangedSignal_t = boost::signals2::signal<ChannelReservationChangedHandler_t>;
         ChannelReservationChangedSignal_t ChannelReservationChanged;
 
+        using ChannelChangingHandler_t = void(bool);
+        using ChannelChangingSignal_t = boost::signals2::signal<ChannelChangingHandler_t>;
+        ChannelChangingSignal_t ChannelChanging;
+
     private:
+        void trySwitchChannel(bool onFail);
+
+    private:
+        enum ChannelState
+        {
+            Working,
+            Error,
+            Undecided
+        };
+
         mutable std::mutex _mtx;
         Logger _logger;
         ChannelConnectionOptions _primarySettings;
@@ -73,10 +87,13 @@ namespace opendnp3
         unsigned _succeededReadingCount{ 0 };
         std::shared_ptr<IOHandler> _primaryChannel;
         std::shared_ptr<IOHandler> _backupChannel;
+        std::shared_ptr<IOHandler> _oldChannel;
         std::shared_ptr<IOHandler> _currentChannel;
         std::shared_ptr<ISharedChannelData> _sessionsManager;
-        Callback_t _afterCurrentChannelShutdown;
+        Callback_t _channelStateChanged;
         std::shared_ptr<exe4cpp::StrandExecutor> _executor;
+        ChannelState _primaryChannelState{ Error };
+        ChannelState _backupChannelState{ Error };
     };
 
 } // namespace opendnp3

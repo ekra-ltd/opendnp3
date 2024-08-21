@@ -35,8 +35,9 @@ SerialIOHandler::SerialIOHandler(const Logger& logger,
                                  const ChannelRetry& retry,
                                  SerialSettings settings,
                                  std::shared_ptr<ISharedChannelData> sessionsManager,
+                                 bool isPrimary,
                                  ConnectionFailureCallback_t connectionFailureCallback)
-    : IOHandler(logger, false, listener, std::move(sessionsManager), std::move(connectionFailureCallback))
+    : IOHandler(logger, false, listener, std::move(sessionsManager), isPrimary, std::move(connectionFailureCallback))
     , executor(executor)
     , retry(retry)
     , settings(std::move(settings))

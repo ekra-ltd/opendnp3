@@ -37,11 +37,12 @@ PollTaskBase::PollTaskBase(const std::shared_ptr<TaskContext>& context,
                            TaskConfig config)
     : IMasterTask(context, application, behavior, logger, std::move(config)), handler(std::move(handler))
 {
+    _taskName = this->config.taskName.value_or("Application Poll");
 }
 
 const char* PollTaskBase::Name() const
 {
-    return "Application Poll";
+    return _taskName.c_str();
 }
 
 void PollTaskBase::Initialize()

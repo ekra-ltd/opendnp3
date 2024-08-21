@@ -72,7 +72,7 @@ public:
             this->Add(task, runner);
     }
 
-    virtual void IsBackupChannelUsed(bool value) = 0;
+    virtual void ChannelChanging(bool value) = 0;
 };
 
 } // namespace opendnp3

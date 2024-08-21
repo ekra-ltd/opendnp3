@@ -31,11 +31,11 @@ namespace opendnp3
 
         virtual bool SendToSession(const Addresses& addresses, const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) = 0;
 
-        virtual void LowerLayerUp() = 0;
+        virtual void LowerLayerUp(LinkStateChangeSource source) = 0;
 
         virtual bool IsAnySessionEnabled() const = 0;
 
-        virtual void LowerLayerDown() = 0;
+        virtual void LowerLayerDown(LinkStateChangeSource source) = 0;
 
         virtual std::deque<SharedTransmission>& TxQueue() = 0;
     };
