@@ -205,7 +205,6 @@ void MContext::OnResponseTimeout()
 
 void MContext::CompleteActiveTask()
 {
-    FORMAT_LOG_BLOCK(logger, flags::INFO, "!!! CompleteActiveTask %s", this->activeTask ? this->activeTask->Name() : "NONE")
     this->activeTask.reset();
     this->scheduler->CompleteCurrentFor(*this);
 }
@@ -359,7 +358,6 @@ void MContext::Transmit(const ser4cpp::rseq_t& data)
         logging::ParseAndLogRequestTx(this->logger, data);
         assert(!this->isSending);
         this->isSending = this->lower->BeginTransmit(Message(this->addresses, data));
-        FORMAT_LOG_BLOCK(logger, flags::INFO, "!!! transmitting = %d, name = %s", this->isSending, this->activeTask ? this->activeTask->Name() : "NONE")
     }
 }
 
@@ -559,8 +557,9 @@ bool MContext::Run(const std::shared_ptr<IMasterTask>& task)
             FORMAT_LOG_BLOCK(
                 logger,
                 flags::INFO,
-                "Cannot run task on %s connection",
-                this->iohandlersManager->IsBackupChannelUsed() ? "backup" : "primary"
+                "Cannot run task on %s connection. Task name = \"%s\"",
+                this->iohandlersManager->IsBackupChannelUsed() ? "backup" : "primary",
+                this->activeTask ? this->activeTask->Name() : ""
             )
             if (this->iohandlersManager->IsBackupChannelUsed() && !task->CanBeExecutedOnBackupChannel())
             {

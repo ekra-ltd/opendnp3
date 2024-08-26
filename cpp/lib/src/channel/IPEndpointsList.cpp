@@ -103,7 +103,7 @@ std::ostream& operator<<(std::ostream& os, const IPEndpointsList& obj)
     {
         os << "\t" << endpoint;
     }
-    os << "currentEndpoint: " << *obj.currentEndpoint;
+    os << std::endl << "\tcurrentEndpoint: " << *obj.currentEndpoint << std::endl;
     return os;
 }
 

@@ -45,7 +45,6 @@ namespace opendnp3
                     _currentChannel.reset();
                 }
                 trySwitchChannel(false);
-                ChannelReservationChanged(_backupChannelUsed);
             }
         };
         auto retrySetting = retry;
@@ -220,8 +219,6 @@ namespace opendnp3
             ChannelChanging(true);
             _oldChannel = _currentChannel;
             const auto handler = [onFail, newChannel, self = shared_from_this()] {
-                (self->_backupChannelUsed ? self->_backupChannelState : self->_primaryChannelState) = Working;
-                (!self->_backupChannelUsed ? self->_backupChannelState : self->_primaryChannelState) = Undecided;
                 self->_succeededReadingCount = 0;
                 if (self->_oldChannel)
                 {
@@ -235,6 +232,10 @@ namespace opendnp3
                 {
                     self->_channelStateChanged(false);
                 }
+
+                self->ChannelReservationChanged(self->_backupChannelUsed);
+                (self->_backupChannelUsed ? self->_backupChannelState : self->_primaryChannelState) = Working;
+                (!self->_backupChannelUsed ? self->_backupChannelState : self->_primaryChannelState) = Undecided;
             };
             if (newChannel->Prepare(handler))
             {
@@ -268,7 +269,6 @@ namespace opendnp3
 
         if (oldBackupChannelUsed != _backupChannelUsed) {
             trySwitchChannel(false);
-            ChannelReservationChanged(_backupChannelUsed);
         }
         return _currentChannel;
     }
@@ -304,7 +304,6 @@ namespace opendnp3
             (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Error;
             _backupChannelUsed = !_backupChannelUsed;
             trySwitchChannel(true);
-            ChannelReservationChanged(_backupChannelUsed);
         }
     }
 
@@ -349,7 +348,6 @@ namespace opendnp3
         std::lock_guard<std::mutex> lock{ _mtx };
         _backupChannelUsed = false;
         _succeededReadingCount = 0;
-        ChannelReservationChanged(false);
         Shutdown();
     }
 
