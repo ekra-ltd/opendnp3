@@ -707,7 +707,7 @@ if(NOT TARGET boost)
 if(NOT DEFINED BOOST_ROOT)
     set(BOOST_ROOT "../boost") # reasonable default: boost is in a parallel directory
 endif()
-find_package(Boost REQUIRED COMPONENTS filesystem)
+find_package(Boost REQUIRED COMPONENTS filesystem locale)
 endif()
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${all_sources})
@@ -720,6 +720,7 @@ target_link_libraries(opendnp3 PRIVATE
     $<BUILD_INTERFACE:asio>
     $<$<BOOL:${DNP3_TLS}>:OpenSSL::SSL>
     Boost::filesystem
+    Boost::locale
 )
 target_include_directories(opendnp3
     PUBLIC
