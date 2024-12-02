@@ -6,6 +6,7 @@
 #include "gen/objects/Group70.h"
 #include "util/EncodingConverter.h"
 
+#include <boost/filesystem/directory.hpp>
 #include <ser4cpp/container/Buffer.h>
 
 #include <algorithm>

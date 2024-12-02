@@ -19,7 +19,7 @@ namespace opendnp3
             ConnectionType operator()(const SerialSettings& /*unused*/) const noexcept {
                 return ConnectionType::Serial;
             }
-            ConnectionType operator()(const IPEndpointsList& /*unused*/) const noexcept {
+            ConnectionType operator()(const TCPSettings& /*unused*/) const noexcept {
                 return ConnectionType::Tcp;
             }
             ConnectionType operator()(const UDPSettings& /*unused*/) const noexcept {
@@ -49,12 +49,12 @@ namespace opendnp3
         }
     }
 
-    ChannelConnectionOptions::ChannelConnectionOptions(const IPEndpointsList& endpoint)
-        : _channelSettings(endpoint)
-    {}
-
     ChannelConnectionOptions::ChannelConnectionOptions(const SerialSettings& serialSettings)
         : _channelSettings(serialSettings)
+    {}
+
+    ChannelConnectionOptions::ChannelConnectionOptions(const TCPSettings& tcpSettings)
+        : _channelSettings(tcpSettings)
     {}
 
     ChannelConnectionOptions::ChannelConnectionOptions(const UDPSettings& udpSettings)
@@ -91,9 +91,9 @@ namespace opendnp3
         return boost::get<SerialSettings>(_channelSettings);
     }
 
-    const IPEndpointsList& ChannelConnectionOptions::TcpPortParameters() const
+    const TCPSettings& ChannelConnectionOptions::TcpPortParameters() const
     {
-        return boost::get<IPEndpointsList>(_channelSettings);
+        return boost::get<TCPSettings>(_channelSettings);
     }
 
     const UDPSettings& ChannelConnectionOptions::UDPParameters() const

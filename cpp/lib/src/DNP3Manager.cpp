@@ -44,11 +44,11 @@ void DNP3Manager::Shutdown()
 std::shared_ptr<IChannel> DNP3Manager::AddTCPClient(const std::string& id,
                                                     const LogLevels& levels,
                                                     const ChannelRetry& retry,
-                                                    const std::vector<IPEndpoint>& hosts,
+                                                    const ChannelConnectionOptions& primary,
                                                     const std::string& local,
                                                     std::shared_ptr<IChannelListener> listener) const
 {
-    return this->impl->AddTCPClient(id, levels, retry, hosts, local, std::move(listener));
+    return this->impl->AddTCPClient(id, levels, retry, primary, local, std::move(listener));
 }
 
 std::shared_ptr<IChannel> DNP3Manager::AddClientWithBackupChannel(
@@ -67,10 +67,10 @@ std::shared_ptr<IChannel> DNP3Manager::AddClientWithBackupChannel(
 std::shared_ptr<IChannel> DNP3Manager::AddTCPServer(const std::string& id,
                                                     const LogLevels& levels,
                                                     ServerAcceptMode mode,
-                                                    const IPEndpoint& endpoint,
+                                                    const TCPSettings& settings,
                                                     std::shared_ptr<IChannelListener> listener) const
 {
-    return this->impl->AddTCPServer(id, levels, mode, endpoint, std::move(listener));
+    return this->impl->AddTCPServer(id, levels, mode, settings, std::move(listener));
 }
 
 std::shared_ptr<IChannel> DNP3Manager::AddUDPChannel(const std::string& id,

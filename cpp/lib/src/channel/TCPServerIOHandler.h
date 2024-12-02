@@ -25,7 +25,7 @@
 #include "channel/TCPServer.h"
 
 #include "opendnp3/channel/ChannelRetry.h"
-#include "opendnp3/channel/IPEndpoint.h"
+#include "opendnp3/channel/TCPSettings.h"
 #include "opendnp3/gen/ServerAcceptMode.h"
 
 #include <exe4cpp/Timer.h>
@@ -70,18 +70,18 @@ public:
                                                       ServerAcceptMode accept_mode,
                                                       const std::shared_ptr<IChannelListener>& listener,
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
-                                                      const IPEndpoint& endpoint,
+                                                      const TCPSettings& settings,
                                                       std::error_code& ec,
                                                       std::shared_ptr<ISharedChannelData> sessionsManager)
     {
-        return std::make_shared<TCPServerIOHandler>(logger, accept_mode, listener, executor, endpoint, ec, std::move(sessionsManager));
+        return std::make_shared<TCPServerIOHandler>(logger, accept_mode, listener, executor, settings, ec, std::move(sessionsManager));
     }
 
     TCPServerIOHandler(const Logger& logger,
                        ServerAcceptMode accept_mode,
                        const std::shared_ptr<IChannelListener>& listener,
                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
-                       IPEndpoint endpoint,
+                       TCPSettings settings,
                        std::error_code& ec,
                        std::shared_ptr<ISharedChannelData> sessionsManager);
 
@@ -93,7 +93,7 @@ protected:
 
 private:
     const std::shared_ptr<exe4cpp::StrandExecutor> executor;
-    const IPEndpoint endpoint;
+    const TCPSettings settings;
     std::shared_ptr<Server> server;
 };
 

@@ -2,8 +2,8 @@
 
 #include "TLSConfig.h"
 #include "UDPSettings.h"
-#include "opendnp3/channel/IPEndpointsList.h"
 #include "opendnp3/channel/SerialSettings.h"
+#include "opendnp3/channel/TCPSettings.h"
 
 #include <boost/variant/variant.hpp>
 
@@ -14,15 +14,15 @@ class ChannelConnectionOptions
 {
 public:
     using ConnectionSettings_t = boost::variant<
-        IPEndpointsList,
         SerialSettings,
+        TCPSettings,
         UDPSettings
     >;
 
 public:
     ChannelConnectionOptions() = default;
-    explicit ChannelConnectionOptions(const IPEndpointsList& endpoint);
     explicit ChannelConnectionOptions(const SerialSettings& serialSettings);
+    explicit ChannelConnectionOptions(const TCPSettings& tcpSettings);
     explicit ChannelConnectionOptions(const UDPSettings& udpSettings);
 
     bool Enabled() const;
@@ -34,7 +34,7 @@ public:
 
     const SerialSettings& SerialPortParameters() const;
 
-    const IPEndpointsList& TcpPortParameters() const;
+    const TCPSettings& TcpPortParameters() const;
 
     const UDPSettings& UDPParameters() const;
 

@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 
+#include "channel/ASIOTCPSocketHelpers.h"
 #include "channel/TCPClientIOHandler.h"
 #include "channel/TCPSocketChannel.h"
 
@@ -30,7 +31,7 @@ TCPClientIOHandler::TCPClientIOHandler(const Logger& logger,
                                        const std::shared_ptr<IChannelListener>& listener,
                                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                                        const ChannelRetry& retry,
-                                       const IPEndpointsList& remotes,
+                                       const TCPSettings& settings,
                                        std::string adapter,
                                        std::shared_ptr<ISharedChannelData> sessionsManager,
                                        bool isPrimary,
@@ -38,7 +39,7 @@ TCPClientIOHandler::TCPClientIOHandler(const Logger& logger,
     : IOHandler(logger, false, listener, std::move(sessionsManager), isPrimary, std::move(connectionFailureCallback)),
       executor(std::move(executor)),
       retry(retry),
-      remotes(remotes),
+      settings(settings),
       adapter(std::move(adapter))
 {
 }
@@ -102,7 +103,7 @@ bool TCPClientIOHandler::StartConnect(const TimeDuration& delay)
             if (client)
             {
                 auto retry_cb = [self, newDelay, this]() {
-                    if (this->retry.InfiniteTries() || this->remotes.Next())
+                    if (this->retry.InfiniteTries() || this->settings.Endpoints.Next())
                     {
                         this->StartConnect(newDelay);
                     }
@@ -119,20 +120,28 @@ bool TCPClientIOHandler::StartConnect(const TimeDuration& delay)
         else
         {
             FORMAT_LOG_BLOCK(this->logger, flags::INFO, "Connected to: %s, port %u",
-                             this->remotes.GetCurrentEndpoint().address.c_str(),
-                             this->remotes.GetCurrentEndpoint().port);
+                             this->settings.Endpoints.GetCurrentEndpoint().address.c_str(),
+                             this->settings.Endpoints.GetCurrentEndpoint().port);
 
             if (client)
             {
+                std::error_code keepAliveOptionsEc;
+                ConfigureTCPKeepAliveOptions(settings, socket, keepAliveOptionsEc);
+                if (keepAliveOptionsEc)
+                {
+                    FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error Configuring Keep-alive Options: %s",
+                                     keepAliveOptionsEc.message().c_str())
+                }
                 this->OnNewChannel(TCPSocketChannel::Create(executor, std::move(socket)));
             }
         }
     };
 
     FORMAT_LOG_BLOCK(this->logger, flags::INFO, "Connecting to: %s, port %u",
-                     this->remotes.GetCurrentEndpoint().address.c_str(), this->remotes.GetCurrentEndpoint().port);
+                     this->settings.Endpoints.GetCurrentEndpoint().address.c_str(),
+                     this->settings.Endpoints.GetCurrentEndpoint().port);
 
-    this->client->BeginConnect(this->remotes.GetCurrentEndpoint(), cb);
+    this->client->BeginConnect(this->settings.Endpoints.GetCurrentEndpoint(), cb);
 
     return true;
 }
@@ -145,7 +154,7 @@ void TCPClientIOHandler::ResetState()
         this->client.reset();
     }
 
-    this->remotes.Reset();
+    this->settings.Endpoints.Reset();
 
     retrytimer.cancel();
 }
