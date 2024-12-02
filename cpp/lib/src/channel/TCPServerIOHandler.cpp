@@ -20,6 +20,7 @@
 
 #include "TCPServerIOHandler.h"
 
+#include "channel/ASIOTCPSocketHelpers.h"
 #include "channel/TCPSocketChannel.h"
 #include "logging/LogMacros.h"
 
@@ -41,13 +42,13 @@ TCPServerIOHandler::TCPServerIOHandler(const Logger& logger,
                                        ServerAcceptMode mode,
                                        const std::shared_ptr<IChannelListener>& listener,
                                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
-                                       IPEndpoint endpoint,
+                                       TCPSettings settings,
                                        std::error_code& ec,
                                        std::shared_ptr<ISharedChannelData> sessionsManager)
     : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener, std::move(sessionsManager), true),
       executor(std::move(executor)),
-      endpoint(std::move(endpoint)),
-      server(std::make_shared<Server>(this->logger, this->executor, this->endpoint, ec))
+      settings(std::move(settings)),
+      server(std::make_shared<Server>(this->logger, this->executor, settings.Endpoints.GetCurrentEndpoint(), ec))
 {
 }
 
@@ -64,6 +65,13 @@ void TCPServerIOHandler::BeginChannelAccept()
 {
     auto callback = [self = shared_from_this(), this](const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       asio::ip::tcp::socket socket) {
+        std::error_code keepAliveOptionsEc;
+        ConfigureTCPKeepAliveOptions(settings, socket, keepAliveOptionsEc);
+        if (keepAliveOptionsEc)
+        {
+            FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error Configuring Keep-alive Options: %s",
+                             keepAliveOptionsEc.message().c_str())
+        }
         this->OnNewChannel(TCPSocketChannel::Create(executor, std::move(socket)));
     };
 
@@ -74,7 +82,7 @@ void TCPServerIOHandler::BeginChannelAccept()
     else
     {
         std::error_code ec;
-        this->server = std::make_shared<Server>(this->logger, this->executor, this->endpoint, ec);
+        this->server = std::make_shared<Server>(this->logger, this->executor, this->settings.Endpoints.GetCurrentEndpoint(), ec);
 
         if (ec)
         {

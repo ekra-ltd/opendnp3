@@ -24,7 +24,7 @@
 #include "channel/TCPClient.h"
 
 #include "opendnp3/channel/ChannelRetry.h"
-#include "opendnp3/channel/IPEndpointsList.h"
+#include "opendnp3/channel/TCPSettings.h"
 
 #include <exe4cpp/Timer.h>
 
@@ -39,7 +39,7 @@ public:
                                                       const std::shared_ptr<IChannelListener>& listener,
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       const ChannelRetry& retry,
-                                                      const IPEndpointsList& remotes,
+                                                      const TCPSettings& tcpSettings,
                                                       const std::string& adapter,
                                                       std::shared_ptr<ISharedChannelData> sessionsManager,
                                                       bool isPrimary,
@@ -50,7 +50,7 @@ public:
             listener,
             executor,
             retry,
-            remotes,
+            tcpSettings,
             adapter,
             std::move(sessionsManager),
             isPrimary,
@@ -62,7 +62,7 @@ public:
                        const std::shared_ptr<IChannelListener>& listener,
                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                        const ChannelRetry& retry,
-                       const IPEndpointsList& remotes,
+                       const TCPSettings& tcpSettings,
                        std::string adapter,
                        std::shared_ptr<ISharedChannelData> sessionsManager,
                        bool isPrimary,
@@ -81,7 +81,7 @@ private:
 
     const std::shared_ptr<exe4cpp::StrandExecutor> executor;
     const ChannelRetry retry;
-    IPEndpointsList remotes;
+    TCPSettings settings;
     const std::string adapter;
 
     // current value of the client

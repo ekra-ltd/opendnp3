@@ -56,7 +56,7 @@ public:
     std::shared_ptr<IChannel> AddTCPClient(const std::string& id,
                                            const opendnp3::LogLevels& levels,
                                            const ChannelRetry& retry,
-                                           const std::vector<IPEndpoint>& hosts,
+                                           const ChannelConnectionOptions& primary,
                                            const std::string& local,
                                            std::shared_ptr<IChannelListener> listener) const;
 
@@ -71,7 +71,7 @@ public:
     std::shared_ptr<IChannel> AddTCPServer(const std::string& id,
                                            const opendnp3::LogLevels& levels,
                                            ServerAcceptMode mode,
-                                           const IPEndpoint& endpoint,
+                                           const TCPSettings& settings,
                                            std::shared_ptr<IChannelListener> listener) const;
 
 

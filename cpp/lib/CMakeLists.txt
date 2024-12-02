@@ -39,6 +39,7 @@ set(opendnp3_public_headers
     ./include/opendnp3/channel/IPEndpointsList.h
     ./include/opendnp3/channel/PrintingChannelListener.h
     ./include/opendnp3/channel/SerialSettings.h
+    ./include/opendnp3/channel/TCPSettings.h
     ./include/opendnp3/channel/TLSConfig.h
     ./include/opendnp3/channel/UDPSettings.h
     ./include/opendnp3/channel/ChannelConnectionOptions.h
@@ -231,6 +232,7 @@ set(opendnp3_private_headers
     ./src/app/parsing/FileOperationHandler.h
 
     ./src/channel/ASIOSerialHelpers.h
+    ./src/channel/ASIOTCPSocketHelpers.h
     ./src/channel/DNP3Channel.h
     ./src/channel/IAsyncChannel.h
     ./src/channel/IChannelCallbacks.h
@@ -468,6 +470,7 @@ set(opendnp3_src
     ./src/app/parsing/FileOperationHandler.cpp
 
     ./src/channel/ASIOSerialHelpers.cpp
+    ./src/channel/ASIOTCPSocketHelpers.cpp
     ./src/channel/ChannelRetry.cpp
     ./src/channel/DNP3Channel.cpp
     ./src/channel/IOHandler.cpp
@@ -479,6 +482,7 @@ set(opendnp3_src
     ./src/channel/TCPClientIOHandler.cpp
     ./src/channel/TCPServer.cpp
     ./src/channel/TCPServerIOHandler.cpp
+    ./src/channel/TCPSettings.cpp
     ./src/channel/TCPSocketChannel.cpp
     ./src/channel/UDPClient.cpp
     ./src/channel/UDPClientIOHandler.cpp
