@@ -44,15 +44,15 @@ public:
     virtual ~IMasterApplication() {}
 
     /// Called when a response or unsolicited response is receive from the outstation
-    virtual void OnReceiveIIN(const IINField& iin) {}
+    virtual void OnReceiveIIN(const IINField& /*iin*/) {}
 
     /// Task start notification
-    virtual bool OnTaskStart(MasterTaskType type, TaskId id) {
+    virtual bool OnTaskStart(MasterTaskType /*type*/, TaskId /*id*/) {
         return true;
     }
 
     /// Task completion notification
-    virtual void OnTaskComplete(const TaskInfo& info) {}
+    virtual void OnTaskComplete(const TaskInfo& /*info*/) {}
 
     /// Called when the application layer is opened
     virtual void OnOpen() {}
@@ -69,9 +69,9 @@ public:
     /// Configure the request headers for assign class. Only called if
     /// "AssignClassDuringStartup" returns true
     /// The user only needs to call the function for each header type to be written
-    virtual void ConfigureAssignClassRequest(const WriteHeaderFunT& fun) {}
+    virtual void ConfigureAssignClassRequest(const WriteHeaderFunT& /*fun*/) {}
 
-    virtual void OnChannelReservationChanged(bool isBackup) {}
+    virtual void OnChannelReservationChanged(bool /*isBackup*/) {}
 };
 
 } // namespace opendnp3

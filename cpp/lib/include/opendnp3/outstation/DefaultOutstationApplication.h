@@ -57,7 +57,7 @@ public:
     {
         return false;
     }
-    virtual bool WriteTimeAndInterval(const ICollection<Indexed<TimeAndInterval>>& values) override
+    virtual bool WriteTimeAndInterval(const ICollection<Indexed<TimeAndInterval>>& /*values*/) override
     {
         return false;
     }
@@ -66,7 +66,7 @@ public:
     {
         return true;
     }
-    virtual void RecordClassAssignment(AssignClassType type, PointClass clazz, uint16_t start, uint16_t stop) override
+    virtual void RecordClassAssignment(AssignClassType /*type*/, PointClass /*clazz*/, uint16_t /*start*/, uint16_t /*stop*/) override
     {
     }
 
