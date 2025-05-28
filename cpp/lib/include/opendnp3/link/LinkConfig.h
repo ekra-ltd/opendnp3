@@ -38,7 +38,7 @@ struct LinkConfig
     LinkConfig() = delete;
 
     LinkConfig(
-        bool isMaster, uint16_t localAddr, uint16_t remoteAddr, TimeDuration timeout, TimeDuration keepAliveTimeout, const StatisticsChangeHandler_t& statisticsChangeHandler)
+        bool isMaster, uint16_t localAddr, uint16_t remoteAddr, TimeDuration timeout, TimeDuration keepAliveTimeout)
         :
           IsMaster(isMaster),
           LocalAddr(localAddr),
@@ -49,7 +49,7 @@ struct LinkConfig
     }
 
     [[deprecated("Use LinkConfig(bool) instead.")]]
-    LinkConfig(bool isMaster, bool useConfirms)
+    LinkConfig(bool isMaster, bool /*useConfirms*/)
         :
           IsMaster(isMaster),
           LocalAddr(isMaster ? 1 : 1024),

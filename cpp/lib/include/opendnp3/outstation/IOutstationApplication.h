@@ -54,7 +54,7 @@ public:
     /// @return boolean value indicating if the time value supplied was accepted. Returning
     /// false will cause the outstation to set IIN 2.3 (PARAM_ERROR) in its response.
     /// The outstation should clear its NEED_TIME field when handling this response
-    virtual bool WriteAbsoluteTime(const UTCTimestamp& timestamp)
+    virtual bool WriteAbsoluteTime(const UTCTimestamp& /*timestamp*/)
     {
         return false;
     }
@@ -72,7 +72,7 @@ public:
     /// behavior is desired
     /// @return boolean value indicating if the values supplied were accepted. Returning
     /// false will cause the outstation to set IIN 2.3 (PARAM_ERROR) in its response.
-    virtual bool WriteTimeAndInterval(const ICollection<Indexed<TimeAndInterval>>& values)
+    virtual bool WriteTimeAndInterval(const ICollection<Indexed<TimeAndInterval>>& /*values*/)
     {
         return false;
     }
@@ -89,7 +89,7 @@ public:
     /// The type and range are pre-validated against the outstation's database
     /// and class assignments are automatically applied internally.
     /// This callback allows user code to persist the changes to non-volatile memory
-    virtual void RecordClassAssignment(AssignClassType type, PointClass clazz, uint16_t start, uint16_t stop) {}
+    virtual void RecordClassAssignment(AssignClassType /*type*/, PointClass /*clazz*/, uint16_t /*start*/, uint16_t /*stop*/) {}
 
     /// Returns the application-controlled IIN field
     virtual ApplicationIIN GetApplicationIIN() const
@@ -135,7 +135,7 @@ public:
     /// @param num_class1 number of Class 1 events remaining in the event buffer after processing the confirm
     /// @param num_class2 number of Class 2 events remaining in the event buffer after processing the confirm
     /// @param num_class3 number of Class 3 events remaining in the event buffer after processing the confirm
-    virtual void OnConfirmProcessed(bool is_unsolicited, uint32_t num_class1, uint32_t num_class2, uint32_t num_class3) {}
+    virtual void OnConfirmProcessed(bool /*is_unsolicited*/, uint32_t /*num_class1*/, uint32_t /*num_class2*/, uint32_t /*num_class3*/) {}
 
     virtual ~IOutstationApplication() = default;
 };
