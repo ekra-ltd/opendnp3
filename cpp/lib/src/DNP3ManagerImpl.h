@@ -114,6 +114,12 @@ public:
                                               const TLSConfig& config,
                                               const std::shared_ptr<IListenCallbacks>& callbacks);
 
+    std::shared_ptr<IChannel> AddUDPChannelListener(const std::string& id,
+                                           const opendnp3::LogLevels& levels,
+                                           ServerAcceptMode mode,
+                                           const IPEndpoint& localEndpoint,
+                                           std::shared_ptr<IChannelListener> listener) const;
+
 private:
     Logger logger;
     const std::shared_ptr<asio::io_context> io;

@@ -130,4 +130,13 @@ std::shared_ptr<IListener> DNP3Manager::CreateListener(std::string loggerid,
     return impl->CreateListener(std::move(loggerid), loglevel, endpoint, config, callbacks);
 }
 
+std::shared_ptr<IChannel> DNP3Manager::AddUDPChannelListener(const std::string& id,
+                                                    const opendnp3::LogLevels& levels,
+                                                    ServerAcceptMode mode,
+                                                    const opendnp3::IPEndpoint& localEndpoint,
+                                                    std::shared_ptr<IChannelListener> listener) const
+{
+    return impl->AddUDPChannelListener(id, levels, mode, localEndpoint, std::move(listener));
+}
+
 } // namespace opendnp3

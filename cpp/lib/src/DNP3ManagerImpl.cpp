@@ -30,10 +30,11 @@
 
 #include "channel/DNP3Channel.h"
 #include "channel/IOHandlersManager.h"
-#include "channel/SharedChannelData.h"
 #include "channel/SerialIOHandler.h"
+#include "channel/SharedChannelData.h"
 #include "channel/TCPClientIOHandler.h"
 #include "channel/TCPServerIOHandler.h"
+#include "channel/UDPChannelListenerIOHandler.h"
 #include "channel/UDPClientIOHandler.h"
 #include "master/MasterTCPServer.h"
 
@@ -327,6 +328,36 @@ std::shared_ptr<IListener> DNP3ManagerImpl::CreateListener(std::string loggerid,
 #else
     throw DNP3Error(Error::NO_TLS_SUPPORT);
 #endif
+}
+
+std::shared_ptr<IChannel> DNP3ManagerImpl::AddUDPChannelListener(const std::string& id,
+                                                        const opendnp3::LogLevels& levels,
+                                                        ServerAcceptMode mode,
+                                                        const opendnp3::IPEndpoint& localEndpoint,
+                                                        std::shared_ptr<IChannelListener> listener) const
+{
+    auto create = [&]() -> std::shared_ptr<IChannel> {
+        std::error_code ec;
+        auto clogger = this->logger.detach(id, levels);
+        auto executor = exe4cpp::StrandExecutor::create(this->io);
+        auto sessionManager = std::make_shared<SharedChannelData>(clogger);
+        auto iohandler = UDPChannelListenerIOHandler::Create(clogger, mode, listener, executor, localEndpoint, ec, sessionManager);
+        if (ec)
+        {
+            throw DNP3Error(Error::UNABLE_TO_BIND_SERVER, ec);
+        }
+        const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, iohandler, sessionManager);
+        return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
+    };
+
+    auto channel = this->resources->Bind<IChannel>(create);
+
+    if (!channel)
+    {
+        throw DNP3Error(Error::SHUTTING_DOWN);
+    }
+
+    return channel;
 }
 
 } // namespace opendnp3

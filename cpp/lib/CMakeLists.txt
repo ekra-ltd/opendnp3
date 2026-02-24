@@ -248,6 +248,8 @@ set(opendnp3_private_headers
     ./src/channel/TCPSocketChannel.h
     ./src/channel/UDPClient.h
     ./src/channel/UDPClientIOHandler.h
+    ./src/channel/UDPChannelListener.h
+    ./src/channel/UDPChannelListenerIOHandler.h
     ./src/channel/UDPSocketChannel.h
     ./src/channel/IOHandlersManager.h
     ./src/channel/IoSessionDescriptor.h
@@ -486,8 +488,10 @@ set(opendnp3_src
     ./src/channel/TCPSocketChannel.cpp
     ./src/channel/UDPClient.cpp
     ./src/channel/UDPClientIOHandler.cpp
-    ./src/channel/UDPSocketChannel.cpp
+    ./src/channel/UDPChannelListener.cpp
+    ./src/channel/UDPChannelListenerIOHandler.cpp
     ./src/channel/UDPSettings.cpp
+    ./src/channel/UDPSocketChannel.cpp
     ./src/channel/ChannelConnectionOptions.cpp
     ./src/channel/IOHandlersManager.cpp
     ./src/channel/IoSessionDescriptor.cpp
