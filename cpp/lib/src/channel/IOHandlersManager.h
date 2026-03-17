@@ -93,7 +93,7 @@ namespace opendnp3
         Callback_t _channelStateChanged;
         std::shared_ptr<exe4cpp::StrandExecutor> _executor;
         ChannelState _primaryChannelState{ Error };
-        ChannelState _backupChannelState{ Error };
+        ChannelState _backupChannelState{ Undecided };
     };
 
 } // namespace opendnp3

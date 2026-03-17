@@ -33,7 +33,13 @@
 namespace opendnp3
 {
 
-typedef std::function<void(const Header&)> WriteHeaderFunT;
+using WriteHeaderFunT = std::function<void(const Header&)>;
+
+enum class MasterStatus
+{
+    Working,
+    Error
+};
 
 /**
  * Interface for all master application callback info except for measurement values.
@@ -41,7 +47,7 @@ typedef std::function<void(const Header&)> WriteHeaderFunT;
 class IMasterApplication : public ILinkListener, public IUTCTimeSource
 {
 public:
-    virtual ~IMasterApplication() {}
+    virtual ~IMasterApplication() = default;
 
     /// Called when a response or unsolicited response is receive from the outstation
     virtual void OnReceiveIIN(const IINField& /*iin*/) {}
@@ -72,6 +78,8 @@ public:
     virtual void ConfigureAssignClassRequest(const WriteHeaderFunT& /*fun*/) {}
 
     virtual void OnChannelReservationChanged(bool /*isBackup*/) {}
+
+    virtual void OnMasterStatusChanged(MasterStatus /*status*/) {}
 };
 
 } // namespace opendnp3
