@@ -128,7 +128,7 @@ bool IOHandler::BeginTransmit(const std::shared_ptr<ILinkSession>& session, cons
     return false;
 }
 
-bool IOHandler::Prepare(NewChannelOpenedCallback_t channelOpenedCallback)
+bool IOHandler::Prepare(const NewChannelOpenedCallback_t& channelOpenedCallback)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     if (_openingChannel)

@@ -32,10 +32,12 @@ class DNP3Channel final : public IChannel, public std::enable_shared_from_this<D
 {
 
 public:
-    DNP3Channel(const Logger& logger,
-                const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
-                std::shared_ptr<IOHandlersManager> iohandlersManager,
-                std::shared_ptr<IResourceManager> manager);
+    DNP3Channel(
+        const Logger& logger,
+        const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
+        std::shared_ptr<IOHandlersManager> iohandlersManager,
+        std::shared_ptr<IResourceManager> manager
+    );
 
     static std::shared_ptr<DNP3Channel> Create(const Logger& logger,
                                                const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
