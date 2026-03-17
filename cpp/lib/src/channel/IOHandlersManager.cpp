@@ -191,6 +191,7 @@ namespace opendnp3
         if (result)
         {
             _currentChannel->ConditionalClose();
+            _channelStateChanged(true);
         }
         return result;
     }
@@ -204,7 +205,7 @@ namespace opendnp3
 
         FORMAT_LOG_BLOCK(
             _logger,
-            flags::DBG,
+            flags::WARN,
             R"(%strying to switch to %s connection)",
             onFail ? "connection error, " : "",
             !_backupChannelUsed ? "primary" : "backup"
@@ -228,14 +229,7 @@ namespace opendnp3
                 }
                 self->_currentChannel = newChannel;
                 self->ChannelChanging(false);
-                if (self->_channelStateChanged)
-                {
-                    self->_channelStateChanged(false);
-                }
-
                 self->ChannelReservationChanged(self->_backupChannelUsed);
-                (self->_backupChannelUsed ? self->_backupChannelState : self->_primaryChannelState) = Working;
-                (!self->_backupChannelUsed ? self->_backupChannelState : self->_primaryChannelState) = Undecided;
             };
             if (newChannel->Prepare(handler))
             {
@@ -291,6 +285,9 @@ namespace opendnp3
             if (isDataReading)
             {
                 ++_succeededReadingCount;
+                (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Working;
+                (!_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Undecided;
+                _channelStateChanged(false);
             }
         }
         else
@@ -302,6 +299,11 @@ namespace opendnp3
             }
 
             (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Error;
+            if (_primaryChannelState == Error && _backupChannelState == Error) {
+                if (_channelStateChanged) {
+                    _channelStateChanged(true);
+                }
+            }
             _backupChannelUsed = !_backupChannelUsed;
             trySwitchChannel(true);
         }
