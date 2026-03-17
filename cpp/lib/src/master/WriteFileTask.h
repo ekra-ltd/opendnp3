@@ -16,9 +16,16 @@ namespace opendnp3
     {
 
     public:
-        WriteFileTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-                      std::shared_ptr<std::ifstream> source, std::string destFilename, uint16_t txSize,
-                      FileOperationTaskCallbackT taskCallback);
+        WriteFileTask(
+            const std::shared_ptr<TaskContext>& context,
+            IMasterApplication& app,
+            const Logger& logger,
+            std::shared_ptr<std::ifstream> source,
+            std::string destFilename,
+            uint16_t txSize,
+            const TaskBehavior& taskBehavior,
+            FileOperationTaskCallbackT taskCallback
+        );
 
         char const* Name() const final
         {
@@ -62,16 +69,16 @@ namespace opendnp3
         void Initialize() final;
 
     private:
-        FileOperationTaskState taskState{ OPENING };
-        std::shared_ptr<std::ifstream> input_file;
-        uint32_t inputFileSize;
-        std::string destFilename;
-        Group70Var4 fileCommandStatus;
-        Group70Var5 fileTransportObject;
-        Group70Var6 fileTransportStatusObject;
-        FileOperationTaskCallbackT callback;
+        FileOperationTaskState _taskState{ OPENING };
+        std::shared_ptr<std::ifstream> _inputFile;
+        uint32_t _inputFileSize;
+        std::string _destFilename;
+        Group70Var4 _fileCommandStatus;
+        Group70Var5 _fileTransportObject;
+        Group70Var6 _fileTransportStatusObject;
+        FileOperationTaskCallbackT _callback;
         uint16_t _txSize;
-        bool errorWhileWriting = false;
+        bool _errorWhileWriting{ false };
     };
 
 } // namespace opendnp3

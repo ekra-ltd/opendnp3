@@ -34,13 +34,13 @@ LANTimeSyncTask::LANTimeSyncTask(const std::shared_ptr<TaskContext>& context,
 {
 }
 
-LANTimeSyncTask::LANTimeSyncTask(const std::shared_ptr<TaskContext>& context,
-                                 IMasterApplication& app,
-                                 const Logger& logger,
-                                 TimeDuration period,
-                                 TimeDuration mixRetryTimeout,
-                                 TimeDuration maxRetryTimeout)
-    : IMasterTask(context, app, TaskBehavior::ImmediatePeriodic(period, mixRetryTimeout, maxRetryTimeout), logger, TaskConfig::Default())
+LANTimeSyncTask::LANTimeSyncTask(
+    const std::shared_ptr<TaskContext>& context,
+    IMasterApplication& app,
+    const Logger& logger,
+    const TaskBehavior& taskBehavior
+)
+    : IMasterTask(context, app, taskBehavior, logger, TaskConfig::Default())
 { }
 
 void LANTimeSyncTask::Initialize()

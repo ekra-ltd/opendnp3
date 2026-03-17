@@ -136,8 +136,8 @@ public:
 
     std::shared_ptr<IMasterTask> AddScan(TimeDuration period,
                                          const HeaderBuilderT& builder,
-                                         std::shared_ptr<ISOEHandler> soe_handler,
-                                         TaskConfig config = TaskConfig::Default());
+                                         const std::shared_ptr<ISOEHandler>& soe_handler,
+                                         const TaskConfig& config = TaskConfig::Default());
 
     std::shared_ptr<IMasterTask> AddAllObjectsScan(GroupVariationID gvId,
                                                    TimeDuration period,
@@ -159,8 +159,8 @@ public:
     // ---- Single shot immediate scans ----
 
     void Scan(const HeaderBuilderT& builder,
-              std::shared_ptr<ISOEHandler> soe_handler,
-              TaskConfig config = TaskConfig::Default());
+              const std::shared_ptr<ISOEHandler>& soe_handler,
+              const TaskConfig& config = TaskConfig::Default());
 
     void ScanAllObjects(GroupVariationID gvId,
                         std::shared_ptr<ISOEHandler> soe_handler,
@@ -178,24 +178,25 @@ public:
 
     /// ---- Write tasks -----
 
-    void Write(const TimeAndInterval& value, uint16_t index, TaskConfig config = TaskConfig::Default());
+    void Write(const TimeAndInterval& value, uint16_t index, const TaskConfig& config = TaskConfig::Default());
 
-    void Restart(RestartType op, const RestartOperationCallbackT& callback, TaskConfig config = TaskConfig::Default());
+    void Restart(RestartType op, const RestartOperationCallbackT& callback, const TaskConfig& config = TaskConfig::Default());
 
     void PerformFunction(const std::string& name,
                          FunctionCode func,
                          const HeaderBuilderT& builder,
-                         TaskConfig config = TaskConfig::Default());
+                         const TaskConfig& config = TaskConfig::Default());
 
     /// public state manipulation actions
 
     bool DemandTimeSyncronization();
 
-    bool ReadFile(const std::string& sourceFile, FileOperationTaskCallbackT callback);
-    bool WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback);
+    bool ReadFile(const std::string& sourceFile, const FileOperationTaskCallbackT& callback);
+    bool WriteFile(const std::shared_ptr<std::ifstream>& source, const std::string& destFilename,
+                   const FileOperationTaskCallbackT& callback);
     void GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback);
     void GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback);
-    void DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback);
+    void DeleteFileFunction(const std::string& filename, const FileOperationTaskCallbackT& callback);
 
     void AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler);
     void RemoveStatisticsHandler();

@@ -32,8 +32,12 @@ class SerialTimeSyncTask : public IMasterTask
 
 public:
     SerialTimeSyncTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger);
-    SerialTimeSyncTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-                       TimeDuration period, TimeDuration mixRetryTimeout, TimeDuration maxRetryTimeout);
+    SerialTimeSyncTask(
+        const std::shared_ptr<TaskContext>& context,
+        IMasterApplication& app,
+        const Logger& logger,
+        const TaskBehavior& taskBehavior
+    );
 
     char const* Name() const final
     {

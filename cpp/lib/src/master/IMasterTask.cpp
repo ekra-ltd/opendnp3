@@ -61,18 +61,17 @@ IMasterTask::ResponseResult IMasterTask::OnResponse(const APDUResponseHeader& re
                                                     const ser4cpp::rseq_t& objects,
                                                     Timestamp now)
 {
-    auto result = this->ProcessResponse(response, objects);
-
+    const auto result = this->ProcessResponse(response, objects);
     switch (result)
     {
-    case (ResponseResult::ERROR_BAD_RESPONSE):
-        this->CompleteTask(TaskCompletion::FAILURE_BAD_RESPONSE, now);
-        break;
-    case (ResponseResult::OK_FINAL):
-        this->CompleteTask(TaskCompletion::SUCCESS, now);
-        break;
-    default:
-        break;
+        case ResponseResult::ERROR_BAD_RESPONSE:
+            this->CompleteTask(TaskCompletion::FAILURE_BAD_RESPONSE, now);
+            break;
+        case ResponseResult::OK_FINAL:
+            this->CompleteTask(TaskCompletion::SUCCESS, now);
+            break;
+        default:
+            break;
     }
 
     return result;
@@ -82,69 +81,68 @@ void IMasterTask::CompleteTask(TaskCompletion result, Timestamp now)
 {
     switch (result)
     {
+        // retry immediately when the comms come back online
+        case TaskCompletion::FAILURE_NO_COMMS:
+            this->behavior.Reset();
+            break;
 
-    // retry immediately when the comms come back online
-    case (TaskCompletion::FAILURE_NO_COMMS):
-        this->behavior.Reset();
-        break;
-
-    // back-off exponentially using the task retry
-    case (TaskCompletion::FAILURE_RESPONSE_TIMEOUT):
-    {
-        const auto timeoutStats = this->behavior.OnResponseTimeout(now);
-        if (this->BlocksLowerPriority()) {
-            this->context->AddBlock(*this);
-        }
-        _retriesFinished = true;
-        if (timeoutStats.IsFixedRetriesCount) {
-            if (!timeoutStats.IsFinished) {
-                _retriesFinished = false;
+        // back-off exponentially using the task retry
+        case TaskCompletion::FAILURE_RESPONSE_TIMEOUT:
+        {
+            const auto timeoutStats = this->behavior.OnResponseTimeout(now);
+            if (this->BlocksLowerPriority()) {
+                this->context->AddBlock(*this);
+            }
+            _retriesFinished = true;
+            if (timeoutStats.IsFixedRetriesCount) {
+                if (!timeoutStats.IsFinished) {
+                    _retriesFinished = false;
+                    FORMAT_LOG_BLOCK(
+                        logger,
+                        flags::WARN,
+                        "Task '%s' completed with timeout, current retry is '%llu' out of '%llu'",
+                        Name(),
+                        timeoutStats.CurrentRetryNumber,
+                        timeoutStats.MaxRetryNumber
+                    )
+                    return;
+                }
                 FORMAT_LOG_BLOCK(
                     logger,
                     flags::WARN,
-                    "Task '%s' completed with timeout, current retry is '%llu' out of '%llu'",
+                    "Task '%s' completed with timeout, out of retries (max retries - '%llu')",
                     Name(),
-                    timeoutStats.CurrentRetryNumber,
                     timeoutStats.MaxRetryNumber
                 )
-                return;
             }
-            FORMAT_LOG_BLOCK(
-                logger,
-                flags::WARN,
-                "Task '%s' completed with timeout, out of retries (max retries - '%llu')",
-                Name(),
-                timeoutStats.MaxRetryNumber
-            )
+            else {
+                FORMAT_LOG_BLOCK(
+                    logger,
+                    flags::WARN,
+                    "Task '%s' completed with timeout and the number of retries set to 'infinite'. Each retry is treated as its own task",
+                    Name()
+                )
+            }
+            break;
         }
-        else {
-            FORMAT_LOG_BLOCK(
-                logger,
-                flags::WARN,
-                "Task '%s' completed with timeout and the number of retries set to 'infinite'. Each retry is treated as its own task",
-                Name()
-            )
-        }
-        break;
-    }
 
-    case (TaskCompletion::SUCCESS):
-        this->behavior.OnSuccess(now);
-        this->context->RemoveBlock(*this);
-        break;
+        case TaskCompletion::SUCCESS:
+            this->behavior.OnSuccess(now);
+            this->context->RemoveBlock(*this);
+            break;
 
-    /**
-    FAILURE_BAD_RESPONSE
-    FAILURE_START_TIMEOUT
-    FAILURE_MESSAGE_FORMAT_ERROR
-    */
-    default:
-    {
-        this->behavior.Disable();
-        if (this->BlocksLowerPriority()) {
-            this->context->AddBlock(*this);
+        /**
+        FAILURE_BAD_RESPONSE
+        FAILURE_START_TIMEOUT
+        FAILURE_MESSAGE_FORMAT_ERROR
+        */
+        default:
+        {
+            this->behavior.Disable();
+            if (this->BlocksLowerPriority()) {
+                this->context->AddBlock(*this);
+            }
         }
-    }
     }
 
     if (config.pCallback)
@@ -191,7 +189,7 @@ bool IMasterTask::OnStart(Timestamp now)
         config.pCallback->OnStart(Name());
     }
 
-    bool isTaskStarted = this->application->OnTaskStart(this->GetTaskType(), config.taskId);
+    const bool isTaskStarted = this->application->OnTaskStart(this->GetTaskType(), config.taskId);
     if (isTaskStarted)
     {
         this->Initialize();
@@ -248,8 +246,7 @@ bool IMasterTask::ValidateInternalIndications(const APDUResponseHeader& header)
 {
     if (header.IIN.HasRequestError())
     {
-        FORMAT_LOG_BLOCK(logger, flags::WARN, "Task was explicitly rejected via response with error IIN bit(s): %s",
-                         this->Name())
+        FORMAT_LOG_BLOCK(logger, flags::WARN, "Task was explicitly rejected via response with error IIN bit(s): %s", this->Name())
         return false;
     }
 

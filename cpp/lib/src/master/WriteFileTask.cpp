@@ -13,36 +13,42 @@
 
 namespace opendnp3
 {
-    WriteFileTask::WriteFileTask(const std::shared_ptr<TaskContext>& context,
+    WriteFileTask::WriteFileTask(
+        const std::shared_ptr<TaskContext>& context,
         IMasterApplication& app,
         const Logger& logger,
         std::shared_ptr<std::ifstream> source,
-        std::string destFilename, uint16_t txSize,
-        FileOperationTaskCallbackT taskCallback)
-        : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
-          input_file(std::move(source)), destFilename(std::move(destFilename)), _txSize(txSize)
+        std::string destFilename,
+        uint16_t txSize,
+        const TaskBehavior& taskBehavior,
+        FileOperationTaskCallbackT taskCallback
+    )
+        : IMasterTask(context, app, taskBehavior, logger, TaskConfig::Default())
+        , _inputFile(std::move(source))
+        , _destFilename(std::move(destFilename))
+        , _txSize(txSize)
     {
-        callback = taskCallback ? std::move(taskCallback) : [](const FileOperationTaskResult& /**/) {};
-        auto fsize = input_file->tellg();
-        input_file->seekg(0, std::ios::end);
-        fsize = input_file->tellg() - fsize;
-        input_file->seekg(0);
-        inputFileSize = static_cast<uint32_t>(fsize);
+        _callback = taskCallback ? std::move(taskCallback) : [](const FileOperationTaskResult& /**/) {};
+        auto fsize = _inputFile->tellg();
+        _inputFile->seekg(0, std::ios::end);
+        fsize = _inputFile->tellg() - fsize;
+        _inputFile->seekg(0);
+        _inputFileSize = static_cast<uint32_t>(fsize);
     }
 
     void WriteFileTask::Initialize()
     {
-        fileCommandStatus = Group70Var4();
-        fileTransportObject = Group70Var5(FileOpeningMode::WRITE);
+        _fileCommandStatus = Group70Var4();
+        _fileTransportObject = Group70Var5(FileOpeningMode::WRITE);
     }
 
     bool WriteFileTask::BuildRequest(APDURequest& request, uint8_t seq) {
-        switch (taskState) {
+        switch (_taskState) {
             case OPENING: {
                 logger.log(flags::DBG, __FILE__, "Attempting opening file");
                 Group70Var3 file(FileOpeningMode::WRITE);
-                file.filename = destFilename;
-                file.filesize = inputFileSize;
+                file.filename = _destFilename;
+                file.filesize = _inputFileSize;
                 file.blockSize = _txSize;
                 request.SetFunction(FunctionCode::OPEN_FILE);
                 request.SetControl(AppControlField::Request(seq));
@@ -50,21 +56,21 @@ namespace opendnp3
                 return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var3>(QualifierCode::FREE_FORMAT, file);
             }
             case WRITING: {
-                fileTransportObject.fileId = fileCommandStatus.fileId;
-                const uint32_t size = std::min(static_cast<uint32_t>(fileCommandStatus.blockSize), inputFileSize);
-                fileTransportObject.data.make_empty();
+                _fileTransportObject.fileId = _fileCommandStatus.fileId;
+                const uint32_t size = std::min(static_cast<uint32_t>(_fileCommandStatus.blockSize), _inputFileSize);
+                _fileTransportObject.data.make_empty();
                 char* data = new char[size + 1];
                 data[size] = 0;
-                input_file->read(data, size);
-                fileTransportObject.data = ser4cpp::rseq_t(reinterpret_cast<uint8_t const*>(data), size);
-                inputFileSize -= size;
-                if (inputFileSize == 0) {
-                    fileTransportObject.isLastBlock = true;
+                _inputFile->read(data, size);
+                _fileTransportObject.data = ser4cpp::rseq_t(reinterpret_cast<uint8_t const*>(data), size);
+                _inputFileSize -= size;
+                if (_inputFileSize == 0) {
+                    _fileTransportObject.isLastBlock = true;
                 }
                 request.SetFunction(FunctionCode::WRITE);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
-                const auto res = writer.WriteSingleValue<ser4cpp::UInt8, Group70Var5>(QualifierCode::FREE_FORMAT, fileTransportObject);
+                const auto res = writer.WriteSingleValue<ser4cpp::UInt8, Group70Var5>(QualifierCode::FREE_FORMAT, _fileTransportObject);
                 delete[] data;
                 return res;
             }
@@ -72,7 +78,7 @@ namespace opendnp3
                 request.SetFunction(FunctionCode::CLOSE_FILE);
                 request.SetControl(AppControlField::Request(seq));
                 auto writer = request.GetWriter();
-                return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var4>(QualifierCode::FREE_FORMAT, fileCommandStatus);
+                return writer.WriteSingleValue<ser4cpp::UInt8, Group70Var4>(QualifierCode::FREE_FORMAT, _fileCommandStatus);
             }
             default:
                 return false;
@@ -81,7 +87,7 @@ namespace opendnp3
 
     IMasterTask::ResponseResult WriteFileTask::ProcessResponse(const APDUResponseHeader& response,
                                                               const ser4cpp::rseq_t& objects) {
-        switch (taskState) {
+        switch (_taskState) {
             case OPENING:
             case CLOSING:
                 return OnResponseStatusObject(response, objects);
@@ -100,18 +106,18 @@ namespace opendnp3
             if (result != ParseResult::OK) {
                 return ResponseResult::ERROR_BAD_RESPONSE;
             }
-            fileCommandStatus = handler.GetFileStatusObject();
+            _fileCommandStatus = handler.GetFileStatusObject();
             std::string s;
-            switch (fileCommandStatus.status) {
+            switch (_fileCommandStatus.status) {
             case FileCommandStatus::SUCCESS:
-                if (taskState == OPENING) {
+                if (_taskState == OPENING) {
                     logger.log(flags::DBG, __FILE__, "Success opening file");
                     logger.log(flags::DBG, __FILE__, "Starting file writing...");
-                    taskState = WRITING;
+                    _taskState = WRITING;
                     return ResponseResult::OK_REPEAT;
                 }
                 logger.log(flags::DBG, __FILE__, "Successfully closed file");
-                if (errorWhileWriting) {
+                if (_errorWhileWriting) {
                     return ResponseResult::ERROR_BAD_RESPONSE;
                 }
                 return ResponseResult::OK_FINAL;
@@ -122,18 +128,18 @@ namespace opendnp3
                 logger.log(flags::DBG, __FILE__, "Invalid mode");
                 break;
             case FileCommandStatus::NOT_FOUND:
-                s = "File - \"" + destFilename + "\" not found";
+                s = "File - \"" + _destFilename + "\" not found";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::FILE_LOCKED:
-                s = "File - \"" + destFilename + "\" locked by another user";
+                s = "File - \"" + _destFilename + "\" locked by another user";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::OPEN_COUNT_EXCEEDED:
                 logger.log(flags::DBG, __FILE__, "Maximum amount of files opened");
                 break;
             case FileCommandStatus::FILE_NOT_OPEN:
-                s = "File - \"" + destFilename + "\" not opened";
+                s = "File - \"" + _destFilename + "\" not opened";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::INVALID_BLOCK_SIZE:
@@ -163,17 +169,17 @@ namespace opendnp3
                 return ResponseResult::ERROR_BAD_RESPONSE;
             }
 
-            fileTransportStatusObject = handler.GetFileTransferStatusObject();
-            switch (fileTransportStatusObject.status) {
+            _fileTransportStatusObject = handler.GetFileTransferStatusObject();
+            switch (_fileTransportStatusObject.status) {
                 case FileTransportStatus::SUCCESS:
-                    if (fileTransportObject.isLastBlock) {
-                        const std::string s = "File - \"" + destFilename +"\"  had been written successfully";
+                    if (_fileTransportObject.isLastBlock) {
+                        const std::string s = "File - \"" + _destFilename +"\"  had been written successfully";
                         logger.log(flags::DBG, __FILE__, s.c_str());
-                        taskState = CLOSING;
+                        _taskState = CLOSING;
                         return ResponseResult::OK_REPEAT;
                     }
 
-                    fileTransportObject.blockNumber = fileTransportStatusObject.blockNumber + 1;
+                    _fileTransportObject.blockNumber = _fileTransportStatusObject.blockNumber + 1;
                     return ResponseResult::OK_REPEAT;
                 case FileTransportStatus::LOST_COM:
                     logger.log(flags::DBG, __FILE__, "Communication lost");
@@ -183,7 +189,7 @@ namespace opendnp3
                     break;
                 case FileTransportStatus::HANDLE_TIMEOUT:
                     logger.log(flags::DBG, __FILE__, "File handle expired, reopening file");
-                    taskState = OPENING;
+                    _taskState = OPENING;
                     return ResponseResult::OK_REPEAT;
                 case FileTransportStatus::BUFFER_OVERFLOW:
                     logger.log(flags::DBG, __FILE__, "Outstation buffer overflow while writing data");
@@ -199,8 +205,8 @@ namespace opendnp3
             }
         }
 
-        errorWhileWriting = true;
-        taskState = CLOSING;
+        _errorWhileWriting = true;
+        _taskState = CLOSING;
         return ResponseResult::OK_REPEAT;
     }
 } // namespace opendnp3

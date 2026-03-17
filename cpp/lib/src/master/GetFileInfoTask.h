@@ -12,8 +12,14 @@ namespace opendnp3
     class GetFileInfoTask : public IMasterTask {
 
     public:
-        GetFileInfoTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-            std::string sourceFile, GetFilesInfoTaskCallbackT taskCallback);
+        GetFileInfoTask(
+            const std::shared_ptr<TaskContext>& context,
+            IMasterApplication& app,
+            const Logger& logger,
+            std::string sourceFile,
+            const TaskBehavior& taskBehavior,
+            GetFilesInfoTaskCallbackT taskCallback
+        );
 
         char const* Name() const final
         {
@@ -54,9 +60,9 @@ namespace opendnp3
         void Initialize() final;
 
     private:
-        std::string sourceFile;
-        DNPFileInfo fileInfo{};
-        GetFilesInfoTaskCallbackT callback;
+        std::string _sourceFile;
+        DNPFileInfo _fileInfo{};
+        GetFilesInfoTaskCallbackT _callback;
     };
 
 } // namespace opendnp3

@@ -29,18 +29,20 @@
 namespace opendnp3
 {
 
-RestartOperationTask::RestartOperationTask(const std::shared_ptr<TaskContext>& context,
-                                           IMasterApplication& app,
-                                           const Timestamp& startTimeout,
-                                           RestartType operationType,
-                                           RestartOperationCallbackT callback,
-                                           const Logger& logger,
-                                           const TaskConfig& config)
-    : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(startTimeout), logger, config),
-      function((operationType == RestartType::COLD) ? FunctionCode::COLD_RESTART : FunctionCode::WARM_RESTART),
-      callback(std::move(callback))
-{
-}
+RestartOperationTask::RestartOperationTask(
+    const std::shared_ptr<TaskContext>& context,
+    IMasterApplication& app,
+    const Timestamp& startTimeout,
+    RestartType operationType,
+    RestartOperationCallbackT callback,
+    const Logger& logger,
+    const TaskConfig& config,
+    const TaskBehavior& taskBehavior
+)
+    : IMasterTask(context, app, taskBehavior, logger, config)
+    , function((operationType == RestartType::COLD) ? FunctionCode::COLD_RESTART : FunctionCode::WARM_RESTART)
+    , callback(std::move(callback))
+{}
 
 bool RestartOperationTask::BuildRequest(APDURequest& request, uint8_t seq)
 {

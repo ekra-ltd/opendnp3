@@ -31,25 +31,28 @@
 namespace opendnp3
 {
 
-MasterTasks::MasterTasks(const MasterParams& params,
-                         const Logger& logger,
-                         IMasterApplication& app,
-                         std::shared_ptr<ISOEHandler> SOEHandler)
-    : context(std::make_shared<TaskContext>()),
-      clearRestart(std::make_shared<ClearRestartTask>(context, app, logger)),
-      assignClass(std::make_shared<AssignClassTask>(context, app, RetryBehavior(params), logger)),
-      startupIntegrity(std::make_shared<StartupIntegrityPoll>(
-          context, app, SOEHandler, params.startupIntegrityClassMask, RetryBehavior(params), logger)),
-      eventScan(std::make_shared<EventScanTask>(
-          context, app, SOEHandler, params.eventScanOnEventsAvailableClassMask, logger)),
-      // optional tasks
-      disableUnsol(GetDisableUnsolTask(context, params, logger, app)),
-      enableUnsol(GetEnableUnsolTask(context, params, logger, app)),
-      timeSynchronization(GetTimeSyncTask(context, params, logger, app))
-{
-}
+MasterTasks::MasterTasks(
+    const MasterParams& params,
+    const Logger& logger,
+    IMasterApplication& app,
+    const std::shared_ptr<ISOEHandler>& SOEHandler
+)
+    : context(std::make_shared<TaskContext>())
+    , clearRestart(std::make_shared<ClearRestartTask>(context, app, logger))
+    , assignClass(std::make_shared<AssignClassTask>(context, app, RetryBehavior(params), logger))
+    , startupIntegrity(std::make_shared<StartupIntegrityPoll>(
+          context, app, SOEHandler, params.startupIntegrityClassMask, RetryBehavior(params), logger)
+    )
+    , eventScan(std::make_shared<EventScanTask>(
+          context, app, SOEHandler, params.eventScanOnEventsAvailableClassMask, logger)
+    )
+    // optional tasks
+    , disableUnsol(GetDisableUnsolTask(context, params, logger, app))
+    , enableUnsol(GetEnableUnsolTask(context, params, logger, app))
+    , timeSynchronization(GetTimeSyncTask(context, params, logger, app))
+{}
 
-void MasterTasks::Initialize(IMasterScheduler& scheduler, IMasterTaskRunner& runner)
+void MasterTasks::Initialize(IMasterScheduler& scheduler, IMasterTaskRunner& runner) const
 {
     for (auto& task :
          {clearRestart, assignClass, startupIntegrity, eventScan, enableUnsol, disableUnsol, timeSynchronization})
@@ -69,27 +72,27 @@ void MasterTasks::BindTask(const std::shared_ptr<IMasterTask>& task)
     boundTasks.push_back(task);
 }
 
-bool MasterTasks::DemandTimeSync()
+bool MasterTasks::DemandTimeSync() const
 {
-    return this->Demand(this->timeSynchronization);
+    return demand(this->timeSynchronization);
 }
 
-bool MasterTasks::DemandEventScan()
+bool MasterTasks::DemandEventScan() const
 {
-    return this->Demand(this->eventScan);
+    return demand(this->eventScan);
 }
 
-bool MasterTasks::DemandIntegrity()
+bool MasterTasks::DemandIntegrity() const
 {
-    return this->Demand(this->startupIntegrity);
+    return demand(this->startupIntegrity);
 }
 
-void MasterTasks::OnRestartDetected()
+void MasterTasks::OnRestartDetected() const
 {
-    this->Demand(this->clearRestart);
-    this->Demand(this->assignClass);
-    this->Demand(this->startupIntegrity);
-    this->Demand(this->enableUnsol);
+    demand(this->clearRestart);
+    demand(this->assignClass);
+    demand(this->startupIntegrity);
+    demand(this->enableUnsol);
 }
 
 std::shared_ptr<IMasterTask> MasterTasks::GetTimeSyncTask(const std::shared_ptr<TaskContext>& context,
@@ -97,19 +100,25 @@ std::shared_ptr<IMasterTask> MasterTasks::GetTimeSyncTask(const std::shared_ptr<
                                                           const Logger& logger,
                                                           IMasterApplication& application)
 {
+    const auto behavior = TaskBehavior::ImmediatePeriodic(
+           params.timeSyncPeriod,
+           params.taskRetryPeriod,
+           params.maxTaskRetryPeriod,
+           params.retryCount
+    );
     switch (params.timeSyncMode)
     {
-    case (TimeSyncMode::NonLAN): {
+    case TimeSyncMode::NonLAN: {
         if (params.timeSyncPeriod == TimeDuration::Max()) {
             return std::make_shared<SerialTimeSyncTask>(context, application, logger);
         }
-        return std::make_shared<SerialTimeSyncTask>(context, application, logger, params.timeSyncPeriod, params.taskRetryPeriod, params.maxTaskRetryPeriod);
+        return std::make_shared<SerialTimeSyncTask>(context, application, logger, behavior);
     }
-    case (TimeSyncMode::LAN): {
+    case TimeSyncMode::LAN: {
         if (params.timeSyncPeriod == TimeDuration::Max()) {
             return std::make_shared<LANTimeSyncTask>(context, application, logger);
         }
-        return std::make_shared<LANTimeSyncTask>(context, application, logger, params.timeSyncPeriod, params.taskRetryPeriod, params.maxTaskRetryPeriod);
+        return std::make_shared<LANTimeSyncTask>(context, application, logger, behavior);
     }
     default:
         return nullptr;
@@ -135,7 +144,7 @@ std::shared_ptr<IMasterTask> MasterTasks::GetDisableUnsolTask(const std::shared_
     return params.disableUnsolOnStartup
         ? std::make_shared<DisableUnsolicitedTask>(
               context, application,
-              TaskBehavior::SingleImmediateExecutionWithRetry(params.taskRetryPeriod, params.maxTaskRetryPeriod),
+              RetryBehavior(params),
               logger)
         : nullptr;
 }

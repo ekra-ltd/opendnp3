@@ -99,11 +99,10 @@ std::shared_ptr<MContext> MContext::Create(
     std::weak_ptr<MContext> weakPtr = ptr;
     ptr->iohandlersManager->SetChannelStateChangedCallback([weakPtr](const bool channelDown) {
         const auto shared = weakPtr.lock();
-        if (!shared)
+        if (shared)
         {
-            return;
+            shared->application->OnMasterStatusChanged(channelDown ? MasterStatus::Error : MasterStatus::Working);
         }
-        shared->application->OnStateChange(channelDown ? LinkStatus::UNRESET : LinkStatus::RESET, LinkStateChangeSource::Unconditional);
     });
     return ptr;
 }
@@ -150,19 +149,19 @@ bool MContext::OnReceive(const Message& message)
     std::lock_guard<std::mutex> lock{ _mtx };
     if (!this->isOnline)
     {
-        SIMPLE_LOG_BLOCK(this->logger, flags::ERR, "Ignorning rx data while offline");
+        SIMPLE_LOG_BLOCK(this->logger, flags::ERR, "Ignorning rx data while offline")
         return false;
     }
 
     if (message.addresses.destination != this->addresses.source)
     {
-        FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Unknown destination address: %u", message.addresses.destination);
+        FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Unknown destination address: %u", message.addresses.destination)
         return false;
     }
 
     if (message.addresses.source != this->addresses.destination)
     {
-        FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Unexpected message source: %u", message.addresses.source);
+        FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Unexpected message source: %u", message.addresses.source)
         return false;
     }
 
@@ -223,36 +222,88 @@ void MContext::DirectOperate(CommandSet&& commands, const CommandResultCallbackT
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    this->ScheduleAdhocTask(CommandTask::CreateDirectOperate(this->tasks.context, std::move(commands),
-                                                             this->params.controlQualifierMode, *application, callback,
-                                                             timeout, config, logger));
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        timeout,
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    this->ScheduleAdhocTask(CommandTask::CreateDirectOperate(
+        this->tasks.context,
+        std::move(commands),
+        this->params.controlQualifierMode,
+        *application,
+        callback,
+        config,
+        behavior,
+        logger
+    ));
 }
 
 void MContext::SelectAndOperate(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    this->ScheduleAdhocTask(CommandTask::CreateSelectAndOperate(this->tasks.context, std::move(commands),
-                                                                this->params.controlQualifierMode, *application,
-                                                                callback, timeout, config, logger));
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        timeout,
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    this->ScheduleAdhocTask(CommandTask::CreateSelectAndOperate(
+        this->tasks.context,
+        std::move(commands),
+        this->params.controlQualifierMode,
+        *application,
+        callback,
+        config,
+        behavior,
+        logger
+    ));
 }
 
 void MContext::Select(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    this->ScheduleAdhocTask(CommandTask::CreateSelect(this->tasks.context, std::move(commands),
-                                                      this->params.controlQualifierMode, *application, callback,
-                                                      timeout, config, logger));
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        timeout,
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    this->ScheduleAdhocTask(CommandTask::CreateSelect(
+        this->tasks.context,
+        std::move(commands),
+        this->params.controlQualifierMode,
+        *application,
+        callback,
+        config,
+        behavior,
+        logger
+    ));
 }
 
 void MContext::Operate(CommandSet&& commands, const CommandResultCallbackT& callback, const TaskConfig& config)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    this->ScheduleAdhocTask(CommandTask::CreateOperate(this->tasks.context, std::move(commands),
-                                                      this->params.controlQualifierMode, *application, callback,
-                                                      timeout, config, logger));
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        timeout,
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    this->ScheduleAdhocTask(CommandTask::CreateOperate(
+        this->tasks.context,
+        std::move(commands),
+        this->params.controlQualifierMode,
+        *application,
+        callback,
+        config,
+        behavior,
+        logger
+    ));
 }
 
 void MContext::ProcessAPDU(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects)
@@ -267,7 +318,7 @@ void MContext::ProcessAPDU(const APDUResponseHeader& header, const ser4cpp::rseq
         break;
     default:
         FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Ignoring unsupported function code: %s",
-                         FunctionCodeSpec::to_human_string(header.function));
+                         FunctionCodeSpec::to_human_string(header.function))
         break;
     }
 }
@@ -307,7 +358,7 @@ void MContext::ProcessUnsolicitedResponse(const APDUResponseHeader& header, cons
 {
     if (!header.control.UNS)
     {
-        SIMPLE_LOG_BLOCK(logger, flags::WARN, "Ignoring unsolicited response without UNS bit set");
+        SIMPLE_LOG_BLOCK(logger, flags::WARN, "Ignoring unsolicited response without UNS bit set")
         return;
     }
 
@@ -371,20 +422,48 @@ bool MContext::DemandTimeSyncronization()
     return result;
 }
 
-bool MContext::ReadFile(const std::string& sourceFile, FileOperationTaskCallbackT callback)
+bool MContext::ReadFile(const std::string& sourceFile, const FileOperationTaskCallbackT& callback)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
-    const auto task = std::make_shared<ReadFileTask>(this->tasks.context, *this->application, this->logger, sourceFile,
-                                                     callback, FileTransferMaxRxBlockSize);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        Timestamp::Max(),
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<ReadFileTask>(
+        this->tasks.context,
+        *this->application,
+        this->logger,
+        sourceFile,
+        behavior,
+        callback,
+        FileTransferMaxRxBlockSize
+    );
     this->ScheduleAdhocTask(task);
     return true;
 }
 
-bool MContext::WriteFile(std::shared_ptr<std::ifstream> source, const std::string& destFilename, FileOperationTaskCallbackT callback)
+bool MContext::WriteFile(const std::shared_ptr<std::ifstream>& source, const std::string& destFilename,
+                         const FileOperationTaskCallbackT& callback)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
-    const auto task = std::make_shared<WriteFileTask>(this->tasks.context, *this->application, this->logger,
-                                                      source, destFilename, FileTransferMaxTxBlockSize, callback);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        Timestamp::Max(),
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<WriteFileTask>(
+        this->tasks.context,
+        *this->application,
+        this->logger,
+        source,
+        destFilename,
+        FileTransferMaxTxBlockSize,
+        behavior,
+        callback
+    );
     this->ScheduleAdhocTask(task);
     return true;
 }
@@ -392,22 +471,54 @@ bool MContext::WriteFile(std::shared_ptr<std::ifstream> source, const std::strin
 void MContext::GetFilesInDirectory(const std::string& sourceDirectory, const GetFilesInfoTaskCallbackT& callback)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
-    const auto task = std::make_shared<GetFilesInDirectoryTask>(this->tasks.context, *this->application, this->logger, sourceDirectory,
-                                                                callback, FileTransferMaxRxBlockSize);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        Timestamp::Max(),
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<GetFilesInDirectoryTask>(
+        this->tasks.context,
+        *this->application,
+        this->logger,
+        sourceDirectory,
+        behavior,
+        callback,
+        FileTransferMaxRxBlockSize
+    );
     return this->ScheduleAdhocTask(task);
 }
 
 void MContext::GetFileInfo(const std::string& sourceFile, const GetFilesInfoTaskCallbackT& callback)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
-    const auto task = std::make_shared<GetFileInfoTask>(this->tasks.context, *this->application, this->logger, sourceFile, callback);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        Timestamp::Max(),
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<GetFileInfoTask>(
+        this->tasks.context,
+        *this->application,
+        this->logger,
+        sourceFile,
+        behavior,
+        callback
+    );
     return this->ScheduleAdhocTask(task);
 }
 
-void MContext::DeleteFileFunction(const std::string& filename, FileOperationTaskCallbackT callback)
+void MContext::DeleteFileFunction(const std::string& filename, const FileOperationTaskCallbackT& callback)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
-    const auto task = std::make_shared<DeleteFileTask>(this->tasks.context, *this->application, this->logger, filename, callback);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        Timestamp::Max(),
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<DeleteFileTask>(this->tasks.context, *this->application, this->logger, filename, behavior, callback);
     return this->ScheduleAdhocTask(task);
 }
 
@@ -431,8 +542,8 @@ void MContext::StartResponseTimer()
 
 std::shared_ptr<IMasterTask> MContext::AddScan(TimeDuration period,
                                                const HeaderBuilderT& builder,
-                                               std::shared_ptr<ISOEHandler> soe_handler,
-                                               TaskConfig config)
+                                               const std::shared_ptr<ISOEHandler>& soe_handler,
+                                               const TaskConfig& config)
 {
     auto task = std::make_shared<UserPollTask>(
         this->tasks.context, builder,
@@ -474,13 +585,26 @@ std::shared_ptr<IMasterTask> MContext::AddRangeScan(GroupVariationID gvId,
     return this->AddScan(period, build, soe_handler, config);
 }
 
-void MContext::Scan(const HeaderBuilderT& builder, std::shared_ptr<ISOEHandler> soe_handler, TaskConfig config)
+void MContext::Scan(const HeaderBuilderT& builder, const std::shared_ptr<ISOEHandler>& soe_handler, const TaskConfig&
+                    config)
 {
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-
-    auto task
-        = std::make_shared<UserPollTask>(this->tasks.context, builder, TaskBehavior::SingleExecutionNoRetry(timeout),
-                                         false, *application, soe_handler, logger, config);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        timeout,
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<UserPollTask>(
+        this->tasks.context,
+        builder,
+        behavior,
+        false,
+        *application,
+        soe_handler,
+        logger,
+        config
+    );
 
     this->ScheduleAdhocTask(task);
 }
@@ -507,7 +631,7 @@ void MContext::ScanRange(
     this->Scan(configure, soe_handler, config);
 }
 
-void MContext::Write(const TimeAndInterval& value, uint16_t index, TaskConfig config)
+void MContext::Write(const TimeAndInterval& value, uint16_t index, const TaskConfig& config)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     auto builder = [value, index](HeaderWriter& writer) -> bool {
@@ -516,29 +640,71 @@ void MContext::Write(const TimeAndInterval& value, uint16_t index, TaskConfig co
     };
 
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    auto task = std::make_shared<EmptyResponseTask>(this->tasks.context, *this->application, "WRITE TimeAndInterval",
-                                                    FunctionCode::WRITE, builder, timeout, this->logger, config);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        timeout,
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<EmptyResponseTask>(
+        this->tasks.context,
+        *this->application,
+        "WRITE TimeAndInterval",
+        FunctionCode::WRITE,
+        builder,
+        this->logger,
+        behavior,
+        config
+    );
     this->ScheduleAdhocTask(task);
 }
 
-void MContext::Restart(RestartType op, const RestartOperationCallbackT& callback, TaskConfig config)
+void MContext::Restart(RestartType op, const RestartOperationCallbackT& callback, const TaskConfig& config)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    auto task = std::make_shared<RestartOperationTask>(this->tasks.context, *this->application, timeout, op, callback,
-                                                       this->logger, config);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        timeout,
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<RestartOperationTask>(
+        this->tasks.context,
+        *this->application,
+        timeout,
+        op,
+        callback,
+        this->logger,
+        config,
+        behavior
+    );
     this->ScheduleAdhocTask(task);
 }
 
 void MContext::PerformFunction(const std::string& name,
                                FunctionCode func,
                                const HeaderBuilderT& builder,
-                               TaskConfig config)
+                               const TaskConfig& config)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     const auto timeout = Timestamp(this->executor->get_time()) + params.taskStartTimeout;
-    auto task = std::make_shared<EmptyResponseTask>(this->tasks.context, *this->application, name, func, builder,
-                                                    timeout, this->logger, config);
+    const auto behavior = TaskBehavior::SingleExecutionWithRetry(
+        timeout,
+        this->params.taskRetryPeriod,
+        this->params.maxTaskRetryPeriod,
+        this->params.retryCount
+    );
+    const auto task = std::make_shared<EmptyResponseTask>(
+        this->tasks.context,
+        *this->application,
+        name,
+        func,
+        builder,
+        this->logger,
+        behavior,
+        config
+    );
     this->ScheduleAdhocTask(task);
 }
 
@@ -642,37 +808,31 @@ MContext::TaskState MContext::ResumeActiveTask()
 
 MContext::TaskState MContext::OnTransmitComplete()
 {
-    switch (tstate)
+    if (tstate == TaskState::TASK_READY)
     {
-    case (TaskState::TASK_READY):
         return this->ResumeActiveTask();
-    default:
-        return tstate;
     }
+    return tstate;
 }
 
 MContext::TaskState MContext::OnResponseEvent(const APDUResponseHeader& header, const ser4cpp::rseq_t& objects)
 {
-    switch (tstate)
+    if (tstate == TaskState::WAIT_FOR_RESPONSE)
     {
-    case (TaskState::WAIT_FOR_RESPONSE):
         return OnResponse_WaitForResponse(header, objects);
-    default:
-        FORMAT_LOG_BLOCK(logger, flags::WARN, "Not expecting a response, sequence: %u", header.control.SEQ);
-        return tstate;
     }
+    FORMAT_LOG_BLOCK(logger, flags::WARN, "Not expecting a response, sequence: %u", header.control.SEQ)
+    return tstate;
 }
 
 MContext::TaskState MContext::OnResponseTimeoutEvent()
 {
-    switch (tstate)
+    if (tstate == TaskState::WAIT_FOR_RESPONSE)
     {
-    case (TaskState::WAIT_FOR_RESPONSE):
         return OnResponseTimeout_WaitForResponse();
-    default:
-        SIMPLE_LOG_BLOCK(logger, flags::ERR, "Unexpected response timeout");
-        return tstate;
     }
+    SIMPLE_LOG_BLOCK(logger, flags::ERR, "Unexpected response timeout")
+    return tstate;
 }
 
 //// --- State actions ----
@@ -692,7 +852,7 @@ MContext::TaskState MContext::OnResponse_WaitForResponse(const APDUResponseHeade
 {
     if (header.control.SEQ != this->solSeq)
     {
-        FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Response with bad sequence: %u", header.control.SEQ);
+        FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Response with bad sequence: %u", header.control.SEQ)
         return TaskState::WAIT_FOR_RESPONSE;
     }
 
@@ -735,7 +895,7 @@ MContext::TaskState MContext::OnResponse_WaitForResponse(const APDUResponseHeade
 
 MContext::TaskState MContext::OnResponseTimeout_WaitForResponse()
 {
-    FORMAT_LOG_BLOCK(logger, flags::WARN, "Timeout waiting for response, task - %s", this->activeTask->Name());
+    FORMAT_LOG_BLOCK(logger, flags::WARN, "Timeout waiting for response, task - %s", this->activeTask->Name())
 
     const auto now = Timestamp(this->executor->get_time());
     this->activeTask->OnResponseTimeout(now);
