@@ -15,8 +15,15 @@ namespace opendnp3
     class GetFilesInDirectoryTask : public IMasterTask {
 
     public:
-        GetFilesInDirectoryTask(const std::shared_ptr<TaskContext>& context, IMasterApplication& app, const Logger& logger,
-            std::string sourceDirectory, GetFilesInfoTaskCallbackT taskCallback, uint16_t rxSize);
+        GetFilesInDirectoryTask(
+            const std::shared_ptr<TaskContext>& context,
+            IMasterApplication& app,
+            const Logger& logger,
+            std::string sourceDirectory,
+            const TaskBehavior& taskBehavior,
+            GetFilesInfoTaskCallbackT taskCallback,
+            uint16_t rxSize
+        );
 
         char const* Name() const final
         {
@@ -60,14 +67,14 @@ namespace opendnp3
         void Initialize() final;
 
     private:
-        FileOperationTaskState currentTaskState{ OPENING };
-        std::string sourceDirectory;
-        Group70Var4 fileCommandStatus;
-        Group70Var5 fileTransportObject;
-        std::deque<DNPFileInfo> filesInfo;
-        GetFilesInfoTaskCallbackT callback;
+        FileOperationTaskState _currentTaskState{ OPENING };
+        std::string _sourceDirectory;
+        Group70Var4 _fileCommandStatus;
+        Group70Var5 _fileTransportObject;
+        std::deque<DNPFileInfo> _filesInfo;
+        GetFilesInfoTaskCallbackT _callback;
         uint16_t _rxSize;
-        bool errorWhileReading = false;
+        bool _errorWhileReading{ false };
     };
 
 } // namespace opendnp3

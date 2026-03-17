@@ -14,26 +14,30 @@
 namespace opendnp3
 {
 
-    GetFileInfoTask::GetFileInfoTask(const std::shared_ptr<TaskContext>& context,
+    GetFileInfoTask::GetFileInfoTask(
+        const std::shared_ptr<TaskContext>& context,
         IMasterApplication& app,
         const Logger& logger,
         std::string sourceFile,
-        GetFilesInfoTaskCallbackT taskCallback)
-        : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
-          sourceFile(std::move(sourceFile)), callback(std::move(taskCallback))
+        const TaskBehavior& taskBehavior,
+        GetFilesInfoTaskCallbackT taskCallback
+    )
+        : IMasterTask(context, app, taskBehavior, logger, TaskConfig::Default())
+        , _sourceFile(std::move(sourceFile))
+        , _callback(std::move(taskCallback))
     { }
 
     void GetFileInfoTask::Initialize()
     {
-        fileInfo = DNPFileInfo();
-        if (callback == nullptr) {
-            callback = [](const GetFilesInfoTaskResult& /**/) {};
+        _fileInfo = DNPFileInfo();
+        if (_callback == nullptr) {
+            _callback = [](const GetFilesInfoTaskResult& /**/) {};
         }
     }
 
     bool GetFileInfoTask::BuildRequest(APDURequest& request, uint8_t seq) {
         Group70Var7 obj;
-        obj.fileInfo.filename = sourceFile;
+        obj.fileInfo.filename = _sourceFile;
         obj.asData = false; // obj isn't a part of another object
         request.SetFunction(FunctionCode::GET_FILE_INFO);
         request.SetControl(AppControlField::Request(seq));
@@ -52,8 +56,8 @@ namespace opendnp3
             // we can get either var 7 or var 4 as a response
             const Group70Var7 obj = handler.GetFileDescriptorObject();
             if (obj.isInitialized) { // if obj is inialized - response contains var 7
-                fileInfo = obj.fileInfo;
-                callback(GetFilesInfoTaskResult(TaskCompletion::SUCCESS, { fileInfo }));
+                _fileInfo = obj.fileInfo;
+                _callback(GetFilesInfoTaskResult(TaskCompletion::SUCCESS, { _fileInfo }));
                 return ResponseResult::OK_FINAL;
             }
             const auto fileCommandStatus = handler.GetFileStatusObject();
@@ -65,7 +69,7 @@ namespace opendnp3
             switch (fileCommandStatus.status) {
             case FileCommandStatus::SUCCESS: {
                 logger.log(flags::DBG, __FILE__, "Successfully received file info");
-                callback(GetFilesInfoTaskResult(TaskCompletion::SUCCESS, { fileInfo }));
+                _callback(GetFilesInfoTaskResult(TaskCompletion::SUCCESS, { _fileInfo }));
                 return ResponseResult::OK_FINAL;
             }
             case FileCommandStatus::PERMISSION_DENIED:
@@ -75,18 +79,18 @@ namespace opendnp3
                 logger.log(flags::DBG, __FILE__, "Invalid mode");
                 break;
             case FileCommandStatus::NOT_FOUND:
-                s = "File - \"" + sourceFile + "\" not found";
+                s = "File - \"" + _sourceFile + "\" not found";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::FILE_LOCKED:
-                s = "File - \"" + sourceFile + "\" locked by another user";
+                s = "File - \"" + _sourceFile + "\" locked by another user";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::OPEN_COUNT_EXCEEDED:
                 logger.log(flags::DBG, __FILE__, "Maximum amount of files opened");
                 break;
             case FileCommandStatus::FILE_NOT_OPEN:
-                s = "File - \"" + sourceFile + "\" not opened";
+                s = "File - \"" + _sourceFile + "\" not opened";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::INVALID_BLOCK_SIZE:
@@ -94,7 +98,7 @@ namespace opendnp3
                 break;
             case FileCommandStatus::LOST_COM:
                 logger.log(flags::DBG, __FILE__, "Communication lost");
-                callback(GetFilesInfoTaskResult(TaskCompletion::FAILURE_NO_COMMS));
+                _callback(GetFilesInfoTaskResult(TaskCompletion::FAILURE_NO_COMMS));
                 break;
             case FileCommandStatus::FAILED_ABORT:
                 logger.log(flags::DBG, __FILE__, "Abort action failed");

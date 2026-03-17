@@ -34,13 +34,16 @@ class RestartOperationTask final : public IMasterTask, private IAPDUHandler
 {
 
 public:
-    RestartOperationTask(const std::shared_ptr<TaskContext>& context,
-                         IMasterApplication& app,
-                         const Timestamp& startTimeout,
-                         RestartType operationType,
-                         RestartOperationCallbackT callback,
-                         const Logger& logger,
-                         const TaskConfig& config);
+    RestartOperationTask(
+        const std::shared_ptr<TaskContext>& context,
+        IMasterApplication& app,
+        const Timestamp& startTimeout,
+        RestartType operationType,
+        RestartOperationCallbackT callback,
+        const Logger& logger,
+        const TaskConfig& config,
+        const TaskBehavior& taskBehavior
+    );
 
     bool BuildRequest(APDURequest& request, uint8_t seq) override;
 

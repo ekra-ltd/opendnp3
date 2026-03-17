@@ -14,26 +14,29 @@
 namespace opendnp3
 {
 
-    DeleteFileTask::DeleteFileTask(const std::shared_ptr<TaskContext>& context,
+    DeleteFileTask::DeleteFileTask(
+        const std::shared_ptr<TaskContext>& context,
         IMasterApplication& app,
         const Logger& logger,
-        std::string filename, 
-        FileOperationTaskCallbackT taskCallback)
-        : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(), logger, TaskConfig::Default()),
-        filename(std::move(filename))
+        std::string filename,
+        const TaskBehavior& taskBehavior,
+        FileOperationTaskCallbackT taskCallback
+    )
+        : IMasterTask(context, app, taskBehavior, logger, TaskConfig::Default())
+        , _filename(std::move(filename))
     {
-        callback = taskCallback ? std::move(taskCallback) : [](const FileOperationTaskResult& /**/) {};
+        _callback = taskCallback ? std::move(taskCallback) : [](const FileOperationTaskResult& /**/) {};
     }
 
     void DeleteFileTask::Initialize()
     {
-        fileCommandStatus = Group70Var4();
+        _fileCommandStatus = Group70Var4();
     }
 
     bool DeleteFileTask::BuildRequest(APDURequest& request, uint8_t seq) {
         logger.log(flags::DBG, __FILE__, "Attempting delete file");
         Group70Var3 file;
-        file.filename = filename;
+        file.filename = _filename;
         file.operationMode = FileOpeningMode::DELETING;
         request.SetFunction(FunctionCode::DELETE_FILE);
         request.SetControl(AppControlField::Request(seq));
@@ -47,16 +50,16 @@ namespace opendnp3
             FileOperationHandler handler;
             const auto result = APDUParser::Parse(objects, handler, &logger);
             if (result != ParseResult::OK) {
-                callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
+                _callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
                 return ResponseResult::ERROR_BAD_RESPONSE;
             }
-            fileCommandStatus = handler.GetFileStatusObject();
+            _fileCommandStatus = handler.GetFileStatusObject();
             std::string s;
-            switch (fileCommandStatus.status) {
+            switch (_fileCommandStatus.status) {
             case FileCommandStatus::SUCCESS:
-                s = "Success deleting file - \"" + filename + "\"";
+                s = "Success deleting file - \"" + _filename + "\"";
                 logger.log(flags::DBG, __FILE__, s.c_str());
-                callback(FileOperationTaskResult(TaskCompletion::SUCCESS));
+                _callback(FileOperationTaskResult(TaskCompletion::SUCCESS));
                 return ResponseResult::OK_FINAL;
             case FileCommandStatus::PERMISSION_DENIED:
                 logger.log(flags::DBG, __FILE__, "Permission denied");
@@ -65,18 +68,18 @@ namespace opendnp3
                 logger.log(flags::DBG, __FILE__, "Invalid mode");
                 break;
             case FileCommandStatus::NOT_FOUND:
-                s = "File - \"" + filename + "\" not found";
+                s = "File - \"" + _filename + "\" not found";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::FILE_LOCKED:
-                s = "File - \"" + filename + "\" locked by another user";
+                s = "File - \"" + _filename + "\" locked by another user";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::OPEN_COUNT_EXCEEDED:
                 logger.log(flags::DBG, __FILE__, "Maximum amount of files opened");
                 break;
             case FileCommandStatus::FILE_NOT_OPEN:
-                s = "File - \"" + filename + "\" not opened";
+                s = "File - \"" + _filename + "\" not opened";
                 logger.log(flags::DBG, __FILE__, s.c_str());
                 break;
             case FileCommandStatus::INVALID_BLOCK_SIZE:
@@ -94,7 +97,7 @@ namespace opendnp3
             }
         }
 
-        callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
+        _callback(FileOperationTaskResult(TaskCompletion::FAILURE_BAD_RESPONSE));
         return ResponseResult::ERROR_BAD_RESPONSE;
     }
 

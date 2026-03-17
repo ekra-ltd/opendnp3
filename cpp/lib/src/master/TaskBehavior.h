@@ -57,9 +57,14 @@ class TaskBehavior
 {
 
 public:
-    static TaskBehavior SingleExecutionNoRetry();
+    TaskBehavior() = delete;
 
-    static TaskBehavior SingleExecutionNoRetry(const Timestamp& startExpiration);
+    static TaskBehavior SingleExecutionWithRetry(
+        const Timestamp& startExpiration,
+        const TimeDuration& minRetryDelay,
+        const TimeDuration& maxRetryDelay,
+        const NumRetries& retryCount = NumRetries::Infinite()
+    );
 
     static TaskBehavior ImmediatePeriodic(const TimeDuration& period,
                                           const TimeDuration& minRetryDelay,
@@ -112,9 +117,7 @@ public:
     void DelayByPeriod(const Timestamp& now);
 
 private:
-    TimeDuration CalcNextRetryTimeout();
-
-    TaskBehavior() = delete;
+    TimeDuration CalcNextRetryTimeout() const;
 
     TaskBehavior(const TimeDuration& period,
                  const Timestamp& expiration,

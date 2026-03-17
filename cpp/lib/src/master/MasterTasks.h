@@ -38,37 +38,34 @@ public:
     MasterTasks(const MasterParams& params,
                 const Logger& logger,
                 IMasterApplication& application,
-                std::shared_ptr<ISOEHandler> SOEHandler);
+                const std::shared_ptr<ISOEHandler>& SOEHandler);
 
-    void Initialize(IMasterScheduler& scheduler, IMasterTaskRunner& runner);
+    void Initialize(IMasterScheduler& scheduler, IMasterTaskRunner& runner) const;
 
-    bool DemandTimeSync();
-    bool DemandEventScan();
-    bool DemandIntegrity();
+    bool DemandTimeSync() const;
+    bool DemandEventScan() const;
+    bool DemandIntegrity() const;
 
-    void OnRestartDetected();
+    void OnRestartDetected() const;
 
     void BindTask(const std::shared_ptr<IMasterTask>& task);
 
     const std::shared_ptr<TaskContext> context;
 
 private:
-    bool Demand(const std::shared_ptr<IMasterTask>& task)
+    static bool demand(const std::shared_ptr<IMasterTask>& task)
     {
         if (task)
         {
             task->SetMinExpiration();
             return true;
         }
-        else
-        {
-            return false;
-        }
+        return false;
     }
 
-    inline static TaskBehavior RetryBehavior(const MasterParams& params)
+    static TaskBehavior RetryBehavior(const MasterParams& params)
     {
-        return TaskBehavior::SingleImmediateExecutionWithRetry(params.taskRetryPeriod, params.maxTaskRetryPeriod);
+        return TaskBehavior::SingleImmediateExecutionWithRetry(params.taskRetryPeriod, params.maxTaskRetryPeriod, params.retryCount);
     }
 
     const std::shared_ptr<IMasterTask> clearRestart;

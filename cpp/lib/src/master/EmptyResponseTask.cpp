@@ -31,10 +31,10 @@ EmptyResponseTask::EmptyResponseTask(const std::shared_ptr<TaskContext>& context
                                      std::string name,
                                      FunctionCode func,
                                      std::function<bool(HeaderWriter&)> format,
-                                     Timestamp startExpiration,
                                      const Logger& logger,
+                                     const TaskBehavior& taskBehavior,
                                      const TaskConfig& config)
-    : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(startExpiration), logger, config),
+    : IMasterTask(context, app, taskBehavior, logger, config),
       name(std::move(name)),
       func(func),
       format(std::move(format))

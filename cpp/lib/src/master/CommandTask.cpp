@@ -31,81 +31,82 @@
 namespace opendnp3
 {
 
-std::shared_ptr<IMasterTask> CommandTask::CreateDirectOperate(const std::shared_ptr<TaskContext>& context,
-                                                              CommandSet&& set,
-                                                              IndexQualifierMode mode,
-                                                              IMasterApplication& app,
-                                                              const CommandResultCallbackT& callback,
-                                                              const Timestamp& startExpiration,
-                                                              const TaskConfig& config,
-                                                              Logger logger)
-{
-    auto task
-        = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, startExpiration, config, logger);
+std::shared_ptr<IMasterTask> CommandTask::CreateDirectOperate(
+    const std::shared_ptr<TaskContext>& context,
+    CommandSet&& set,
+    IndexQualifierMode mode,
+    IMasterApplication& app,
+    const CommandResultCallbackT& callback,
+    const TaskConfig& config,
+    const TaskBehavior& taskBehavior,
+    Logger logger
+) {
+    auto task = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, config, taskBehavior, logger);
     task->LoadDirectOperate();
     return task;
 }
 
-std::shared_ptr<IMasterTask> CommandTask::CreateSelectAndOperate(const std::shared_ptr<TaskContext>& context,
-                                                                 CommandSet&& set,
-                                                                 IndexQualifierMode mode,
-                                                                 IMasterApplication& app,
-                                                                 const CommandResultCallbackT& callback,
-                                                                 const Timestamp& startExpiration,
-                                                                 const TaskConfig& config,
-                                                                 Logger logger)
-{
-    auto task
-        = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, startExpiration, config, logger);
+std::shared_ptr<IMasterTask> CommandTask::CreateSelectAndOperate(
+    const std::shared_ptr<TaskContext>& context,
+    CommandSet&& set,
+    IndexQualifierMode mode,
+    IMasterApplication& app,
+    const CommandResultCallbackT& callback,
+    const TaskConfig& config,
+    const TaskBehavior& taskBehavior,
+    Logger logger
+) {
+    auto task = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, config, taskBehavior, logger);
     task->LoadSelectAndOperate();
     return task;
 }
 
-std::shared_ptr<IMasterTask> CommandTask::CreateSelect(const std::shared_ptr<TaskContext>& context,
-                                                       CommandSet&& set,
-                                                       IndexQualifierMode mode,
-                                                       IMasterApplication& app,
-                                                       const CommandResultCallbackT& callback,
-                                                       const Timestamp& startExpiration,
-                                                       const TaskConfig& config,
-                                                       Logger logger)
-{
-    auto task
-        = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, startExpiration, config, logger);
+std::shared_ptr<IMasterTask> CommandTask::CreateSelect(
+    const std::shared_ptr<TaskContext>& context,
+    CommandSet&& set,
+    IndexQualifierMode mode,
+    IMasterApplication& app,
+    const CommandResultCallbackT& callback,
+    const TaskConfig& config,
+    const TaskBehavior& taskBehavior,
+    Logger logger
+) {
+    auto task = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, config, taskBehavior, logger);
     task->LoadSelect();
     return task;
 }
 
-std::shared_ptr<IMasterTask> CommandTask::CreateOperate(const std::shared_ptr<TaskContext>& context,
-                                                        CommandSet&& set,
-                                                        IndexQualifierMode mode,
-                                                        IMasterApplication& app,
-                                                        const CommandResultCallbackT& callback,
-                                                        const Timestamp& startExpiration,
-                                                        const TaskConfig& config,
-                                                        Logger logger)
-{
-    auto task
-        = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, startExpiration, config, logger);
+std::shared_ptr<IMasterTask> CommandTask::CreateOperate(
+    const std::shared_ptr<TaskContext>& context,
+    CommandSet&& set,
+    IndexQualifierMode mode,
+    IMasterApplication& app,
+    const CommandResultCallbackT& callback,
+    const TaskConfig& config,
+    const TaskBehavior& taskBehavior,
+    Logger logger
+) {
+    auto task = std::make_shared<CommandTask>(context, std::move(set), mode, app, callback, config, taskBehavior, logger);
     task->LoadOperate();
     return task;
 }
 
-CommandTask::CommandTask(const std::shared_ptr<TaskContext>& context,
-                         CommandSet&& commands,
-                         IndexQualifierMode mode,
-                         IMasterApplication& app,
-                         CommandResultCallbackT callback,
-                         const Timestamp& startExpiration,
-                         const TaskConfig& config,
-                         const Logger& logger)
-    : IMasterTask(context, app, TaskBehavior::SingleExecutionNoRetry(startExpiration), logger, config),
-      statusResult(CommandStatus::UNDEFINED),
-      commandCallback(std::move(callback)),
-      commands(std::move(commands)),
-      mode(mode)
-{
-}
+CommandTask::CommandTask(
+    const std::shared_ptr<TaskContext>& context,
+    CommandSet&& commands,
+    IndexQualifierMode mode,
+    IMasterApplication& app,
+    CommandResultCallbackT callback,
+    const TaskConfig& config,
+    const TaskBehavior& taskBehavior,
+    const Logger& logger
+)
+    : IMasterTask(context, app, taskBehavior, logger, config)
+    , statusResult(CommandStatus::UNDEFINED)
+    , commandCallback(std::move(callback))
+    , commands(std::move(commands))
+    , mode(mode)
+{}
 
 void CommandTask::LoadSelectAndOperate()
 {

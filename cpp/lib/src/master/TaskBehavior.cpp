@@ -20,69 +20,83 @@
 
 #include "TaskBehavior.h"
 
-#include <limits>
-
 namespace opendnp3
 {
 
-TaskBehavior TaskBehavior::SingleExecutionNoRetry()
-{
-    return SingleExecutionNoRetry(Timestamp::Max()); // no start expiration
+TaskBehavior TaskBehavior::SingleExecutionWithRetry(
+    const Timestamp& startExpiration,
+    const TimeDuration& minRetryDelay,
+    const TimeDuration& maxRetryDelay,
+    const NumRetries& retryCount
+) {
+    return {
+        TimeDuration::Min(), // not periodic
+        Timestamp::Min(),    // run immediately
+        minRetryDelay,
+        maxRetryDelay,
+        startExpiration,
+        retryCount
+    };
 }
 
-TaskBehavior TaskBehavior::SingleExecutionNoRetry(const Timestamp& startExpiration)
-{
-    return TaskBehavior(TimeDuration::Min(), // not periodic
-                        Timestamp::Min(),    // run immediately
-                        TimeDuration::Max(), TimeDuration::Max(), startExpiration,
-                        NumRetries::Fixed(0));
+TaskBehavior TaskBehavior::ImmediatePeriodic(
+    const TimeDuration& period,
+    const TimeDuration& minRetryDelay,
+    const TimeDuration& maxRetryDelay,
+    const NumRetries&   retryCount
+) {
+    return {
+        period,
+        Timestamp::Min(), // run immediately
+        minRetryDelay,
+        maxRetryDelay,
+        Timestamp::Max(), // no start expiration
+        retryCount
+    };
 }
 
-TaskBehavior TaskBehavior::ImmediatePeriodic(const TimeDuration& period,
-                                             const TimeDuration& minRetryDelay,
-                                             const TimeDuration& maxRetryDelay,
-                                             const NumRetries&   retryCount)
-{
-    return TaskBehavior(period,
-                        Timestamp::Min(), // run immediately
-                        minRetryDelay, maxRetryDelay,
-                        Timestamp::Max(), // no start expiraion
-                        retryCount
-    );
-}
-
-TaskBehavior TaskBehavior::SingleImmediateExecutionWithRetry(const TimeDuration& minRetryDelay,
-                                                             const TimeDuration& maxRetryDelay,
-                                                             const NumRetries&   retryCount)
-{
-    return TaskBehavior(TimeDuration::Min(), // not periodic
-                        Timestamp::Min(),    // run immediatey
-                        minRetryDelay, maxRetryDelay, Timestamp::Max(),
-                        retryCount);
+TaskBehavior TaskBehavior::SingleImmediateExecutionWithRetry(
+    const TimeDuration& minRetryDelay,
+    const TimeDuration& maxRetryDelay,
+    const NumRetries&   retryCount
+) {
+    return {
+        TimeDuration::Min(), // not periodic
+        Timestamp::Min(),    // run immediately
+        minRetryDelay,
+        maxRetryDelay,
+        Timestamp::Max(),
+        retryCount
+    };
 }
 
 TaskBehavior TaskBehavior::ReactsToIINOnly()
 {
-    return TaskBehavior(TimeDuration::Min(), // not periodic
-                        Timestamp::Max(),    // only run when needed
-                        TimeDuration::Max(), // never retry
-                        TimeDuration::Max(), Timestamp::Max(),
-                        NumRetries::Fixed(0));
+    return {
+        TimeDuration::Min(), // not periodic
+        Timestamp::Max(),    // only run when needed
+        TimeDuration::Max(), // never retry
+        TimeDuration::Max(),
+        Timestamp::Max(),
+        NumRetries::Fixed(0)
+    };
 }
 
-TaskBehavior::TaskBehavior(const TimeDuration& period,
-                           const Timestamp& expiration,
-                           const TimeDuration& minRetryDelay,
-                           const TimeDuration& maxRetryDelay,
-                           const Timestamp& startExpiration,
-                           const NumRetries& retryCount)
-    : period(period),
-      minRetryDelay(minRetryDelay),
-      maxRetryDelay(maxRetryDelay),
-      startExpiration(startExpiration),
-      expiration(expiration),
-      currentRetryDelay(minRetryDelay),
-      _retryCount(retryCount)
+TaskBehavior::TaskBehavior(
+    const TimeDuration& period,
+    const Timestamp& expiration,
+    const TimeDuration& minRetryDelay,
+    const TimeDuration& maxRetryDelay,
+    const Timestamp& startExpiration,
+    const NumRetries& retryCount
+)
+    : period(period)
+    , minRetryDelay(minRetryDelay)
+    , maxRetryDelay(maxRetryDelay)
+    , startExpiration(startExpiration)
+    , expiration(expiration)
+    , currentRetryDelay(minRetryDelay)
+    , _retryCount(retryCount)
 {
 }
 
@@ -130,13 +144,13 @@ void TaskBehavior::DelayByPeriod(const Timestamp& now)
     _retryCount.Reset();
 }
 
-TimeDuration TaskBehavior::CalcNextRetryTimeout()
+TimeDuration TaskBehavior::CalcNextRetryTimeout() const
 {
     if (_retryCount.IsFixed()) {
         return this->minRetryDelay;
     }
     const auto doubled = this->currentRetryDelay.Double();
-    return (doubled > this->maxRetryDelay) ? this->maxRetryDelay : doubled;
+    return doubled > this->maxRetryDelay ? this->maxRetryDelay : doubled;
 }
 
 } // namespace opendnp3

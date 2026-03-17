@@ -38,8 +38,8 @@ public:
                       std::string name,
                       FunctionCode func,
                       HeaderBuilderT format,
-                      Timestamp startExpiration,
                       const Logger& logger,
+                      const TaskBehavior& taskBehavior,
                       const TaskConfig& config);
 
     bool BuildRequest(APDURequest& request, uint8_t seq) override;
