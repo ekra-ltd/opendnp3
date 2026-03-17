@@ -64,7 +64,7 @@ public:
     bool BeginTransmit(const std::shared_ptr<ILinkSession>& session, const ser4cpp::rseq_t& data);
 
     // Begin sending messages to the context
-    bool Prepare(NewChannelOpenedCallback_t channelOpenedCallback = nullptr);
+    bool Prepare(const NewChannelOpenedCallback_t& channelOpenedCallback = nullptr);
 
     // Stop sending messages to this session
     void ConditionalClose();

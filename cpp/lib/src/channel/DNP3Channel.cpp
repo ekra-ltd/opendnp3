@@ -35,13 +35,12 @@ DNP3Channel::DNP3Channel(const Logger& logger,
                          const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                          std::shared_ptr<IOHandlersManager> iohandlersManager,
                          std::shared_ptr<IResourceManager> manager)
-    :
-      logger(logger),
-      executor(executor),
-      scheduler(std::make_shared<MasterSchedulerBackend>(executor)),
-      iohandlersManager(std::move(iohandlersManager)),
-      manager(std::move(manager)),
-      resources(ResourceManager::Create())
+    : logger(logger)
+    , executor(executor)
+    , scheduler(std::make_shared<MasterSchedulerBackend>(executor))
+    , iohandlersManager(std::move(iohandlersManager))
+    , manager(std::move(manager))
+    , resources(ResourceManager::Create())
 {
     this->iohandlersManager->ChannelChanging.connect([masterScheduler = this->scheduler](const bool pause) {
         if (masterScheduler)
