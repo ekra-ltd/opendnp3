@@ -293,16 +293,15 @@ namespace opendnp3
         else
         {
             _succeededReadingCount = 0;
-            if (!_backupSettings)
-            {
-                return;
-            }
-
             (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Error;
             if (_primaryChannelState == Error && _backupChannelState == Error) {
                 if (_channelStateChanged) {
                     _channelStateChanged(true);
                 }
+            }
+            if (!_backupSettings)
+            {
+                return;
             }
             _backupChannelUsed = !_backupChannelUsed;
             trySwitchChannel(true);
