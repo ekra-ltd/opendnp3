@@ -191,7 +191,10 @@ namespace opendnp3
         if (result)
         {
             _currentChannel->ConditionalClose();
-            _channelStateChanged(true);
+            if (_channelStateChanged)
+            {
+                _channelStateChanged(true);
+            }
         }
         return result;
     }
@@ -287,7 +290,10 @@ namespace opendnp3
                 ++_succeededReadingCount;
                 (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Working;
                 (!_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Undecided;
-                _channelStateChanged(false);
+                if (_channelStateChanged)
+                {
+                    _channelStateChanged(false);
+                }
             }
         }
         else
