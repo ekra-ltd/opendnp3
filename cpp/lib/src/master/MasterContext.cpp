@@ -108,7 +108,7 @@ std::shared_ptr<MContext> MContext::Create(
             shared->application->OnMasterStatusChanged(channelDown ? MasterStatus::Error : MasterStatus::Working);
         }
     });
-    ptr->iohandlersManager->ChannelPaused.connect([weakPtr](const bool pause) {
+    ptr->_channelPausedConnection = ptr->iohandlersManager->ChannelPaused.connect([weakPtr](const bool pause) {
         const auto shared = weakPtr.lock();
         if (shared && shared->scheduler) {
             shared->scheduler->ChannelPaused(*shared, pause);
