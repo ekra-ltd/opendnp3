@@ -337,15 +337,10 @@ std::shared_ptr<IChannel> DNP3ManagerImpl::AddUDPChannelListener(const std::stri
                                                         std::shared_ptr<IChannelListener> listener) const
 {
     auto create = [&]() -> std::shared_ptr<IChannel> {
-        std::error_code ec;
         auto clogger = this->logger.detach(id, levels);
         auto executor = exe4cpp::StrandExecutor::create(this->io);
         auto sessionManager = std::make_shared<SharedChannelData>(clogger);
-        auto iohandler = UDPChannelListenerIOHandler::Create(clogger, mode, listener, executor, localEndpoint, ec, sessionManager);
-        if (ec)
-        {
-            throw DNP3Error(Error::UNABLE_TO_BIND_SERVER, ec);
-        }
+        auto iohandler = UDPChannelListenerIOHandler::Create(clogger, mode, listener, executor, localEndpoint, sessionManager);
         const auto iohandlersManager = std::make_shared<IOHandlersManager>(clogger, iohandler, sessionManager);
         return DNP3Channel::Create(clogger, executor, iohandlersManager, this->resources);
     };

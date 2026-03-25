@@ -35,17 +35,20 @@ IOHandler::IOHandler(
     std::shared_ptr<IChannelListener> listener,
     std::shared_ptr<ISharedChannelData> sessionsManager,
     bool isPrimary,
+    std::shared_ptr<exe4cpp::StrandExecutor> executor,
+    const ChannelRetry& channelRetry,
     ConnectionFailureCallback_t connectionFailureCallback
 )
     : close_existing(close_existing)
     , logger(logger)
     , listener(std::move(listener))
     , _connectionFailureCallback(std::move(connectionFailureCallback))
+    , retry(channelRetry)
+    , executor(std::move(executor))
     , parser(logger)
     , _sessionsManager(std::move(sessionsManager))
     , _isPrimary(isPrimary)
-{
-}
+{}
 
 LinkStatistics IOHandler::Statistics() const
 {
@@ -62,7 +65,7 @@ void IOHandler::Shutdown(bool onFail, bool doNotNotify)
 
         this->Reset(onFail, doNotNotify);
 
-        this->ShutdownImpl();
+        this->shutdownImpl();
 
         if (!doNotNotify)
         {
@@ -76,11 +79,12 @@ void IOHandler::OnReadComplete(const std::error_code& ec, size_t num)
     if (ec)
     {
         FORMAT_LOG_BLOCK(this->logger, flags::WARN, "read error: %s", ec.message().c_str())
+        logConnectionRetry();
 
         this->Reset();
 
         this->UpdateListener(ChannelState::OPENING);
-        this->OnChannelShutdown();
+        this->onChannelShutdown();
     }
     else
     {
@@ -99,7 +103,7 @@ void IOHandler::OnWriteComplete(const std::error_code& ec, size_t num)
         this->Reset();
 
         this->UpdateListener(ChannelState::OPENING);
-        this->OnChannelShutdown();
+        this->onChannelShutdown();
     }
     else
     {
@@ -142,7 +146,7 @@ bool IOHandler::Prepare(const NewChannelOpenedCallback_t& channelOpenedCallback)
         _openingChannel.exchange(true);
         this->UpdateListener(ChannelState::OPENING);
 
-        this->BeginChannelAccept();
+        this->beginChannelAccept();
 
         return false;
     }
@@ -155,7 +159,7 @@ void IOHandler::ConditionalClose()
     if (!_sessionsManager->IsAnySessionEnabled())
     {
         this->Reset(false);
-        this->SuspendChannelAccept();
+        this->suspendChannelAccept();
     }
 }
 
@@ -164,13 +168,35 @@ bool IOHandler::OnSessionRemoved()
     std::lock_guard<std::mutex> lock{ _mtx };
     if (!_sessionsManager->IsAnySessionEnabled())
     {
-        this->SuspendChannelAccept();
+        this->suspendChannelAccept();
     }
 
     return true;
 }
 
-void IOHandler::OnNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel)
+bool IOHandler::checkOnShutdownInternal()
+{
+    return true;
+}
+
+void IOHandler::onChannelShutdown()
+{
+    if (shouldRetry()) {
+        this->retryTimer = this->executor->start(this->retry.reconnectDelay.value, [this, self = shared_from_this()] {
+            if (!checkOnShutdownInternal()) {
+                return;
+            }
+            this->beginChannelAccept();
+        });
+    }
+    else if (_connectionFailureCallback) {
+        this->retry.Reset();
+        _openingChannel.exchange(false);
+        _connectionFailureCallback();
+    }
+}
+
+void IOHandler::onNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel)
 {
     _openingChannel.exchange(false);
     // if we have an active channel, and we're configured to close new channels
@@ -202,6 +228,32 @@ void IOHandler::OnNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel)
     _sessionsManager->LowerLayerUp(_isPrimary ? LinkStateChangeSource::PrimaryChannel : LinkStateChangeSource::BackupChannel);
 
     SIMPLE_LOG_BLOCK(logger, flags::DBG, "IOHandler, new channel opened")
+}
+
+bool IOHandler::shouldRetry()
+{
+    return this->retry.Retry();
+}
+
+void IOHandler::performRetry(const std::shared_ptr<IOHandler>& self, const std::error_code& ec, const TimeDuration& delay)
+{
+    FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error Connecting: %s", ec.message().c_str())
+    ++this->statistics.numOpenFail;
+    const auto newDelay = this->retry.NextDelay(delay);
+
+    auto retryCallback = [self, newDelay, this] {
+        (void)self;
+        if (shouldRetry()) {
+            logConnectionRetry();
+            this->tryOpen(newDelay);
+        }
+        else if (_connectionFailureCallback) {
+            this->retry.Reset();
+            _openingChannel.exchange(false);
+            _connectionFailureCallback();
+        }
+    };
+    this->retryTimer = this->executor->start(delay.value, retryCallback);
 }
 
 void IOHandler::UpdateListener(ChannelState state) const
@@ -243,6 +295,23 @@ bool IOHandler::CheckForSend()
     return this->channel->BeginWrite(_sessionsManager->TxQueue().front().TxData);
 }
 
+void IOHandler::logConnectionRetry()
+{
+    const auto& numRetries = this->retry.GetNumRetries();
+    if (numRetries.IsFixed()) {
+        FORMAT_LOG_BLOCK(
+            logger,
+            flags::WARN,
+            "Current retry is '%llu' out of '%llu'",
+            numRetries.CurrentRetry(),
+            numRetries.MaximumRetries()
+        )
+    }
+    else {
+        FORMAT_LOG_BLOCK(logger, flags::WARN, "Retries are infinite")
+    }
+}
+
 void IOHandler::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
@@ -255,6 +324,15 @@ void IOHandler::RemoveStatisticsHandler()
     std::lock_guard<std::mutex> lock{ _mtx };
     this->statistics.changeHandler = nullptr;
     this->parser.AddStatisticsHandler(nullptr);
+}
+
+void IOHandler::SetChannelRetryCount(const NumRetries& numRetries)
+{
+    if (retry.GetNumRetries().MaximumRetries() > numRetries.MaximumRetries())
+    {
+        return;
+    }
+    retry.SetNumRetries(numRetries);
 }
 
 void IOHandler::Reset(bool onFail, bool doNotNotify)

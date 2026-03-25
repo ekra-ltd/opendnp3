@@ -72,7 +72,7 @@ public:
             this->Add(task, runner);
     }
 
-    virtual void ChannelChanging(bool value) = 0;
+    virtual void ChannelPaused(const IMasterTaskRunner& runner, bool pause) = 0;
 };
 
 } // namespace opendnp3

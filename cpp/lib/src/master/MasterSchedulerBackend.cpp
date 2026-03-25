@@ -24,9 +24,9 @@
 namespace opendnp3
 {
 
-MasterSchedulerBackend::MasterSchedulerBackend(const std::shared_ptr<exe4cpp::IExecutor>& executor) : executor(executor)
-{
-}
+MasterSchedulerBackend::MasterSchedulerBackend(std::shared_ptr<exe4cpp::IExecutor> executor)
+    : executor(std::move(executor))
+{}
 
 void MasterSchedulerBackend::Shutdown()
 {
@@ -115,10 +115,33 @@ void MasterSchedulerBackend::Evaluate()
     this->PostCheckForTaskRun();
 }
 
-void MasterSchedulerBackend::ChannelChanging(bool value)
+void MasterSchedulerBackend::ChannelPaused(const IMasterTaskRunner& runner, bool pause)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
-    tasksPaused = value;
+    if (this->isShutdown) {
+        return;
+    }
+    if (tasksPaused == pause)
+    {
+        return;
+    }
+    tasksPaused = pause;
+    if (tasksPaused)
+    {
+        this->taskTimer.cancel();
+        this->taskStartTimeout.cancel();
+        if (this->current)
+        {
+            if (this->current.task && this->current.task->IsRecurring()) {
+                this->tasks.emplace_back(this->current.task, *this->current.runner);
+            }
+            this->current.Clear();
+        }
+    }
+    else
+    {
+        PostCheckForTaskRun();
+    }
 }
 
 void MasterSchedulerBackend::PostCheckForTaskRun()

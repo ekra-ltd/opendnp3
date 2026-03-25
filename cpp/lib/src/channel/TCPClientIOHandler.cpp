@@ -31,59 +31,56 @@ TCPClientIOHandler::TCPClientIOHandler(const Logger& logger,
                                        const std::shared_ptr<IChannelListener>& listener,
                                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                                        const ChannelRetry& retry,
-                                       const TCPSettings& settings,
+                                       TCPSettings settings,
                                        std::string adapter,
                                        std::shared_ptr<ISharedChannelData> sessionsManager,
                                        bool isPrimary,
                                        ConnectionFailureCallback_t connectionFailureCallback)
-    : IOHandler(logger, false, listener, std::move(sessionsManager), isPrimary, std::move(connectionFailureCallback)),
-      executor(std::move(executor)),
-      retry(retry),
-      settings(settings),
-      adapter(std::move(adapter))
+    : IOHandler(
+        logger,
+        false,
+        listener,
+        std::move(sessionsManager),
+        isPrimary,
+        std::move(executor),
+        retry,
+        std::move(connectionFailureCallback)
+    )
+    , settings(std::move(settings))
+    , adapter(std::move(adapter))
+{}
+
+void TCPClientIOHandler::shutdownImpl()
 {
+    this->resetState();
 }
 
-void TCPClientIOHandler::ShutdownImpl()
-{
-    this->ResetState();
-}
-
-void TCPClientIOHandler::BeginChannelAccept()
+void TCPClientIOHandler::beginChannelAccept()
 {
     if (this->client)
     {
         this->client->Cancel();
     }
     this->client = TCPClient::Create(logger, executor, adapter);
-    this->StartConnect(this->retry.minOpenRetry);
+    this->tryOpen(this->retry.minOpenRetry);
 }
 
-void TCPClientIOHandler::SuspendChannelAccept()
+void TCPClientIOHandler::suspendChannelAccept()
 {
-    this->ResetState();
+    this->resetState();
 }
 
-void TCPClientIOHandler::OnChannelShutdown()
+bool TCPClientIOHandler::checkOnShutdownInternal()
 {
-    if (this->retry.InfiniteTries())
-    {
-        this->retrytimer = this->executor->start(this->retry.reconnectDelay.value, [this, self = shared_from_this()]() {
-            if (!client)
-            {
-                return;
-            }
-            this->BeginChannelAccept();
-        });
-    }
-    else if (_connectionFailureCallback)
-    {
-        _openingChannel.exchange(false);
-        _connectionFailureCallback();
-    }
+    return !this->client && IOHandler::checkOnShutdownInternal();
 }
 
-bool TCPClientIOHandler::StartConnect(const TimeDuration& delay)
+bool TCPClientIOHandler::shouldRetry()
+{
+    return this->settings.Endpoints.Next() || IOHandler::shouldRetry();
+}
+
+bool TCPClientIOHandler::tryOpen(const TimeDuration& delay)
 {
     if (!client)
     {
@@ -94,34 +91,13 @@ bool TCPClientIOHandler::StartConnect(const TimeDuration& delay)
                                              asio::ip::tcp::socket socket, const std::error_code& ec) -> void {
         if (ec)
         {
-            FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error Connecting: %s", ec.message().c_str())
-
-            ++this->statistics.numOpenFail;
-
-            const auto newDelay = this->retry.NextDelay(delay);
-
-            if (client)
-            {
-                auto retry_cb = [self, newDelay, this]() {
-                    if (this->retry.InfiniteTries() || this->settings.Endpoints.Next())
-                    {
-                        this->StartConnect(newDelay);
-                    }
-                    else if (_connectionFailureCallback)
-                    {
-                        _openingChannel.exchange(false);
-                        _connectionFailureCallback();
-                    }
-                };
-
-                this->retrytimer = this->executor->start(delay.value, retry_cb);
-            }
+            performRetry(self, ec, delay);
         }
         else
         {
             FORMAT_LOG_BLOCK(this->logger, flags::INFO, "Connected to: %s, port %u",
                              this->settings.Endpoints.GetCurrentEndpoint().address.c_str(),
-                             this->settings.Endpoints.GetCurrentEndpoint().port);
+                             this->settings.Endpoints.GetCurrentEndpoint().port)
 
             if (client)
             {
@@ -132,21 +108,21 @@ bool TCPClientIOHandler::StartConnect(const TimeDuration& delay)
                     FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error Configuring Keep-alive Options: %s",
                                      keepAliveOptionsEc.message().c_str())
                 }
-                this->OnNewChannel(TCPSocketChannel::Create(executor, std::move(socket)));
+                this->onNewChannel(TCPSocketChannel::Create(executor, std::move(socket)));
             }
         }
     };
 
     FORMAT_LOG_BLOCK(this->logger, flags::INFO, "Connecting to: %s, port %u",
                      this->settings.Endpoints.GetCurrentEndpoint().address.c_str(),
-                     this->settings.Endpoints.GetCurrentEndpoint().port);
+                     this->settings.Endpoints.GetCurrentEndpoint().port)
 
     this->client->BeginConnect(this->settings.Endpoints.GetCurrentEndpoint(), cb);
 
     return true;
 }
 
-void TCPClientIOHandler::ResetState()
+void TCPClientIOHandler::resetState()
 {
     if (this->client)
     {
@@ -156,7 +132,7 @@ void TCPClientIOHandler::ResetState()
 
     this->settings.Endpoints.Reset();
 
-    retrytimer.cancel();
+    this->retryTimer.cancel();
 }
 
 } // namespace opendnp3

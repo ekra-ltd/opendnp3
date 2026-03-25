@@ -45,14 +45,12 @@ TCPServerIOHandler::TCPServerIOHandler(const Logger& logger,
                                        TCPSettings settings,
                                        std::error_code& ec,
                                        std::shared_ptr<ISharedChannelData> sessionsManager)
-    : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener, std::move(sessionsManager), true),
-      executor(std::move(executor)),
-      settings(std::move(settings)),
-      server(std::make_shared<Server>(this->logger, this->executor, settings.Endpoints.GetCurrentEndpoint(), ec))
-{
-}
+    : IOHandler(logger, mode == ServerAcceptMode::CloseExisting, listener, std::move(sessionsManager), true, std::move(executor))
+    , settings(std::move(settings))
+    , server(std::make_shared<Server>(this->logger, this->executor, settings.Endpoints.GetCurrentEndpoint(), ec))
+{}
 
-void TCPServerIOHandler::ShutdownImpl()
+void TCPServerIOHandler::shutdownImpl()
 {
     if (this->server)
     {
@@ -61,7 +59,7 @@ void TCPServerIOHandler::ShutdownImpl()
     }
 }
 
-void TCPServerIOHandler::BeginChannelAccept()
+void TCPServerIOHandler::beginChannelAccept()
 {
     auto callback = [self = shared_from_this(), this](const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       asio::ip::tcp::socket socket) {
@@ -72,7 +70,7 @@ void TCPServerIOHandler::BeginChannelAccept()
             FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error Configuring Keep-alive Options: %s",
                              keepAliveOptionsEc.message().c_str())
         }
-        this->OnNewChannel(TCPSocketChannel::Create(executor, std::move(socket)));
+        this->onNewChannel(TCPSocketChannel::Create(executor, std::move(socket)));
     };
 
     if (this->server)
@@ -97,13 +95,18 @@ void TCPServerIOHandler::BeginChannelAccept()
     }
 }
 
-void TCPServerIOHandler::SuspendChannelAccept()
+void TCPServerIOHandler::suspendChannelAccept()
 {
     if (this->server)
     {
         this->server->Shutdown();
         this->server.reset();
     }
+}
+
+bool TCPServerIOHandler::tryOpen(const TimeDuration& /*delay*/)
+{
+    return true;
 }
 
 } // namespace opendnp3

@@ -110,6 +110,12 @@ void TaskBehavior::OnSuccess(const Timestamp& now)
 TaskTimeoutStats TaskBehavior::OnResponseTimeout(const Timestamp& now)
 {
     auto finished = false;
+    TaskTimeoutStats stats{
+        _retryCount.MaximumRetries(),
+        _retryCount.CurrentRetry(),
+        finished,
+        _retryCount.IsFixed()
+    };
     if (_retryCount.Retry()) {
         this->expiration = now + this->currentRetryDelay;
         this->currentRetryDelay = this->CalcNextRetryTimeout();
@@ -120,8 +126,8 @@ TaskTimeoutStats TaskBehavior::OnResponseTimeout(const Timestamp& now)
         _retryCount.Reset();
         finished = true;
     }
-
-    return { _retryCount.MaximumRetries(), _retryCount.CurrentRetry(), finished, _retryCount.IsFixed() };
+    stats.IsFinished = finished;
+    return stats;
 }
 
 void TaskBehavior::Reset()

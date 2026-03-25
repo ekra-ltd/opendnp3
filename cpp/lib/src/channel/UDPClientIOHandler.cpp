@@ -19,9 +19,7 @@
  */
 
 #include "channel/UDPClientIOHandler.h"
-
 #include "channel/UDPSocketChannel.h"
-
 #include <utility>
 
 namespace opendnp3
@@ -29,53 +27,44 @@ namespace opendnp3
 
 UDPClientIOHandler::UDPClientIOHandler(const Logger& logger,
                                        const std::shared_ptr<IChannelListener>& listener,
-                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
+                                       std::shared_ptr<exe4cpp::StrandExecutor> executor,
                                        const ChannelRetry& retry,
-                                       const IPEndpoint& localEndpoint,
-                                       const IPEndpoint& remoteEndpoint,
+                                       IPEndpoint localEndpoint,
+                                       IPEndpoint remoteEndpoint,
                                        std::shared_ptr<ISharedChannelData> sessionsManager,
                                        bool isPrimary,
                                        ConnectionFailureCallback_t connectionFailureCallback)
-    : IOHandler(logger, false, listener, std::move(sessionsManager), isPrimary, std::move(connectionFailureCallback))
-    , executor(executor)
-    , retry(retry)
-    , localEndpoint(localEndpoint)
-    , remoteEndpoint(remoteEndpoint)
+    : IOHandler(
+        logger,
+        false,
+        listener,
+        std::move(sessionsManager),
+        isPrimary,
+        std::move(executor),
+        retry,
+        std::move(connectionFailureCallback)
+    )
+    , localEndpoint(std::move(localEndpoint))
+    , remoteEndpoint(std::move(remoteEndpoint))
+{}
+
+void UDPClientIOHandler::shutdownImpl()
 {
+    this->resetState();
 }
 
-void UDPClientIOHandler::ShutdownImpl()
-{
-    this->ResetState();
-}
-
-void UDPClientIOHandler::BeginChannelAccept()
+void UDPClientIOHandler::beginChannelAccept()
 {
     client = std::make_shared<UDPClient>(logger, executor);
-    this->TryOpen(this->retry.minOpenRetry);
+    this->tryOpen(this->retry.minOpenRetry);
 }
 
-void UDPClientIOHandler::SuspendChannelAccept()
+void UDPClientIOHandler::suspendChannelAccept()
 {
-    this->ResetState();
+    this->resetState();
 }
 
-void UDPClientIOHandler::OnChannelShutdown()
-{
-    if (this->retry.InfiniteTries())
-    {
-        this->retrytimer = this->executor->start(this->retry.reconnectDelay.value, [this, self = shared_from_this()]() {
-            this->BeginChannelAccept();
-        });
-    }
-    else if (_connectionFailureCallback)
-    {
-        _openingChannel.exchange(false);
-        _connectionFailureCallback();
-    }
-}
-
-bool UDPClientIOHandler::TryOpen(const TimeDuration& delay)
+bool UDPClientIOHandler::tryOpen(const TimeDuration& delay)
 {
     if (!client)
     {
@@ -86,52 +75,31 @@ bool UDPClientIOHandler::TryOpen(const TimeDuration& delay)
                                              asio::ip::udp::socket socket, const std::error_code& ec) -> void {
         if (ec)
         {
-            FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error opening UDP socket: %s", ec.message().c_str());
-
-            ++this->statistics.numOpenFail;
-
-            const auto newDelay = this->retry.NextDelay(delay);
-
-            if (client)
-            {
-                auto retry_cb = [self, newDelay, this]() {
-                    if (this->retry.InfiniteTries())
-                    {
-                        this->TryOpen(newDelay);
-                    }
-                    else if (_connectionFailureCallback)
-                    {
-                        _openingChannel.exchange(false);
-                        _connectionFailureCallback();
-                    }
-                };
-
-                this->retrytimer = this->executor->start(delay.value, retry_cb);
-            }
+            performRetry(self, ec, delay);
         }
         else
         {
             FORMAT_LOG_BLOCK(this->logger, flags::INFO, "UDP socket binded to: %s, port %u, sending to %s, port %u",
                              socket.local_endpoint().address().to_string().c_str(), socket.local_endpoint().port(),
-                             socket.remote_endpoint().address().to_string().c_str(), socket.remote_endpoint().port());
+                             socket.remote_endpoint().address().to_string().c_str(), socket.remote_endpoint().port())
 
             if (client)
             {
-                this->OnNewChannel(UDPSocketChannel::Create(executor, this->logger, std::move(socket)));
+                this->onNewChannel(UDPSocketChannel::Create(executor, this->logger, std::move(socket)));
             }
         }
     };
 
     FORMAT_LOG_BLOCK(this->logger, flags::INFO, "Binding UDP socket to: %s, port %u, resolving address: %s, port %u",
                      localEndpoint.address.c_str(), localEndpoint.port,
-                     remoteEndpoint.address.c_str(), remoteEndpoint.port);
+                     remoteEndpoint.address.c_str(), remoteEndpoint.port)
 
     this->client->Open(localEndpoint, remoteEndpoint, cb);
 
     return true;
 }
 
-void UDPClientIOHandler::ResetState()
+void UDPClientIOHandler::resetState()
 {
     if (this->client)
     {
@@ -139,7 +107,7 @@ void UDPClientIOHandler::ResetState()
         this->client.reset();
     }
 
-    retrytimer.cancel();
+    retryTimer.cancel();
 }
 
 } // namespace opendnp3
