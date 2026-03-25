@@ -19,96 +19,69 @@
  */
 
 #include "channel/SerialIOHandler.h"
-
-#include "logging/LogMacros.h"
-
-#include "opendnp3/logging/LogLevels.h"
-
 #include <utility>
 
 namespace opendnp3
 {
 
-SerialIOHandler::SerialIOHandler(const Logger& logger,
-                                 const std::shared_ptr<IChannelListener>& listener,
-                                 const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
-                                 const ChannelRetry& retry,
-                                 SerialSettings settings,
-                                 std::shared_ptr<ISharedChannelData> sessionsManager,
-                                 bool isPrimary,
-                                 ConnectionFailureCallback_t connectionFailureCallback)
-    : IOHandler(logger, false, listener, std::move(sessionsManager), isPrimary, std::move(connectionFailureCallback))
-    , executor(executor)
-    , retry(retry)
+SerialIOHandler::SerialIOHandler(
+    const Logger& logger,
+    const std::shared_ptr<IChannelListener>& listener,
+    std::shared_ptr<exe4cpp::StrandExecutor> executor,
+    const ChannelRetry& retry,
+    SerialSettings settings,
+    std::shared_ptr<ISharedChannelData> sessionsManager,
+    bool isPrimary,
+    ConnectionFailureCallback_t connectionFailureCallback
+)
+    : IOHandler(
+        logger,
+        false,
+        listener,
+        std::move(sessionsManager),
+        isPrimary,
+        std::move(executor),
+        retry,
+        std::move(connectionFailureCallback)
+    )
     , settings(std::move(settings))
+{}
+
+void SerialIOHandler::shutdownImpl()
 {
+    this->resetState();
 }
 
-void SerialIOHandler::ShutdownImpl()
+void SerialIOHandler::beginChannelAccept()
 {
-    this->ResetState();
+    this->tryOpen(retry.minOpenRetry);
 }
 
-void SerialIOHandler::BeginChannelAccept()
+void SerialIOHandler::suspendChannelAccept()
 {
-    this->TryOpen(retry.minOpenRetry);
+    this->resetState();
 }
 
-void SerialIOHandler::SuspendChannelAccept()
+bool SerialIOHandler::tryOpen(const TimeDuration& delay)
 {
-    this->ResetState();
-}
-
-void SerialIOHandler::OnChannelShutdown()
-{
-    if (this->retry.InfiniteTries())
-    {
-        this->retrytimer = this->executor->start(this->retry.reconnectDelay.value,
-            [this, self = shared_from_this()]() { this->BeginChannelAccept(); });
-    }
-    else if (_connectionFailureCallback)
-    {
-        _openingChannel.exchange(false);
-        _connectionFailureCallback();
-    }
-}
-
-void SerialIOHandler::TryOpen(const TimeDuration& timeout)
-{
-    auto port = std::make_shared<SerialChannel>(executor);
-
     std::error_code ec;
+    const auto port = std::make_shared<SerialChannel>(executor);
     port->Open(settings, ec);
 
     if (ec)
     {
-        FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error Connecting: %s", ec.message().c_str());
-
-        ++this->statistics.numOpenFail;
-
-        auto callback = [this, timeout, self = shared_from_this()] {
-            if (this->retry.InfiniteTries())
-            {
-                this->TryOpen(this->retry.NextDelay(timeout));
-            }
-            else if (_connectionFailureCallback)
-            {
-                _openingChannel.exchange(false);
-                _connectionFailureCallback();
-            }
-        };
-
-        this->retrytimer = this->executor->start(timeout.value, callback);
+        performRetry(shared_from_this(), ec, delay);
     }
     else
     {
-        this->OnNewChannel(port);
+        this->onNewChannel(port);
     }
+    return true;
 }
 
-void SerialIOHandler::ResetState()
+void SerialIOHandler::resetState()
 {
-    retrytimer.cancel();
+    retryTimer.cancel();
 }
 
 } // namespace opendnp3

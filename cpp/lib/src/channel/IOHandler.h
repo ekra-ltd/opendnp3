@@ -26,6 +26,7 @@
 
 #include "opendnp3/channel/IChannelListener.h"
 #include "opendnp3/logging/Logger.h"
+#include "opendnp3/channel/ChannelRetry.h"
 
 #include <boost/signals2/signal.hpp>
 
@@ -50,6 +51,8 @@ public:
         std::shared_ptr<IChannelListener> listener,
         std::shared_ptr<ISharedChannelData> sessionsManager,
         bool isPrimary,
+        std::shared_ptr<exe4cpp::StrandExecutor> executor,
+        const ChannelRetry& channelRetry = ChannelRetry::Default(),
         ConnectionFailureCallback_t connectionFailureCallback = []{}
     );
 
@@ -75,6 +78,8 @@ public:
     void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler);
     void RemoveStatisticsHandler();
 
+    void SetChannelRetryCount(const NumRetries& numRetries);
+
 protected:
     // ------ Implement IChannelCallbacks -----
 
@@ -85,19 +90,26 @@ protected:
     // ------ Super classes will implement these -----
 
     // start getting a new channel
-    virtual void BeginChannelAccept() = 0;
+    virtual void beginChannelAccept() = 0;
 
     // stop getting new channels
-    virtual void SuspendChannelAccept() = 0;
+    virtual void suspendChannelAccept() = 0;
 
     // shutdown any additional state
-    virtual void ShutdownImpl() = 0;
+    virtual void shutdownImpl() = 0;
+
+    virtual bool checkOnShutdownInternal();
 
     // the current channel has closed, start getting a new one
-    virtual void OnChannelShutdown() = 0;
+    virtual void onChannelShutdown();
 
     // Called by the super class when a new channel is available
-    void OnNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel);
+    void onNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel);
+
+    virtual bool tryOpen(const TimeDuration& delay) = 0;
+
+    virtual bool shouldRetry();
+    virtual void performRetry(const std::shared_ptr<IOHandler>& self, const std::error_code& ec, const TimeDuration& delay);
 
     const bool close_existing;
     Logger logger;
@@ -106,9 +118,11 @@ protected:
     ConnectionFailureCallback_t _connectionFailureCallback;
     std::atomic_bool _openingChannel{ false };
     NewChannelOpenedCallback_t _channelOpenedCallback;
+    ChannelRetry retry;
+    exe4cpp::Timer retryTimer; // connection retry timer
+    const std::shared_ptr<exe4cpp::StrandExecutor> executor;
 
 private:
-    bool isShutdown = false;
 
     void UpdateListener(ChannelState state) const;
 
@@ -118,6 +132,11 @@ private:
     void Reset(bool onFail = true, bool doNotNotify = false);
     void BeginRead();
     bool CheckForSend();
+
+    void logConnectionRetry();
+
+private:
+    bool isShutdown = false;
 
     LinkLayerParser parser;
 

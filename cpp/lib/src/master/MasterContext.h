@@ -262,6 +262,8 @@ private:
     std::shared_ptr<IOHandlersManager> iohandlersManager;
 
     std::mutex _mtx;
+
+    boost::signals2::scoped_connection _channelPausedConnection;
 };
 
 } // namespace opendnp3

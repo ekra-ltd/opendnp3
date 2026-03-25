@@ -62,33 +62,28 @@ public:
                        const std::shared_ptr<IChannelListener>& listener,
                        std::shared_ptr<exe4cpp::StrandExecutor> executor,
                        const ChannelRetry& retry,
-                       const TCPSettings& tcpSettings,
+                       TCPSettings tcpSettings,
                        std::string adapter,
                        std::shared_ptr<ISharedChannelData> sessionsManager,
                        bool isPrimary,
                        ConnectionFailureCallback_t connectionFailureCallback);
 
 protected:
-    void ShutdownImpl() override;
-    void BeginChannelAccept() override;
-    void SuspendChannelAccept() override;
-    void OnChannelShutdown() override;
+    void shutdownImpl() override;
+    void beginChannelAccept() override;
+    void suspendChannelAccept() override;
+    bool checkOnShutdownInternal() override;
+    bool shouldRetry() override;
+    bool tryOpen(const TimeDuration& delay) override;
 
 private:
-    bool StartConnect(const TimeDuration& delay);
+    void resetState();
 
-    void ResetState();
-
-    const std::shared_ptr<exe4cpp::StrandExecutor> executor;
-    const ChannelRetry retry;
     TCPSettings settings;
     const std::string adapter;
 
     // current value of the client
     std::shared_ptr<TCPClient> client;
-
-    // connection retry timer
-    exe4cpp::Timer retrytimer;
 };
 
 } // namespace opendnp3

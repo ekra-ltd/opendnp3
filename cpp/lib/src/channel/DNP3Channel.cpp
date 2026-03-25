@@ -18,13 +18,9 @@
  * limitations under the License.
  */
 #include "channel/DNP3Channel.h"
-
-#include "logging/LogMacros.h"
 #include "master/MasterSchedulerBackend.h"
 #include "master/MasterStack.h"
 #include "outstation/OutstationStack.h"
-
-#include "opendnp3/logging/LogLevels.h"
 
 #include <utility>
 
@@ -41,14 +37,7 @@ DNP3Channel::DNP3Channel(const Logger& logger,
     , iohandlersManager(std::move(iohandlersManager))
     , manager(std::move(manager))
     , resources(ResourceManager::Create())
-{
-    this->iohandlersManager->ChannelChanging.connect([masterScheduler = this->scheduler](const bool pause) {
-        if (masterScheduler)
-        {
-            masterScheduler->ChannelChanging(pause);
-        }
-    });
-}
+{}
 
 DNP3Channel::~DNP3Channel()
 {

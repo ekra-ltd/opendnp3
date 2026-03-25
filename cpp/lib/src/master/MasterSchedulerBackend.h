@@ -63,7 +63,7 @@ class MasterSchedulerBackend final : public IMasterScheduler,
     };
 
 public:
-    explicit MasterSchedulerBackend(const std::shared_ptr<exe4cpp::IExecutor>& executor);
+    explicit MasterSchedulerBackend(std::shared_ptr<exe4cpp::IExecutor> executor);
 
     void Shutdown() override;
 
@@ -79,7 +79,7 @@ public:
 
     void Evaluate() override;
 
-    void ChannelChanging(bool value) override;
+    void ChannelPaused(const IMasterTaskRunner& runner, bool pause) override;
 
 private:
     bool isShutdown = false;

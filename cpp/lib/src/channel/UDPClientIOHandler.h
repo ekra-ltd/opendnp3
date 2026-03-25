@@ -60,35 +60,29 @@ public:
 
     UDPClientIOHandler(const Logger& logger,
                        const std::shared_ptr<IChannelListener>& listener,
-                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
+                       std::shared_ptr<exe4cpp::StrandExecutor> executor,
                        const ChannelRetry& retry,
-                       const IPEndpoint& localEndpoint,
-                       const IPEndpoint& remoteEndpoint,
+                       IPEndpoint localEndpoint,
+                       IPEndpoint remoteEndpoint,
                        std::shared_ptr<ISharedChannelData> sessionsManager,
                        bool isPrimary,
                        ConnectionFailureCallback_t connectionFailureCallback = []{});
 
 protected:
-    void ShutdownImpl() override;
-    void BeginChannelAccept() override;
-    void SuspendChannelAccept() override;
-    void OnChannelShutdown() override;
+    void shutdownImpl() override;
+    void beginChannelAccept() override;
+    void suspendChannelAccept() override;
 
 private:
-    bool TryOpen(const TimeDuration& delay);
+    bool tryOpen(const TimeDuration& delay) override;
 
-    void ResetState();
+    void resetState();
 
-    const std::shared_ptr<exe4cpp::StrandExecutor> executor;
-    const ChannelRetry retry;
     const IPEndpoint localEndpoint;
     const IPEndpoint remoteEndpoint;
 
     // current value of the client
     std::shared_ptr<UDPClient> client;
-
-    // connection retry timer
-    exe4cpp::Timer retrytimer;
 };
 
 } // namespace opendnp3

@@ -49,33 +49,32 @@ public:
                                                       const std::shared_ptr<IChannelListener>& listener,
                                                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
                                                       const IPEndpoint& localEndpoint,
-                                                      std::error_code& ec,
                                                       std::shared_ptr<ISharedChannelData> sessionsManager)
     {
-        return std::make_shared<UDPChannelListenerIOHandler>(logger, mode, listener, executor, localEndpoint, ec, std::move(sessionsManager));
+        return std::make_shared<UDPChannelListenerIOHandler>(logger, mode, listener, executor, localEndpoint, std::move(sessionsManager));
     }
 
     UDPChannelListenerIOHandler(const Logger& logger,
                        ServerAcceptMode mode,
                        const std::shared_ptr<IChannelListener>& listener,
-                       const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
-                       const IPEndpoint& localEndpoint,
-                       std::error_code& ec,
+                       std::shared_ptr<exe4cpp::StrandExecutor> executor,
+                       IPEndpoint localEndpoint,
                        std::shared_ptr<ISharedChannelData> sessionsManager);
 
 protected:
-    void BeginChannelAccept() override;
-    void SuspendChannelAccept() override;
-    void ShutdownImpl() override;
-    void OnChannelShutdown() override;
+    void beginChannelAccept() override;
+    void suspendChannelAccept() override;
+    void shutdownImpl() override;
+    void onChannelShutdown() override;
+
+    bool tryOpen(const TimeDuration& delay) override;
 
 private:
     void startServer();
     void stopServer();
-    void onNewChannel(asio::ip::udp::socket socket);
+    void onNewChannelInternal(asio::ip::udp::socket socket);
 
 private:
-    const std::shared_ptr<exe4cpp::StrandExecutor> executor;
     const IPEndpoint localEndpoint;
     std::shared_ptr<Server> server;
 };

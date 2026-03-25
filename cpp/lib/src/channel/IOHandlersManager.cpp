@@ -25,37 +25,17 @@ namespace opendnp3
         , _sessionsManager( std::make_shared<SharedChannelData>(_logger) )
         , _executor(executor)
     {
-        IOHandler::ConnectionFailureCallback_t callback = [this] {
+        const IOHandler::ConnectionFailureCallback_t callback = [this] {
             std::lock_guard<std::mutex> lock{ _mtx };
-            _succeededReadingCount = 0;
-            (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Error;
-            if (_primaryChannelState == Error && _backupChannelState == Error)
-            {
-                if (_channelStateChanged)
-                {
-                    _channelStateChanged(true);
-                }
-            }
-            if (_backupSettings)
-            {
-                _backupChannelUsed = !_backupChannelUsed;
-                if (_currentChannel)
-                {
-                    _currentChannel->Shutdown(false, true);
-                    _currentChannel.reset();
-                }
-                trySwitchChannel(false);
-            }
+            prepareReconnect(false);
         };
-        auto retrySetting = retry;
-        retrySetting.InfiniteTries(!_backupSettings.has_value());
         if (_primarySettings.UseTcp())
         {
             _primaryChannel = TCPClientIOHandler::Create(
                 logger,
                 listener,
                 executor,
-                retrySetting,
+                retry,
                 _primarySettings.TcpPortParameters(),
                 adapter,
                 _sessionsManager,
@@ -69,7 +49,7 @@ namespace opendnp3
                 logger,
                 listener,
                 executor,
-                retrySetting,
+                retry,
                 _primarySettings.SerialPortParameters(),
                 _sessionsManager,
                 true,
@@ -83,7 +63,7 @@ namespace opendnp3
                 logger,
                 listener,
                 executor,
-                retrySetting,
+                retry,
                 udpSettings.Local,
                 udpSettings.Remote,
                 _sessionsManager,
@@ -106,7 +86,7 @@ namespace opendnp3
                 logger,
                 listener, 
                 executor,
-                retrySetting,
+                retry,
                 _backupSettings->TcpPortParameters(),
                 adapter,
                 _sessionsManager,
@@ -120,7 +100,7 @@ namespace opendnp3
                 logger,
                 listener,
                 executor,
-                retrySetting,
+                retry,
                 _backupSettings->SerialPortParameters(),
                 _sessionsManager,
                 false,
@@ -134,7 +114,7 @@ namespace opendnp3
                 logger,
                 listener,
                 executor,
-                retrySetting,
+                retry,
                 udpSettings.Local,
                 udpSettings.Remote,
                 _sessionsManager,
@@ -165,7 +145,7 @@ namespace opendnp3
     {
         std::lock_guard<std::mutex> lock{ _mtx };
         const bool result = _sessionsManager->Remove(session);
-        if (result)
+        if (result && _currentChannel)
         {
             _currentChannel->OnSessionRemoved();
         }
@@ -177,7 +157,7 @@ namespace opendnp3
     {
         std::lock_guard<std::mutex> lock{ _mtx };
         const auto result = _sessionsManager->Enable(session);
-        if (result)
+        if (result && _currentChannel)
         {
             _currentChannel->Prepare();
         }
@@ -190,7 +170,10 @@ namespace opendnp3
         const auto result = _sessionsManager->Disable(session);
         if (result)
         {
-            _currentChannel->ConditionalClose();
+            if (_currentChannel)
+            {
+                _currentChannel->ConditionalClose();
+            }
             if (_channelStateChanged)
             {
                 _channelStateChanged(true);
@@ -199,45 +182,71 @@ namespace opendnp3
         return result;
     }
 
-    void IOHandlersManager::trySwitchChannel(bool onFail)
+    void IOHandlersManager::prepareReconnect(const bool onFail)
     {
-        if (!_backupSettings)
-        {
-            return;
-        }
-
+        _succeededReadingCount = 0;
+        (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Error;
+        exe4cpp::duration_t duration{ 0 };
         FORMAT_LOG_BLOCK(
             _logger,
             flags::WARN,
-            R"(%strying to switch to %s connection)",
-            onFail ? "connection error, " : "",
+            R"(%spreparing reconnect...)",
+            onFail ? "connection error, " : ""
+        )
+        if (_primaryChannelState == Error && _backupChannelState == Error) {
+            if (_channelStateChanged) {
+                _channelStateChanged(true);
+            }
+            if (_backupSettings) {
+                _backupChannelState = Undecided;
+            }
+            duration = _reconnectionDelay.value;
+            FORMAT_LOG_BLOCK(
+                _logger,
+                flags::WARN,
+                R"(retry scheduled in %lld seconds)",
+                std::chrono::duration_cast<std::chrono::seconds>(duration).count()
+            )
+        }
+        if (_currentChannel) {
+            _currentChannel->Shutdown(false, true);
+            _currentChannel.reset();
+        }
+        ChannelPaused(true);
+        _reconnectTimer = _executor->start(duration, [this] {
+            tryReconnectChannel(true);
+        });
+    }
+
+    void IOHandlersManager::tryReconnectChannel(const bool withSwitch)
+    {
+        if (_currentChannel) {
+            _currentChannel->Shutdown(false, true);
+            _currentChannel.reset();
+        }
+        if (_backupSettings && withSwitch)
+        {
+            _backupChannelUsed = !_backupChannelUsed;
+        }
+        FORMAT_LOG_BLOCK(
+            _logger,
+            flags::WARN,
+            R"(trying to connect to %s channel...)",
             !_backupChannelUsed ? "primary" : "backup"
         )
+
         const auto settings = _backupChannelUsed ? *_backupSettings : _primarySettings;
         FORMAT_LOG_BLOCK(_logger, flags::DBG, R"(channel settings - %s)", settings.ToString().c_str())
-
         const auto newChannel = _backupChannelUsed ? _backupChannel : _primaryChannel;
-
-        if (_currentChannel != newChannel)
+        const auto handler = [newChannel, self = shared_from_this()] {
+            self->_succeededReadingCount = 0;
+            self->_currentChannel = newChannel;
+            self->ChannelPaused(false);
+            self->ChannelReservationChanged(self->_backupChannelUsed);
+        };
+        if (newChannel->Prepare(handler))
         {
-            ChannelChanging(true);
-            _oldChannel = _currentChannel;
-            const auto handler = [onFail, newChannel, self = shared_from_this()] {
-                self->_succeededReadingCount = 0;
-                if (self->_oldChannel)
-                {
-                    // shutdown without notifications
-                    self->_oldChannel->Shutdown(onFail, true);
-                    self->_oldChannel.reset();
-                }
-                self->_currentChannel = newChannel;
-                self->ChannelChanging(false);
-                self->ChannelReservationChanged(self->_backupChannelUsed);
-            };
-            if (newChannel->Prepare(handler))
-            {
-                handler();
-            }
+            handler();
         }
     }
 
@@ -265,7 +274,8 @@ namespace opendnp3
         }
 
         if (oldBackupChannelUsed != _backupChannelUsed) {
-            trySwitchChannel(false);
+            ChannelPaused(true);
+            tryReconnectChannel(false);
         }
         return _currentChannel;
     }
@@ -274,6 +284,10 @@ namespace opendnp3
     {
         std::lock_guard<std::mutex> lock{ _mtx };
         if (_backupChannelUsed && !canUseBackupChannel)
+        {
+            return false;
+        }
+        if (!_currentChannel)
         {
             return false;
         }
@@ -298,25 +312,17 @@ namespace opendnp3
         }
         else
         {
-            _succeededReadingCount = 0;
-            (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Error;
-            if (_primaryChannelState == Error && _backupChannelState == Error) {
-                if (_channelStateChanged) {
-                    _channelStateChanged(true);
-                }
-            }
-            if (!_backupSettings)
-            {
-                return;
-            }
-            _backupChannelUsed = !_backupChannelUsed;
-            trySwitchChannel(true);
+            prepareReconnect(true);
         }
     }
 
     LinkStatistics IOHandlersManager::Statistics() const
     {
         std::lock_guard<std::mutex> lock{ _mtx };
+        if (!_currentChannel)
+        {
+            return {};
+        }
         return _currentChannel->Statistics();
     }
 
@@ -360,6 +366,7 @@ namespace opendnp3
 
     void IOHandlersManager::Shutdown()
     {
+        _reconnectTimer.cancel();
         ChannelReservationChanged.disconnect_all_slots();
         _primaryChannel->Shutdown(false);
         if (_backupChannel)
@@ -371,6 +378,23 @@ namespace opendnp3
     void IOHandlersManager::SetChannelStateChangedCallback(const Callback_t& afterCurrentChannelShutdown)
     {
         _channelStateChanged = afterCurrentChannelShutdown;
+    }
+
+    void IOHandlersManager::SetChannelRetryCount(const NumRetries& numRetries) const
+    {
+        _primaryChannel->SetChannelRetryCount(numRetries);
+        if (_backupChannel) {
+            _backupChannel->SetChannelRetryCount(numRetries);
+        }
+    }
+
+    void IOHandlersManager::SetChannelReconnectionDelay(const TimeDuration& delay)
+    {
+        if (_reconnectionDelay.value > delay.value)
+        {
+            return;
+        }
+        _reconnectionDelay = delay;
     }
 
     bool IOHandlersManager::IsBackupChannelUsed() const

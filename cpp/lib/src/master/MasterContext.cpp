@@ -52,25 +52,24 @@ MContext::MContext(const Addresses& addresses,
                    std::shared_ptr<IMasterScheduler> scheduler,
                    const MasterParams& params,
                    std::shared_ptr<IOHandlersManager> iohandlersManager)
-    : logger(logger),
-      executor(std::move(executor)),
-      lower(std::move(lower)),
-      addresses(addresses),
-      params(params),
-      SOEHandler(SOEHandler),
-      application(application),
-      scheduler(std::move(scheduler)),
-      tasks(params, logger, *application, SOEHandler),
-      txBuffer(params.maxTxFragSize),
-      tstate(TaskState::IDLE),
-      iohandlersManager(std::move(iohandlersManager))
+    : logger(logger)
+    , executor(std::move(executor))
+    , lower(std::move(lower))
+    , addresses(addresses)
+    , params(params)
+    , SOEHandler(SOEHandler)
+    , application(application)
+    , scheduler(std::move(scheduler))
+    , tasks(params, logger, *application, SOEHandler)
+    , txBuffer(params.maxTxFragSize)
+    , tstate(TaskState::IDLE)
+    , iohandlersManager(std::move(iohandlersManager))
 {
     FileTransferMaxRxBlockSize = params.maxRxFragSize
                                - LinkHeader::HEADER_SIZE
                                - TransportHeader::HEADER_SIZE
                                - APDUHeader::RESPONSE_SIZE
                                - 3;
-
     FileTransferMaxTxBlockSize = params.maxTxFragSize
                                - LinkHeader::HEADER_SIZE
                                - TransportHeader::HEADER_SIZE
@@ -97,11 +96,22 @@ std::shared_ptr<MContext> MContext::Create(
 {
     auto ptr = std::shared_ptr<MContext>(new MContext(addresses, logger, executor, std::move(lower), SOEHandler, application, std::move(scheduler), params, iohandlersManager));
     std::weak_ptr<MContext> weakPtr = ptr;
+    if (params.retryCount.IsFixed())
+    {
+        ptr->iohandlersManager->SetChannelRetryCount(params.retryCount);
+    }
+    ptr->iohandlersManager->SetChannelReconnectionDelay(params.reconnectionDelay);
     ptr->iohandlersManager->SetChannelStateChangedCallback([weakPtr](const bool channelDown) {
         const auto shared = weakPtr.lock();
         if (shared)
         {
             shared->application->OnMasterStatusChanged(channelDown ? MasterStatus::Error : MasterStatus::Working);
+        }
+    });
+    ptr->_channelPausedConnection = ptr->iohandlersManager->ChannelPaused.connect([weakPtr](const bool pause) {
+        const auto shared = weakPtr.lock();
+        if (shared && shared->scheduler) {
+            shared->scheduler->ChannelPaused(*shared, pause);
         }
     });
     return ptr;

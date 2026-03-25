@@ -33,21 +33,19 @@ public:
     static std::shared_ptr<IAsyncChannel> Create(std::shared_ptr<exe4cpp::StrandExecutor> executor,
                                                  const Logger& logger, asio::ip::udp::socket socket)
     {
-        return std::make_shared<UDPSocketChannel>(executor, logger, std::move(socket));
+        return std::make_shared<UDPSocketChannel>(std::move(executor), logger, std::move(socket));
     }
 
     UDPSocketChannel(const std::shared_ptr<exe4cpp::StrandExecutor>& executor, const Logger& logger, asio::ip::udp::socket socket);
 
 protected:
-    void BeginReadImpl(ser4cpp::wseq_t dest) final;
-    void BeginWriteImpl(const ser4cpp::rseq_t& buffer) final;
-    void ShutdownImpl() final;
+    void BeginReadImpl(ser4cpp::wseq_t dest) override;
+    void BeginWriteImpl(const ser4cpp::rseq_t& buffer) override;
+    void ShutdownImpl() override;
 
 private:
     Logger logger;
     asio::ip::udp::socket socket;
-    bool first_successful_read;
-    uint8_t num_first_read_retries;
 };
 
 } // namespace opendnp3

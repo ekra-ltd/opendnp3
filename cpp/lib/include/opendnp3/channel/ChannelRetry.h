@@ -22,6 +22,7 @@
 
 #include "opendnp3/channel/IOpenDelayStrategy.h"
 #include "opendnp3/util/TimeDuration.h"
+#include "opendnp3/outstation/NumRetries.h"
 
 namespace opendnp3
 {
@@ -41,7 +42,7 @@ public:
                  TimeDuration maxOpenRetry,
                  TimeDuration reconnectDelay = TimeDuration::Zero(),
                  IOpenDelayStrategy& strategy = ExponentialBackoffStrategy::Instance(),
-                 bool infiniteTries = true);
+                 NumRetries numRetries = NumRetries::Infinite());
 
     /// Return the default configuration of exponential backoff from 1 sec to 1 minute
     static ChannelRetry Default();
@@ -55,13 +56,16 @@ public:
 
     TimeDuration NextDelay(const TimeDuration& current) const;
 
-    void InfiniteTries(bool value);
-    bool InfiniteTries() const;
+    bool Retry();
+    void Reset();
+
+    NumRetries GetNumRetries() const;
+    void SetNumRetries(NumRetries value);
 
 private:
     //// Strategy to use (default to exponential backoff)
     IOpenDelayStrategy& strategy;
-    bool _infiniteTries{ true };
+    NumRetries _numRetries;
 };
 
 } // namespace opendnp3

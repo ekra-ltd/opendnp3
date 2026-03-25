@@ -23,7 +23,6 @@
 #include "channel/IOHandler.h"
 #include "channel/SerialChannel.h"
 
-#include "opendnp3/channel/ChannelRetry.h"
 #include "opendnp3/channel/IPEndpoint.h"
 #include "opendnp3/channel/SerialSettings.h"
 
@@ -59,7 +58,7 @@ public:
 
     SerialIOHandler(const Logger& logger,
                     const std::shared_ptr<IChannelListener>& listener,
-                    const std::shared_ptr<exe4cpp::StrandExecutor>& executor,
+                    std::shared_ptr<exe4cpp::StrandExecutor> executor,
                     const ChannelRetry& retry,
                     SerialSettings settings,
                     std::shared_ptr<ISharedChannelData> sessionsManager,
@@ -67,22 +66,15 @@ public:
                     ConnectionFailureCallback_t connectionFailureCallback = []{});
 
 protected:
-    void ShutdownImpl() override;
-    void BeginChannelAccept() override;
-    void SuspendChannelAccept() override;
-    void OnChannelShutdown() override;
+    void shutdownImpl() override;
+    void beginChannelAccept() override;
+    void suspendChannelAccept() override;
+    bool tryOpen(const TimeDuration& delay) override;
 
 private:
-    void TryOpen(const TimeDuration& timeout);
+    void resetState();
 
-    void ResetState();
-
-    const std::shared_ptr<exe4cpp::StrandExecutor> executor;
-    const ChannelRetry retry;
     const SerialSettings settings;
-
-    // connection retry timer
-    exe4cpp::Timer retrytimer;
 };
 
 } // namespace opendnp3

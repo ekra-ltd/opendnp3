@@ -23,22 +23,23 @@
 namespace opendnp3
 {
 
-ChannelRetry::ChannelRetry(TimeDuration minOpenRetry_,
-                           TimeDuration maxOpenRetry_,
-                           TimeDuration reconnectDelay_,
-                           IOpenDelayStrategy& strategy_,
-                           bool infiniteTries)
+ChannelRetry::ChannelRetry(
+    TimeDuration minOpenRetry_,
+    TimeDuration maxOpenRetry_,
+    TimeDuration reconnectDelay_,
+    IOpenDelayStrategy& strategy_,
+    NumRetries numRetries
+)
     : minOpenRetry(minOpenRetry_)
     , maxOpenRetry(maxOpenRetry_)
     , reconnectDelay(reconnectDelay_)
     , strategy(strategy_)
-    , _infiniteTries(infiniteTries)
-{
-}
+    , _numRetries(numRetries)
+{}
 
 ChannelRetry ChannelRetry::Default()
 {
-    return ChannelRetry(TimeDuration::Seconds(1), TimeDuration::Minutes(1));
+    return { TimeDuration::Seconds(1), TimeDuration::Minutes(1) };
 }
 
 TimeDuration ChannelRetry::NextDelay(const TimeDuration& current) const
@@ -46,14 +47,24 @@ TimeDuration ChannelRetry::NextDelay(const TimeDuration& current) const
     return strategy.GetNextDelay(current, maxOpenRetry);
 }
 
-void ChannelRetry::InfiniteTries(bool value)
+bool ChannelRetry::Retry()
 {
-    _infiniteTries = value;
+    return _numRetries.Retry();
 }
 
-bool ChannelRetry::InfiniteTries() const
+void ChannelRetry::Reset()
 {
-    return _infiniteTries;
+    _numRetries.Reset();
+}
+
+NumRetries ChannelRetry::GetNumRetries() const
+{
+    return _numRetries;
+}
+
+void ChannelRetry::SetNumRetries(NumRetries value)
+{
+    _numRetries = value;
 }
 
 } // namespace opendnp3

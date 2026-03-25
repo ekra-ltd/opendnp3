@@ -86,13 +86,13 @@ public:
                        std::shared_ptr<ISharedChannelData> sessionsManager);
 
 protected:
-    void ShutdownImpl() override;
-    void BeginChannelAccept() override;
-    void SuspendChannelAccept() override;
-    void OnChannelShutdown() override {} // do nothing, always accepting new connections
+    void shutdownImpl() override;
+    void beginChannelAccept() override;
+    void suspendChannelAccept() override;
+    void onChannelShutdown() override {} // do nothing, always accepting new connections
+    bool tryOpen(const TimeDuration& delay) override;
 
 private:
-    const std::shared_ptr<exe4cpp::StrandExecutor> executor;
     const TCPSettings settings;
     std::shared_ptr<Server> server;
 };

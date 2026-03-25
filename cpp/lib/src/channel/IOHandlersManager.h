@@ -6,6 +6,9 @@
 #include "opendnp3/channel/ChannelConnectionOptions.h"
 #include "opendnp3/link/LinkStatistics.h"
 #include "opendnp3/logging/Logger.h"
+#include "opendnp3/master/MasterParams.h"
+#include "opendnp3/outstation/NumRetries.h"
+
 #include <boost/optional/optional.hpp>
 #include <boost/signals2/signal.hpp>
 
@@ -57,6 +60,8 @@ namespace opendnp3
         void Shutdown();
 
         void SetChannelStateChangedCallback(const Callback_t& afterCurrentChannelShutdown);
+        void SetChannelRetryCount(const NumRetries& numRetries) const;
+        void SetChannelReconnectionDelay(const TimeDuration& delay);
 
         bool IsBackupChannelUsed() const;
 
@@ -66,10 +71,12 @@ namespace opendnp3
 
         using ChannelChangingHandler_t = void(bool);
         using ChannelChangingSignal_t = boost::signals2::signal<ChannelChangingHandler_t>;
-        ChannelChangingSignal_t ChannelChanging;
+        ChannelChangingSignal_t ChannelPaused;
 
     private:
-        void trySwitchChannel(bool onFail);
+        void prepareOldChannel();
+        void prepareReconnect(bool onFail);
+        void tryReconnectChannel(bool withSwitch);
 
     private:
         enum ChannelState
@@ -87,13 +94,14 @@ namespace opendnp3
         unsigned _succeededReadingCount{ 0 };
         std::shared_ptr<IOHandler> _primaryChannel;
         std::shared_ptr<IOHandler> _backupChannel;
-        std::shared_ptr<IOHandler> _oldChannel;
         std::shared_ptr<IOHandler> _currentChannel;
         std::shared_ptr<ISharedChannelData> _sessionsManager;
         Callback_t _channelStateChanged;
         std::shared_ptr<exe4cpp::StrandExecutor> _executor;
         ChannelState _primaryChannelState{ Error };
         ChannelState _backupChannelState{ Undecided };
+        TimeDuration _reconnectionDelay;
+        exe4cpp::Timer _reconnectTimer;
     };
 
 } // namespace opendnp3

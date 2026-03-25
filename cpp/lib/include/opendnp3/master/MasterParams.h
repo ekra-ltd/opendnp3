@@ -41,6 +41,8 @@ struct MasterParams
     /// Application layer response timeout
     TimeDuration responseTimeout = TimeDuration::Seconds(5);
 
+    TimeDuration reconnectionDelay = TimeDuration::Min();
+
     // Tasks retry count
     NumRetries retryCount = NumRetries::Infinite();
 
