@@ -80,6 +80,8 @@ public:
     virtual void OnChannelReservationChanged(bool /*isBackup*/) {}
 
     virtual void OnMasterStatusChanged(MasterStatus /*status*/) {}
+
+    virtual void OnBackupChannelChanged(bool /*isBackup*/) {}
 };
 
 } // namespace opendnp3

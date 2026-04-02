@@ -226,7 +226,7 @@ namespace opendnp3
         }
         if (_backupSettings && withSwitch)
         {
-            _backupChannelUsed = !_backupChannelUsed;
+            setIsBackupChannelUsed(!_backupChannelUsed);
         }
         FORMAT_LOG_BLOCK(
             _logger,
@@ -268,7 +268,7 @@ namespace opendnp3
                     _succeededReadingCount,
                     _backupSettings->ReadingCountBeforeReturnToPrimary()
                 )
-                _backupChannelUsed = false;
+                setIsBackupChannelUsed(false);
                 _succeededReadingCount = 0;
             }
         }
@@ -359,7 +359,7 @@ namespace opendnp3
     void IOHandlersManager::Reset()
     {
         std::lock_guard<std::mutex> lock{ _mtx };
-        _backupChannelUsed = false;
+        setIsBackupChannelUsed(false);
         _succeededReadingCount = 0;
         Shutdown();
     }
@@ -400,6 +400,12 @@ namespace opendnp3
     bool IOHandlersManager::IsBackupChannelUsed() const
     {
         return _backupChannelUsed;
+    }
+
+    void IOHandlersManager::setIsBackupChannelUsed(bool value)
+    {
+        _backupChannelUsed = value;
+        IsBackupChannelUsedChanged(_backupChannelUsed);
     }
 
 } // namespace opendnp3
