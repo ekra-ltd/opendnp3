@@ -73,10 +73,15 @@ namespace opendnp3
         using ChannelChangingSignal_t = boost::signals2::signal<ChannelChangingHandler_t>;
         ChannelChangingSignal_t ChannelPaused;
 
+        using IsBackupChannelUsedChangedHandler_t = void(bool value);
+        using IsBackupChannelUsedChangedSignal_t = boost::signals2::signal<IsBackupChannelUsedChangedHandler_t>;
+        IsBackupChannelUsedChangedSignal_t IsBackupChannelUsedChanged;
+
     private:
         void prepareOldChannel();
         void prepareReconnect(bool onFail);
         void tryReconnectChannel(bool withSwitch);
+        void setIsBackupChannelUsed(bool value);
 
     private:
         enum ChannelState

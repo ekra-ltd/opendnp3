@@ -81,6 +81,12 @@ MContext::MContext(const Addresses& addresses,
             app->OnChannelReservationChanged(isBackup);
         }
     });
+    this->iohandlersManager->IsBackupChannelUsedChanged.connect([app = this->application](const bool isBackup) {
+        if (app)
+        {
+            app->OnBackupChannelChanged(isBackup);
+        }
+    });
 }
 
 std::shared_ptr<MContext> MContext::Create(
