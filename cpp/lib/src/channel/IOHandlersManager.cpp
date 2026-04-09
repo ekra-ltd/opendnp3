@@ -5,6 +5,7 @@
 #include "TCPClientIOHandler.h"
 #include "UDPClientIOHandler.h"
 #include "logging/LogMacros.h"
+#include <boost/thread/thread.hpp>
 
 #include <utility>
 
@@ -213,8 +214,11 @@ namespace opendnp3
             _currentChannel.reset();
         }
         ChannelPaused(true);
-        _reconnectTimer = _executor->start(duration, [this] {
-            tryReconnectChannel(true);
+        std::weak_ptr<IOHandlersManager> self = shared_from_this();
+        _reconnectTimer = _executor->start(duration, [self] {
+            if (const auto lockedSelf = self.lock()) {
+                lockedSelf->tryReconnectChannel(true);
+            }
         });
     }
 
