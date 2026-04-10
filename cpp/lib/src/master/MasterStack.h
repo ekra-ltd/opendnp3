@@ -64,7 +64,6 @@ public:
                                                  manager, config, lc);
 
         ret->tstack.link->SetRouter(*ret);
-
         return ret;
     }
 
@@ -190,6 +189,9 @@ public:
 
 protected:
     std::shared_ptr<MContext> mcontext;
+
+private:
+    boost::signals2::scoped_connection _backupChangedConnection;
 };
 
 } // namespace opendnp3

@@ -54,6 +54,9 @@ MasterStack::MasterStack(const Logger& logger,
                iohandlersManager))
 {
     tstack.transport->SetAppLayer(*mcontext);
+    _backupChangedConnection = iohandlersManager->IsBackupChannelUsedChanged.connect([link = tstack.link](const bool isBackup) {
+        link->BackupChannelUsed(isBackup);
+    });
 }
 
 bool MasterStack::Enable()
@@ -70,6 +73,7 @@ bool MasterStack::Disable()
 
 void MasterStack::Shutdown()
 {
+    _backupChangedConnection.disconnect();
     this->PerformShutdown(shared_from_this());
 }
 

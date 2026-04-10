@@ -111,6 +111,7 @@ public:
     void CompleteKeepAlive();
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata);
     bool TryPendingTx(ser4cpp::Settable<ser4cpp::rseq_t>& pending, bool primary);
+    void BackupChannelUsed(bool isBackup);
 
     // buffers used for primary and secondary requests
     ser4cpp::StaticBuffer<LPDU_MAX_FRAME_SIZE> priTxBuffer;
@@ -131,6 +132,7 @@ public:
     bool nextReadFCB;
     bool isOnline;
     bool keepAliveTimeout;
+    TimeDuration keepAliveTimeoutInterval;
     Timestamp lastMessageTimestamp;
     StackStatistics::Link statistics;
 
