@@ -64,7 +64,6 @@ public:
                                                  manager, config, lc);
 
         ret->tstack.link->SetRouter(*ret);
-        // todo: IsBackupChannelChannel
         return ret;
     }
 
