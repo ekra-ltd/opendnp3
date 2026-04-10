@@ -54,6 +54,7 @@ public:
     virtual bool Send(ITransportSegment& segments) override;
 
     const StackStatistics::Link& GetStatistics() const;
+    void BackupChannelUsed(bool isBackup) const;
 
 private:
     // The full state

@@ -20,12 +20,10 @@
 #ifndef OPENDNP3_LINKCONFIG_H
 #define OPENDNP3_LINKCONFIG_H
 
-#include "opendnp3/StatisticsTypes.h"
 #include "opendnp3/link/Addresses.h"
 #include "opendnp3/util/TimeDuration.h"
-
+#include <boost/optional/optional.hpp>
 #include <cstdint>
-#include <utility>
 
 namespace opendnp3
 {
@@ -89,6 +87,10 @@ struct LinkConfig
     /// the interval for keep-alive messages (link status requests)
     /// if set to TimeDuration::Max(), the keep-alive is disabled
     TimeDuration KeepAliveTimeout;
+
+    /// the interval for keep-alive messages (link status requests) on backup channel
+    /// if set to TimeDuration::Max(), the keep-alive is disabled
+    boost::optional<TimeDuration> BackupKeepAliveTimeout;
 };
 
 } // namespace opendnp3

@@ -35,22 +35,22 @@ LinkContext::LinkContext(const Logger& logger,
                          std::shared_ptr<ILinkListener> listener,
                          ILinkSession& session,
                          const LinkLayerConfig& config)
-    : logger(logger),
-      config(config),
-      pSegments(nullptr),
-      txMode(LinkTransmitMode::Idle),
-      executor(executor),
-      nextReadFCB(false),
-      isOnline(false),
-      keepAliveTimeout(false),
-      lastMessageTimestamp(executor->get_time()),
-      pPriState(&PLLS_Idle::Instance()),
-      pSecState(&SLLS_NotReset::Instance()),
-      listener(std::move(listener)),
-      upper(std::move(upper)),
-      pSession(&session)
-{
-}
+    : logger(logger)
+    , config(config)
+    , pSegments(nullptr)
+    , txMode(LinkTransmitMode::Idle)
+    , executor(executor)
+    , nextReadFCB(false)
+    , isOnline(false)
+    , keepAliveTimeout(false)
+    , keepAliveTimeoutInterval(config.KeepAliveTimeout)
+    , lastMessageTimestamp(executor->get_time())
+    , pPriState(&PLLS_Idle::Instance())
+    , pSecState(&SLLS_NotReset::Instance())
+    , listener(std::move(listener))
+    , upper(std::move(upper))
+    , pSession(&session)
+{}
 
 std::shared_ptr<LinkContext> LinkContext::Create(const Logger& logger,
                                                  const std::shared_ptr<exe4cpp::IExecutor>& executor,
@@ -238,7 +238,7 @@ void LinkContext::OnKeepAliveTimeout()
     const auto now = Timestamp(this->executor->get_time());
     const auto elapsed = now - this->lastMessageTimestamp;
 
-    if (elapsed >= this->config.KeepAliveTimeout)
+    if (elapsed >= keepAliveTimeoutInterval)
     {
         this->keepAliveTimeout = true;
     }
@@ -272,7 +272,7 @@ void LinkContext::RestartKeepAliveTimer()
     this->keepAliveTimer.cancel();
 
     this->lastMessageTimestamp = Timestamp(this->executor->get_time());
-    const auto expiration = this->lastMessageTimestamp + this->config.KeepAliveTimeout;
+    const auto expiration = this->lastMessageTimestamp + keepAliveTimeoutInterval;
 
     this->keepAliveTimer = executor->start(expiration.value, [self = shared_from_this()]() {
         if (self->isOnline)
@@ -394,6 +394,18 @@ bool LinkContext::TryPendingTx(ser4cpp::Settable<ser4cpp::rseq_t>& pending, bool
     }
 
     return false;
+}
+
+void LinkContext::BackupChannelUsed(bool isBackup)
+{
+    keepAliveTimeoutInterval = isBackup
+                             ? this->config.BackupKeepAliveTimeout.value_or(this->config.KeepAliveTimeout)
+                             : this->config.KeepAliveTimeout;
+
+    if (isOnline)
+    {
+        this->RestartKeepAliveTimer();
+    }
 }
 
 } // namespace opendnp3

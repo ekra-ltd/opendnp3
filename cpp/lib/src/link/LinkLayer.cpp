@@ -36,6 +36,11 @@ const StackStatistics::Link& LinkLayer::GetStatistics() const
     return this->ctx->statistics;
 }
 
+void LinkLayer::BackupChannelUsed(bool isBackup) const
+{
+    ctx->BackupChannelUsed(isBackup);
+}
+
 void LinkLayer::SetRouter(ILinkTx& router)
 {
     assert(!ctx->linktx);
