@@ -64,18 +64,20 @@ void SerialIOHandler::suspendChannelAccept()
 
 bool SerialIOHandler::tryOpen(const TimeDuration& delay)
 {
-    std::error_code ec;
-    const auto port = std::make_shared<SerialChannel>(executor);
-    port->Open(settings, ec);
-
-    if (ec)
-    {
-        performRetry(shared_from_this(), ec, delay);
-    }
-    else
-    {
-        this->onNewChannel(port);
-    }
+    auto callback = [self = shared_from_this(), delay, this] {
+        std::error_code ec;
+        const auto port = std::make_shared<SerialChannel>(executor);
+        port->Open(settings, ec);
+        if (ec)
+        {
+            performRetry(self, ec, delay);
+        }
+        else
+        {
+            this->onNewChannel(port);
+        }
+    };
+    executor->post(callback);
     return true;
 }
 
