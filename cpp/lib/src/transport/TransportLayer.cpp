@@ -146,6 +146,11 @@ bool TransportLayer::OnLowerLayerUp()
     return true;
 }
 
+std::weak_ptr<IIOHandlerStatus> TransportLayer::ChannelStatusInterface()
+{
+    return {};
+}
+
 bool TransportLayer::OnLowerLayerDown()
 {
     if (!isOnline)

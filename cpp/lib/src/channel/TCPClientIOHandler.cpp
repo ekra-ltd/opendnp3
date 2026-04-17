@@ -72,7 +72,7 @@ void TCPClientIOHandler::suspendChannelAccept()
 
 bool TCPClientIOHandler::checkOnShutdownInternal()
 {
-    return !this->client && IOHandler::checkOnShutdownInternal();
+    return this->client && IOHandler::checkOnShutdownInternal();
 }
 
 bool TCPClientIOHandler::shouldRetry()

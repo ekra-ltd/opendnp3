@@ -22,6 +22,8 @@
 
 #include "ISharedChannelData.h"
 #include "channel/IAsyncChannel.h"
+#include "channel/IIOHandlerStatus.h"
+#include "link/LinkContext.h"
 #include "link/LinkLayerParser.h"
 
 #include "opendnp3/channel/IChannelListener.h"
@@ -38,7 +40,7 @@ namespace opendnp3
 Manages I/O for a number of link contexts
 
 */
-class IOHandler : private IFrameSink, public IChannelCallbacks, public std::enable_shared_from_this<IOHandler>
+class IOHandler : private IFrameSink, public IChannelCallbacks, public IIOHandlerStatus, public std::enable_shared_from_this<IOHandler>
 {
 public:
     using ConnectionFailureCallback_t = std::function<void()>;
@@ -61,6 +63,7 @@ public:
     LinkStatistics Statistics() const;
 
     void Shutdown(bool onFail = false, bool doNotNotify = false);
+    bool IsShutdown() const override;
 
     /// --- implement ILinkTx ---
 

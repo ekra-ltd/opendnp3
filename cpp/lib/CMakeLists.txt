@@ -236,6 +236,7 @@ set(opendnp3_private_headers
     ./src/channel/DNP3Channel.h
     ./src/channel/IAsyncChannel.h
     ./src/channel/IChannelCallbacks.h
+    ./src/channel/IIOHandlerStatus.h
     ./src/channel/IOHandler.h
     ./src/channel/LoggingConnectionCondition.h
     ./src/channel/SerialChannel.h

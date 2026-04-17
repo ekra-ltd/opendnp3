@@ -73,7 +73,7 @@ void MasterSchedulerBackend::SetRunnerOffline(const IMasterTaskRunner& runner)
     // move erase idiom
     this->tasks.erase(std::remove_if(this->tasks.begin(), this->tasks.end(), checkForOwnership), this->tasks.end());
 
-    this->PostCheckForTaskRun();
+    this->postCheckForTaskRun();
 }
 
 bool MasterSchedulerBackend::CompleteCurrentFor(const IMasterTaskRunner& runner)
@@ -94,7 +94,7 @@ bool MasterSchedulerBackend::CompleteCurrentFor(const IMasterTaskRunner& runner)
 
     this->current.Clear();
 
-    this->PostCheckForTaskRun();
+    this->postCheckForTaskRun();
 
     return true;
 }
@@ -104,7 +104,7 @@ void MasterSchedulerBackend::Demand(const std::shared_ptr<IMasterTask>& task)
     std::lock_guard<std::mutex> lock{ _mtx };
     auto callback = [this, task, self = shared_from_this()]() {
         task->SetMinExpiration();
-        this->CheckForTaskRun();
+        this->checkForTaskRun();
     };
 
     this->executor->post(callback);
@@ -112,7 +112,8 @@ void MasterSchedulerBackend::Demand(const std::shared_ptr<IMasterTask>& task)
 
 void MasterSchedulerBackend::Evaluate()
 {
-    this->PostCheckForTaskRun();
+    std::lock_guard<std::mutex> lock{ _mtx };
+    this->postCheckForTaskRun();
 }
 
 void MasterSchedulerBackend::ChannelPaused(const IMasterTaskRunner& runner, bool pause)
@@ -140,27 +141,27 @@ void MasterSchedulerBackend::ChannelPaused(const IMasterTaskRunner& runner, bool
     }
     else
     {
-        PostCheckForTaskRun();
+        postCheckForTaskRun();
     }
 }
 
-void MasterSchedulerBackend::PostCheckForTaskRun()
+void MasterSchedulerBackend::postCheckForTaskRun()
 {
     if (!this->taskCheckPending)
     {
         this->taskCheckPending = true;
-        this->executor->post([this, self = shared_from_this()]() { this->CheckForTaskRun(); });
+        this->executor->post([this, self = shared_from_this()]() { this->checkForTaskRun(); });
     }
 }
 
-bool MasterSchedulerBackend::CheckForTaskRun()
+bool MasterSchedulerBackend::checkForTaskRun()
 {
     if (this->isShutdown)
         return false;
 
     this->taskCheckPending = false;
 
-    this->RestartTimeoutTimer();
+    this->restartTimeoutTimer();
 
     if (this->current)
         return false;
@@ -176,7 +177,7 @@ bool MasterSchedulerBackend::CheckForTaskRun()
 
     while (currentIt != this->tasks.end())
     {
-        if (GetBestTaskToRun(now, *best_task, *currentIt) == Comparison::RIGHT)
+        if (getBestTaskToRun(now, *best_task, *currentIt) == Comparison::RIGHT)
         {
             best_task = currentIt;
         }
@@ -198,7 +199,7 @@ bool MasterSchedulerBackend::CheckForTaskRun()
         return true;
     }
 
-    auto callback = [this, self = shared_from_this()]() { this->CheckForTaskRun(); };
+    auto callback = [this, self = shared_from_this()]() { this->checkForTaskRun(); };
 
     this->taskTimer.cancel();
     this->taskTimer = this->executor->start(best_task->task->ExpirationTime().value, callback);
@@ -206,7 +207,7 @@ bool MasterSchedulerBackend::CheckForTaskRun()
     return false;
 }
 
-void MasterSchedulerBackend::RestartTimeoutTimer()
+void MasterSchedulerBackend::restartTimeoutTimer()
 {
     if (this->isShutdown)
         return;
@@ -225,11 +226,11 @@ void MasterSchedulerBackend::RestartTimeoutTimer()
     if (min != Timestamp::Max())
     {
         this->taskStartTimeout
-            = this->executor->start(min.value, [this, self = shared_from_this()]() { this->TimeoutTasks(); });
+            = this->executor->start(min.value, [this, self = shared_from_this()]() { this->timeoutTasks(); });
     }
 }
 
-void MasterSchedulerBackend::TimeoutTasks()
+void MasterSchedulerBackend::timeoutTasks()
 {
     if (this->isShutdown)
         return;
@@ -251,7 +252,7 @@ void MasterSchedulerBackend::TimeoutTasks()
     // erase-remove idion (https://en.wikipedia.org/wiki/Erase-remove_idiom)
     this->tasks.erase(std::remove_if(this->tasks.begin(), this->tasks.end(), isTimedOut), this->tasks.end());
 
-    this->RestartTimeoutTimer();
+    this->restartTimeoutTimer();
 }
 
 void MasterSchedulerBackend::add(const std::shared_ptr<IMasterTask>& task, IMasterTaskRunner& runner)
@@ -260,14 +261,14 @@ void MasterSchedulerBackend::add(const std::shared_ptr<IMasterTask>& task, IMast
         return;
 
     this->tasks.emplace_back(task, runner);
-    this->PostCheckForTaskRun();
+    this->postCheckForTaskRun();
 }
 
-MasterSchedulerBackend::Comparison MasterSchedulerBackend::GetBestTaskToRun(const Timestamp& now,
+MasterSchedulerBackend::Comparison MasterSchedulerBackend::getBestTaskToRun(const Timestamp& now,
                                                                             const Record& left,
                                                                             const Record& right)
 {
-    const auto BEST_ENABLED_STATUS = CompareEnabledStatus(left, right);
+    const auto BEST_ENABLED_STATUS = compareEnabledStatus(left, right);
 
     if (BEST_ENABLED_STATUS != Comparison::SAME)
     {
@@ -275,7 +276,7 @@ MasterSchedulerBackend::Comparison MasterSchedulerBackend::GetBestTaskToRun(cons
         return BEST_ENABLED_STATUS;
     }
 
-    const auto BEST_BLOCKED_STATUS = CompareBlockedStatus(left, right);
+    const auto BEST_BLOCKED_STATUS = compareBlockedStatus(left, right);
 
     if (BEST_BLOCKED_STATUS != Comparison::SAME)
     {
@@ -283,14 +284,14 @@ MasterSchedulerBackend::Comparison MasterSchedulerBackend::GetBestTaskToRun(cons
         return BEST_BLOCKED_STATUS;
     }
 
-    const auto EARLIEST_EXPIRATION = CompareTime(now, left, right);
-    const auto BEST_PRIORITY = ComparePriority(left, right);
+    const auto EARLIEST_EXPIRATION = compareTime(now, left, right);
+    const auto BEST_PRIORITY = comparePriority(left, right);
 
     // if the expiration times are the same, break based on priority, otherwise go with the expiration time
     return (EARLIEST_EXPIRATION == Comparison::SAME) ? BEST_PRIORITY : EARLIEST_EXPIRATION;
 }
 
-MasterSchedulerBackend::Comparison MasterSchedulerBackend::CompareTime(const Timestamp& now,
+MasterSchedulerBackend::Comparison MasterSchedulerBackend::compareTime(const Timestamp& now,
                                                                        const Record& left,
                                                                        const Record& right)
 {
@@ -312,7 +313,7 @@ MasterSchedulerBackend::Comparison MasterSchedulerBackend::CompareTime(const Tim
     }
 }
 
-MasterSchedulerBackend::Comparison MasterSchedulerBackend::CompareEnabledStatus(const Record& left, const Record& right)
+MasterSchedulerBackend::Comparison MasterSchedulerBackend::compareEnabledStatus(const Record& left, const Record& right)
 {
     if (left.task->ExpirationTime() == Timestamp::Max()) // left is disabled, check the right
     {
@@ -329,7 +330,7 @@ MasterSchedulerBackend::Comparison MasterSchedulerBackend::CompareEnabledStatus(
     }
 }
 
-MasterSchedulerBackend::Comparison MasterSchedulerBackend::CompareBlockedStatus(const Record& left, const Record& right)
+MasterSchedulerBackend::Comparison MasterSchedulerBackend::compareBlockedStatus(const Record& left, const Record& right)
 {
     if (left.task->IsBlocked())
     {
@@ -339,7 +340,7 @@ MasterSchedulerBackend::Comparison MasterSchedulerBackend::CompareBlockedStatus(
     return right.task->IsBlocked() ? Comparison::LEFT : Comparison::SAME;
 }
 
-MasterSchedulerBackend::Comparison MasterSchedulerBackend::ComparePriority(const Record& left, const Record& right)
+MasterSchedulerBackend::Comparison MasterSchedulerBackend::comparePriority(const Record& left, const Record& right)
 {
     if (left.task->Priority() < right.task->Priority())
     {

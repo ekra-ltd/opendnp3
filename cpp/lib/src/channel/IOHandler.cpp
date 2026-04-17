@@ -74,6 +74,12 @@ void IOHandler::Shutdown(bool onFail, bool doNotNotify)
     }
 }
 
+bool IOHandler::IsShutdown() const
+{
+    std::lock_guard<std::mutex> lock{ _mtx };
+    return this->isShutdown;
+}
+
 void IOHandler::OnReadComplete(const std::error_code& ec, size_t num)
 {
     if (ec)

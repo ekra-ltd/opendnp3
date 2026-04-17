@@ -217,6 +217,7 @@ namespace opendnp3
         std::weak_ptr<IOHandlersManager> self = shared_from_this();
         _reconnectTimer = _executor->start(duration, [self] {
             if (const auto lockedSelf = self.lock()) {
+                std::lock_guard<std::mutex> lock{ lockedSelf->_mtx };
                 lockedSelf->tryReconnectChannel(true);
             }
         });
@@ -243,6 +244,7 @@ namespace opendnp3
         FORMAT_LOG_BLOCK(_logger, flags::DBG, R"(channel settings - %s)", settings.ToString().c_str())
         const auto newChannel = _backupChannelUsed ? _backupChannel : _primaryChannel;
         const auto handler = [newChannel, self = shared_from_this()] {
+            std::lock_guard<std::mutex> lock{ self->_mtx };
             self->_succeededReadingCount = 0;
             self->_currentChannel = newChannel;
             self->ChannelPaused(false);
@@ -365,18 +367,13 @@ namespace opendnp3
         std::lock_guard<std::mutex> lock{ _mtx };
         setIsBackupChannelUsed(false);
         _succeededReadingCount = 0;
-        Shutdown();
+        shutdown();
     }
 
     void IOHandlersManager::Shutdown()
     {
-        _reconnectTimer.cancel();
-        ChannelReservationChanged.disconnect_all_slots();
-        _primaryChannel->Shutdown(false);
-        if (_backupChannel)
-        {
-            _backupChannel->Shutdown(false);
-        }
+        std::lock_guard<std::mutex> lock{ _mtx };
+        shutdown();
     }
 
     void IOHandlersManager::SetChannelStateChangedCallback(const Callback_t& afterCurrentChannelShutdown)
@@ -410,6 +407,16 @@ namespace opendnp3
     {
         _backupChannelUsed = value;
         IsBackupChannelUsedChanged(_backupChannelUsed);
+    }
+
+    void IOHandlersManager::shutdown()
+    {
+        _reconnectTimer.cancel();
+        ChannelReservationChanged.disconnect_all_slots();
+        _primaryChannel->Shutdown(false);
+        if (_backupChannel) {
+            _backupChannel->Shutdown(false);
+        }
     }
 
 } // namespace opendnp3

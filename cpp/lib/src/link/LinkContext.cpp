@@ -72,10 +72,10 @@ bool LinkContext::OnLowerLayerUp(LinkStateChangeSource source)
 
     this->isOnline = true;
 
-    this->RestartKeepAliveTimer();
-
     listener->OnStateChange(LinkStatus::RESET, source);
     upper->OnLowerLayerUp();
+
+    this->RestartKeepAliveTimer();
 
     return true;
 }
@@ -274,9 +274,9 @@ void LinkContext::RestartKeepAliveTimer()
     this->lastMessageTimestamp = Timestamp(this->executor->get_time());
     const auto expiration = this->lastMessageTimestamp + keepAliveTimeoutInterval;
 
-    this->keepAliveTimer = executor->start(expiration.value, [self = shared_from_this()]() {
-        if (self->isOnline)
-        {
+    this->keepAliveTimer = executor->start(expiration.value, [self = shared_from_this(), weakChannel = upper->ChannelStatusInterface()] {
+        const auto channel = weakChannel.lock();
+        if (self->isOnline && channel && !channel->IsShutdown()) {
             self->OnKeepAliveTimeout();
         }
     });
@@ -287,7 +287,7 @@ void LinkContext::CancelTimer()
     rspTimeoutTimer.cancel();
 }
 
-void LinkContext::FailKeepAlive(bool timeout)
+void LinkContext::FailKeepAlive(bool timeout) const
 {
     if (timeout)
     {
@@ -398,14 +398,10 @@ bool LinkContext::TryPendingTx(ser4cpp::Settable<ser4cpp::rseq_t>& pending, bool
 
 void LinkContext::BackupChannelUsed(bool isBackup)
 {
+    this->keepAliveTimer.cancel();
     keepAliveTimeoutInterval = isBackup
                              ? this->config.BackupKeepAliveTimeout.value_or(this->config.KeepAliveTimeout)
                              : this->config.KeepAliveTimeout;
-
-    if (isOnline)
-    {
-        this->RestartKeepAliveTimer();
-    }
 }
 
 } // namespace opendnp3

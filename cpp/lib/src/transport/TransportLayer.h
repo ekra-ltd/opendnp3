@@ -50,6 +50,7 @@ public:
 
     virtual bool OnReceive(const Message& message) override;
     virtual bool OnLowerLayerUp() override final;
+    std::weak_ptr<IIOHandlerStatus> ChannelStatusInterface() override;
     virtual bool OnLowerLayerDown() override;
     virtual bool OnTxReady() override;
 
