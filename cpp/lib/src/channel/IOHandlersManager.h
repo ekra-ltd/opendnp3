@@ -78,10 +78,10 @@ namespace opendnp3
         IsBackupChannelUsedChangedSignal_t IsBackupChannelUsedChanged;
 
     private:
-        void prepareOldChannel();
         void prepareReconnect(bool onFail);
         void tryReconnectChannel(bool withSwitch);
         void setIsBackupChannelUsed(bool value);
+        void shutdown();
 
     private:
         enum ChannelState

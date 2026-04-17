@@ -105,6 +105,11 @@ bool OContext::OnLowerLayerUp()
     return true;
 }
 
+std::weak_ptr<IIOHandlerStatus> OContext::ChannelStatusInterface()
+{
+    return {};
+}
+
 bool OContext::OnLowerLayerDown()
 {
     if (!isOnline)

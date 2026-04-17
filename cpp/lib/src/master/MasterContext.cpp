@@ -116,8 +116,15 @@ std::shared_ptr<MContext> MContext::Create(
     });
     ptr->_channelPausedConnection = ptr->iohandlersManager->ChannelPaused.connect([weakPtr](const bool pause) {
         const auto shared = weakPtr.lock();
-        if (shared && shared->scheduler) {
-            shared->scheduler->ChannelPaused(*shared, pause);
+        if (shared) {
+            shared->tstate = TaskState::IDLE;
+            shared->responseTimer.cancel();
+            shared->solSeq = shared->unsolSeq = 0;
+            shared->isSending = false;
+            shared->activeTask.reset();
+            if (shared->scheduler) {
+                shared->scheduler->ChannelPaused(*shared, pause);
+            }
         }
     });
     return ptr;
@@ -138,6 +145,11 @@ bool MContext::OnLowerLayerUp()
     this->application->OnOpen();
 
     return true;
+}
+
+std::weak_ptr<IIOHandlerStatus> MContext::ChannelStatusInterface()
+{
+    return this->iohandlersManager->GetCurrent();
 }
 
 bool MContext::OnLowerLayerDown()

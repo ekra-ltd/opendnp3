@@ -21,8 +21,10 @@
 #define OPENDNP3_LAYERINTERFACES_H
 
 #include "app/Message.h"
+#include "channel/IIOHandlerStatus.h"
 
 #include <cassert>
+#include <memory>
 
 namespace opendnp3
 {
@@ -40,6 +42,8 @@ public:
     // Called by a lower Layer when it is available to this layer
     // return false if the layer is already up
     virtual bool OnLowerLayerUp() = 0;
+
+    virtual std::weak_ptr<IIOHandlerStatus> ChannelStatusInterface() = 0;
 
     // Called by a lower layer when it is no longer available to this layer
     // return false if the layer is already down

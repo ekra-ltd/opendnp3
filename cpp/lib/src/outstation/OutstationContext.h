@@ -73,6 +73,8 @@ public:
 
     virtual bool OnLowerLayerUp() override;
 
+    std::weak_ptr<IIOHandlerStatus> ChannelStatusInterface() override;
+
     virtual bool OnLowerLayerDown() override;
 
     virtual bool OnTxReady() override final;

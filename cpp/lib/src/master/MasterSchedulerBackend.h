@@ -89,13 +89,13 @@ private:
     Record current;
     std::vector<Record> tasks;
 
-    void PostCheckForTaskRun();
+    void postCheckForTaskRun();
 
-    bool CheckForTaskRun();
+    bool checkForTaskRun();
 
-    void RestartTimeoutTimer();
+    void restartTimeoutTimer();
 
-    void TimeoutTasks();
+    void timeoutTasks();
 
     void add(const std::shared_ptr<IMasterTask>& task, IMasterTaskRunner& runner);
 
@@ -110,15 +110,15 @@ private:
         SAME
     };
 
-    static Comparison GetBestTaskToRun(const Timestamp& now, const Record& left, const Record& right);
+    static Comparison getBestTaskToRun(const Timestamp& now, const Record& left, const Record& right);
 
-    static Comparison CompareEnabledStatus(const Record& left, const Record& right);
+    static Comparison compareEnabledStatus(const Record& left, const Record& right);
 
-    static Comparison CompareBlockedStatus(const Record& left, const Record& right);
+    static Comparison compareBlockedStatus(const Record& left, const Record& right);
 
-    static Comparison ComparePriority(const Record& left, const Record& right);
+    static Comparison comparePriority(const Record& left, const Record& right);
 
-    static Comparison CompareTime(const Timestamp& now, const Record& left, const Record& right);
+    static Comparison compareTime(const Timestamp& now, const Record& left, const Record& right);
 
 private:
     std::mutex _mtx;

@@ -112,6 +112,8 @@ public:
 
     bool OnLowerLayerUp() final;
 
+    std::weak_ptr<IIOHandlerStatus> ChannelStatusInterface() override;
+
     bool OnLowerLayerDown() final;
 
     bool OnReceive(const Message& message) final;
