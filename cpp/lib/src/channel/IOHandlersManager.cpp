@@ -308,8 +308,16 @@ namespace opendnp3
             if (isDataReading)
             {
                 ++_succeededReadingCount;
-                (_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Working;
-                (!_backupChannelUsed ? _backupChannelState : _primaryChannelState) = Undecided;
+                if (_backupChannelUsed) {
+                    _primaryChannelState = Undecided;
+                    _backupChannelState = Working;
+                }
+                else {
+                    _primaryChannelState = Working;
+                    if (_backupSettings) {
+                        _backupChannelState = Undecided;
+                    }
+                }
                 if (_channelStateChanged)
                 {
                     _channelStateChanged(false);
