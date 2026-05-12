@@ -89,7 +89,7 @@ public:
         // keep the channel alive until it's not reading or writing
         auto action = [self = shared_from_this()]() { self->CheckForShutdown(self); };
 
-        this->executor->post(action);
+        this->executor->post(this->executor->wrap(action));
 
         return true;
     }
@@ -132,7 +132,7 @@ private:
         {
             auto action = [self]() { self->CheckForShutdown(self); };
 
-            self->executor->post(action);
+            self->executor->post(self->executor->wrap(action));
         }
         else
         {

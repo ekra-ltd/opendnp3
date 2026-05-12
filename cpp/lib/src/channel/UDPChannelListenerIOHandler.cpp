@@ -40,13 +40,14 @@ void UDPChannelListenerIOHandler::onChannelShutdown()
 
 bool UDPChannelListenerIOHandler::tryOpen(const TimeDuration& /*delay*/)
 {
-    std::error_code ec;
     server = std::make_shared<Server>(logger, executor, [self = shared_from_this(), this](asio::ip::udp::socket socket) {
         onNewChannelInternal(std::move(socket));
     });
+    std::error_code ec;
     server->Start(localEndpoint, ec);
     if (ec) {
         SIMPLE_LOG_BLOCK(logger, flags::WARN, ec.message().c_str())
+        return false;
     }
 
     return true;

@@ -72,6 +72,7 @@ protected:
     void shutdownImpl() override;
     void beginChannelAccept() override;
     void suspendChannelAccept() override;
+    bool checkOnShutdownInternal() override;
 
 private:
     bool tryOpen(const TimeDuration& delay) override;

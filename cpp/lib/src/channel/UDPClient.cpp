@@ -128,7 +128,7 @@ bool UDPClient::PostConnectError(const connect_callback_t& callback, const std::
             callback(self->executor, std::move(self->socket), ec);
         }
     };
-    executor->post(cb);
+    executor->post(executor->wrap(cb));
     return true;
 }
 

@@ -39,6 +39,9 @@ public:
      * Begin transmission of a frame. Callback happens OFF the call stack (via executor)
      */
     virtual bool BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& context) = 0;
+
+    virtual bool CanSwitchChannel() = 0;
+    virtual void OnKeepAliveTimeout() = 0;
 };
 
 } // namespace opendnp3

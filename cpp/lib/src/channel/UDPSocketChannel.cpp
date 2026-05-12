@@ -49,9 +49,22 @@ void UDPSocketChannel::BeginWriteImpl(const ser4cpp::rseq_t& buffer)
 
 void UDPSocketChannel::ShutdownImpl()
 {
-    std::error_code ec;
-    socket.shutdown(asio::socket_base::shutdown_type::shutdown_both, ec);
-    socket.close(ec);
+    {
+        std::error_code ec;
+        socket.shutdown(asio::socket_base::shutdown_type::shutdown_both, ec);
+        if (ec)
+        {
+            SIMPLE_LOG_BLOCK(logger, flags::ERR, ec.message().c_str());
+        }
+    }
+    {
+        std::error_code ec;
+        socket.close(ec);
+        if (ec)
+        {
+            SIMPLE_LOG_BLOCK(logger, flags::ERR, ec.message().c_str());
+        }
+    }
 }
 
 } // namespace opendnp3

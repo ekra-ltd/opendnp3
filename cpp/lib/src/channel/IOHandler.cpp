@@ -188,12 +188,13 @@ bool IOHandler::checkOnShutdownInternal()
 void IOHandler::onChannelShutdown()
 {
     if (shouldRetry()) {
-        this->retryTimer = this->executor->start(this->retry.reconnectDelay.value, [this, self = shared_from_this()] {
+        auto callback = [this, self = shared_from_this()] {
             if (!checkOnShutdownInternal()) {
                 return;
             }
             this->beginChannelAccept();
-        });
+        };
+        this->retryTimer = this->executor->start(this->retry.reconnectDelay.value, this->executor->wrap(callback));
     }
     else if (_connectionFailureCallback) {
         this->retry.Reset();
@@ -259,7 +260,7 @@ void IOHandler::performRetry(const std::shared_ptr<IOHandler>& self, const std::
             _connectionFailureCallback();
         }
     };
-    this->retryTimer = this->executor->start(delay.value, retryCallback);
+    this->retryTimer = this->executor->start(delay.value, this->executor->wrap(retryCallback));
 }
 
 void IOHandler::UpdateListener(ChannelState state) const

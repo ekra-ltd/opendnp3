@@ -65,6 +65,8 @@ namespace opendnp3
 
         bool IsBackupChannelUsed() const;
 
+        bool CanSwitchChannel() const;
+
         using ChannelReservationChangedHandler_t = void(bool isBackup);
         using ChannelReservationChangedSignal_t = boost::signals2::signal<ChannelReservationChangedHandler_t>;
         ChannelReservationChangedSignal_t ChannelReservationChanged;
@@ -82,6 +84,7 @@ namespace opendnp3
         void tryReconnectChannel(bool withSwitch);
         void setIsBackupChannelUsed(bool value);
         void shutdown();
+        void tryReturnToPrimary();
 
     private:
         enum ChannelState

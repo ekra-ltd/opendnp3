@@ -148,6 +148,9 @@ bool TransportLayer::OnLowerLayerUp()
 
 std::weak_ptr<IIOHandlerStatus> TransportLayer::ChannelStatusInterface()
 {
+    if (upper) {
+        return upper->ChannelStatusInterface();
+    }
     return {};
 }
 

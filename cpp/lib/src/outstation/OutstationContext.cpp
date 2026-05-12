@@ -51,7 +51,8 @@ OContext::OContext(const Addresses& addresses,
                    const std::shared_ptr<exe4cpp::IExecutor>& executor,
                    std::shared_ptr<ILowerLayer> lower,
                    std::shared_ptr<ICommandHandler> commandHandler,
-                   std::shared_ptr<IOutstationApplication> application)
+                   std::shared_ptr<IOutstationApplication> application,
+                   std::shared_ptr<IOHandler> channel)
     :
 
       addresses(addresses),
@@ -73,7 +74,8 @@ OContext::OContext(const Addresses& addresses,
       unsolRetries(config.params.numUnsolRetries),
       shouldCheckForUnsolicited(false),
       _fileTransferWorker(config.params.enableFileTransfer, config.params.maxOpenedFiles, config.params.shouldOverrideFiles,
-                          config.params.permitDeleteFiles, this->logger)
+                          config.params.permitDeleteFiles, this->logger),
+      _channel{std::move(channel)}
 {
     // because mxRx/Tx frag size not taking into account the size of headers for file transfer
     // and just the max size of packet and not file data size
@@ -107,7 +109,7 @@ bool OContext::OnLowerLayerUp()
 
 std::weak_ptr<IIOHandlerStatus> OContext::ChannelStatusInterface()
 {
-    return {};
+    return _channel;
 }
 
 bool OContext::OnLowerLayerDown()

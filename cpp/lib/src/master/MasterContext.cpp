@@ -562,6 +562,17 @@ void MContext::RemoveStatisticsHandler()
     statisticsChangeHandler = nullptr;
 }
 
+void MContext::OnKeepAliveTimeout()
+{
+    this->tstate = TaskState::IDLE;
+    this->responseTimer.cancel();
+    this->solSeq = this->unsolSeq = 0;
+    this->isSending = false;
+    this->activeTask.reset();
+
+    this->iohandlersManager->NotifyTaskResult(false, false);
+}
+
 void MContext::StartResponseTimer()
 {
     auto timeout = [self = shared_from_this()]() { self->OnResponseTimeout(); };

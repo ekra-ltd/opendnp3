@@ -259,30 +259,6 @@ namespace opendnp3
     std::shared_ptr<IOHandler> IOHandlersManager::GetCurrent()
     {
         std::lock_guard<std::mutex> lock{ _mtx };
-        if (!_backupSettings || !_backupSettings->Enabled()) {
-            return _primaryChannel;
-        }
-
-        // if we using backup channel - check the number of successful data reading (interrogations) to determine the necessity of switching to primary channel
-        const auto oldBackupChannelUsed = _backupChannelUsed;
-        if (_backupChannelUsed) {
-            if (_succeededReadingCount >= _backupSettings->ReadingCountBeforeReturnToPrimary()) {
-                FORMAT_LOG_BLOCK(
-                    _logger,
-                    flags::DBG,
-                    R"(Succeeded reading count %d >= %d)",
-                    _succeededReadingCount,
-                    _backupSettings->ReadingCountBeforeReturnToPrimary()
-                )
-                setIsBackupChannelUsed(false);
-                _succeededReadingCount = 0;
-            }
-        }
-
-        if (oldBackupChannelUsed != _backupChannelUsed) {
-            ChannelPaused(true);
-            tryReconnectChannel(false);
-        }
         return _currentChannel;
     }
 
@@ -311,6 +287,7 @@ namespace opendnp3
                 if (_backupChannelUsed) {
                     _primaryChannelState = Undecided;
                     _backupChannelState = Working;
+                    tryReturnToPrimary();
                 }
                 else {
                     _primaryChannelState = Working;
@@ -411,6 +388,11 @@ namespace opendnp3
         return _backupChannelUsed;
     }
 
+    bool IOHandlersManager::CanSwitchChannel() const
+    {
+        return _backupChannelState != Error || _primaryChannelState != Error;
+    }
+
     void IOHandlersManager::setIsBackupChannelUsed(bool value)
     {
         _backupChannelUsed = value;
@@ -424,6 +406,30 @@ namespace opendnp3
         _primaryChannel->Shutdown(false);
         if (_backupChannel) {
             _backupChannel->Shutdown(false);
+        }
+    }
+
+    void IOHandlersManager::tryReturnToPrimary()
+    {
+        // if we using backup channel - check the number of successful data reading (interrogations) to determine the necessity of switching to primary channel
+        if (_succeededReadingCount >= _backupSettings->ReadingCountBeforeReturnToPrimary()) {
+            FORMAT_LOG_BLOCK(
+                _logger,
+                flags::DBG,
+                R"(Succeeded reading count %d >= %d)",
+                _succeededReadingCount,
+                _backupSettings->ReadingCountBeforeReturnToPrimary()
+            )
+            auto callback = [self = shared_from_this(), this] {
+                std::lock_guard<std::mutex> lock{ _mtx };
+                if (_backupChannelUsed)
+                {
+                    _succeededReadingCount = 0;
+                    ChannelPaused(true);
+                    tryReconnectChannel(true);
+                }
+            };
+            _executor->post(_executor->wrap(callback));
         }
     }
 
