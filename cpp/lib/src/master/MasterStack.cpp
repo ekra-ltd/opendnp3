@@ -100,6 +100,18 @@ bool MasterStack::BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& /*c
     return false;
 }
 
+bool MasterStack::CanSwitchChannel()
+{
+    return this->iohandlersManager && this->iohandlersManager->CanSwitchChannel();
+}
+
+void MasterStack::OnKeepAliveTimeout()
+{
+    if (this->mcontext && this->mcontext->isOnline && this->mcontext->tstate != MContext::TaskState::IDLE) {
+        this->mcontext->OnKeepAliveTimeout();
+    }
+}
+
 void MasterStack::OnResponseTimeout()
 {
     if (this->iohandlersManager) {

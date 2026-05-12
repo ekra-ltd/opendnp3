@@ -112,6 +112,16 @@ bool LinkSession::BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& /*s
     return this->channel->BeginWrite(buffer);
 }
 
+bool LinkSession::CanSwitchChannel()
+{
+    return false;
+}
+
+void LinkSession::OnKeepAliveTimeout()
+{
+    // do nothing
+}
+
 bool LinkSession::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata)
 {
     if (this->stack)

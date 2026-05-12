@@ -75,7 +75,7 @@ void DNP3Channel::ShutdownImpl()
         self->manager.reset();
     };
 
-    this->executor->post(detach);
+    this->executor->post(this->executor->wrap(detach));
 }
 
 LinkStatistics DNP3Channel::GetStatistics()

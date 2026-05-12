@@ -203,6 +203,8 @@ public:
     void AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler);
     void RemoveStatisticsHandler();
 
+    void OnKeepAliveTimeout();
+
 private:
     // --- implement  IMasterTaskRunner ------
 

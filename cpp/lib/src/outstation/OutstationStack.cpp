@@ -45,7 +45,8 @@ OutstationStack::OutstationStack(const Logger& logger,
                executor,
                tstack.transport,
                commandHandler,
-               application)
+               application,
+               iohandlersManager->GetCurrent())
 {
     this->tstack.transport->SetAppLayer(ocontext);
 }
@@ -73,6 +74,16 @@ StackStatistics OutstationStack::GetStackStatistics()
     return this->executor->return_from<StackStatistics>(get);
 }
 
+bool OutstationStack::CanSwitchChannel()
+{
+    return false;
+}
+
+void OutstationStack::OnKeepAliveTimeout()
+{
+    // do nothing
+}
+
 void OutstationStack::OnResponseTimeout()
 {
     if (this->iohandlersManager) {
@@ -90,7 +101,7 @@ void OutstationStack::SetRestartIIN()
 {
     // this doesn't need to be synchronous, just post it
     auto set = [self = this->shared_from_this()]() { self->ocontext.SetRestartIIN(); };
-    this->executor->post(set);
+    this->executor->post(this->executor->wrap(set));
 }
 
 void OutstationStack::Apply(const Updates& updates)
@@ -103,7 +114,7 @@ void OutstationStack::Apply(const Updates& updates)
         self->ocontext.HandleNewEvents(); // force the outstation to check for updates
     };
 
-    this->executor->post(task);
+    this->executor->post(this->executor->wrap(task));
 }
 
 } // namespace opendnp3

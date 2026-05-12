@@ -22,6 +22,7 @@
 
 #include "FileTransferWorker.h"
 #include "LayerInterfaces.h"
+#include "channel/IOHandler.h"
 #include "link/LinkLayerConstants.h"
 #include "outstation/ControlState.h"
 #include "outstation/Database.h"
@@ -67,7 +68,8 @@ public:
              const std::shared_ptr<exe4cpp::IExecutor>& executor,
              std::shared_ptr<ILowerLayer> lower,
              std::shared_ptr<ICommandHandler> commandHandler,
-             std::shared_ptr<IOutstationApplication> application);
+             std::shared_ptr<IOutstationApplication> application,
+             std::shared_ptr<IOHandler> channel);
 
     /// ----- Implement IUpperLayer ------
 
@@ -220,6 +222,8 @@ private:
     ser4cpp::Settable<LinkBroadcastAddress> lastBroadcastMessageReceived;
 
     FileTransferWorker _fileTransferWorker;
+
+    std::shared_ptr<IOHandler> _channel;
 };
 
 } // namespace opendnp3

@@ -254,7 +254,10 @@ void LinkContext::OnResponseTimeout()
 
     pSession->OnResponseTimeout();
 
-    this->TryStartTransmission();
+    if (!this->linktx || !this->linktx->CanSwitchChannel())
+    {
+        this->TryStartTransmission();
+    }
 }
 
 void LinkContext::StartResponseTimer()
@@ -291,7 +294,12 @@ void LinkContext::FailKeepAlive(bool timeout) const
 {
     if (timeout)
     {
-        this->listener->OnKeepAliveFailure();
+        if (this->linktx) {
+            this->linktx->OnKeepAliveTimeout();
+        }
+        if ((!this->linktx || !this->linktx->CanSwitchChannel())) {
+            this->listener->OnKeepAliveFailure();
+        }
     }
 }
 

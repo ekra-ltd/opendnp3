@@ -101,6 +101,10 @@ public:
 
     bool BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& context) override;
 
+    bool CanSwitchChannel() override;
+
+    void OnKeepAliveTimeout() override;
+
     void OnResponseTimeout() override;
 
     // --------- Implement IMasterOperations ---------

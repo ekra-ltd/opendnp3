@@ -55,6 +55,10 @@ void UDPClientIOHandler::shutdownImpl()
 
 void UDPClientIOHandler::beginChannelAccept()
 {
+    if (this->client)
+    {
+        this->client->Cancel();
+    }
     client = std::make_shared<UDPClient>(logger, executor);
     this->tryOpen(this->retry.minOpenRetry);
 }
@@ -62,6 +66,11 @@ void UDPClientIOHandler::beginChannelAccept()
 void UDPClientIOHandler::suspendChannelAccept()
 {
     this->resetState();
+}
+
+bool UDPClientIOHandler::checkOnShutdownInternal()
+{
+    return this->client && IOHandler::checkOnShutdownInternal();
 }
 
 bool UDPClientIOHandler::tryOpen(const TimeDuration& delay)

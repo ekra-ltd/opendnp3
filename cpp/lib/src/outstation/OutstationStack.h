@@ -120,6 +120,10 @@ public:
         return false;
     }
 
+    bool CanSwitchChannel() override;
+
+    void OnKeepAliveTimeout() override;
+
     void OnResponseTimeout() override;
 
     // --------- Implement IOutstation ---------
