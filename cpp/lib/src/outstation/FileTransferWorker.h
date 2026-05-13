@@ -1,12 +1,5 @@
 #pragma once
 
-#ifdef _WINDOWS
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <Windows.h>
-#endif
-
 #include "app/AppControlField.h"
 #include "app/HeaderWriter.h"
 #include "app/parsing/FileOperationHandler.h"

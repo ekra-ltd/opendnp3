@@ -12,6 +12,13 @@
 #include <algorithm>
 #include <vector>
 
+#ifdef _WINDOWS
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
+#endif
+
 namespace opendnp3
 {
 
