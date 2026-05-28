@@ -41,7 +41,8 @@ namespace opendnp3
                 adapter,
                 _sessionsManager,
                 true,
-                callback
+                callback,
+                _primarySettings.ChannelKeepAliveTimeout()
             );
         }
         else if (_primarySettings.UseSerial())
@@ -54,7 +55,8 @@ namespace opendnp3
                 _primarySettings.SerialPortParameters(),
                 _sessionsManager,
                 true,
-                callback
+                callback,
+                _primarySettings.ChannelKeepAliveTimeout()
             );
         }
         else
@@ -69,7 +71,8 @@ namespace opendnp3
                 udpSettings.Remote,
                 _sessionsManager,
                 true,
-                callback
+                callback,
+                _primarySettings.ChannelKeepAliveTimeout()
             );
         }
         _currentChannel = _primaryChannel;
@@ -92,7 +95,8 @@ namespace opendnp3
                 adapter,
                 _sessionsManager,
                 false,
-                callback
+                callback,
+                _backupSettings->ChannelKeepAliveTimeout()
             );
         }
         else if (_backupSettings->UseSerial())
@@ -105,7 +109,8 @@ namespace opendnp3
                 _backupSettings->SerialPortParameters(),
                 _sessionsManager,
                 false,
-                callback
+                callback,
+                _backupSettings->ChannelKeepAliveTimeout()
             );
         }
         else
@@ -120,7 +125,8 @@ namespace opendnp3
                 udpSettings.Remote,
                 _sessionsManager,
                 false,
-                callback
+                callback,
+                _backupSettings->ChannelKeepAliveTimeout()
             );
         }
     }
@@ -434,6 +440,7 @@ namespace opendnp3
                 if (_backupChannelUsed)
                 {
                     _succeededReadingCount = 0;
+                    _backupChannel->HoldChannel();
                     ChannelPaused(true);
                     tryReconnectChannel(true);
                 }

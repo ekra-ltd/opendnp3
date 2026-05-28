@@ -44,6 +44,9 @@ public:
     unsigned ReadingCountBeforeReturnToPrimary() const;
     void ReadingCountBeforeReturnToPrimary(unsigned value);
 
+    TimeDuration ChannelKeepAliveTimeout() const;
+    void ChannelKeepAliveTimeout(TimeDuration value);
+
     std::string ToString() const;
 
     friend bool operator==(const ChannelConnectionOptions& lhs, const ChannelConnectionOptions& rhs);
@@ -58,6 +61,7 @@ private:
     };
     bool _isBackupChannel{ false };
     unsigned _readingCountBeforeReturnToPrimary{ 0 };
+    TimeDuration _channelKeepAliveTimeout;
 };
 
 } // namespace opendnp3

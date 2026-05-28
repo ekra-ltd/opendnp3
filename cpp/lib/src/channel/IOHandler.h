@@ -55,7 +55,8 @@ public:
         bool isPrimary,
         std::shared_ptr<exe4cpp::StrandExecutor> executor,
         const ChannelRetry& channelRetry = ChannelRetry::Default(),
-        ConnectionFailureCallback_t connectionFailureCallback = []{}
+        ConnectionFailureCallback_t connectionFailureCallback = []{},
+        TimeDuration holdChannelTimeout = {}
     );
 
     ~IOHandler() override = default;
@@ -84,6 +85,8 @@ public:
 
     void SetChannelRetryCount(const NumRetries& numRetries);
 
+    void HoldChannel();
+
 protected:
     // ------ Implement IChannelCallbacks -----
 
@@ -109,6 +112,8 @@ protected:
 
     // Called by the super class when a new channel is available
     void onNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel);
+
+    void resumeOnHoldChannel();
 
     virtual bool tryOpen(const TimeDuration& delay) = 0;
 
@@ -142,6 +147,8 @@ private:
     void notifyOpen(bool increment);
     void notifyClosed(bool increment);
 
+    void startOnHoldChannelTimer();
+
 private:
     bool isShutdown = false;
 
@@ -157,6 +164,9 @@ private:
     bool _isPrimary{ true };
 
     bool _isOpened{ false };
+
+    exe4cpp::Timer _onHoldTimer;
+    TimeDuration _holdChannelTimeout;
 };
 
 } // namespace opendnp3

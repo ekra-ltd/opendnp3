@@ -37,7 +37,8 @@ IOHandler::IOHandler(
     bool isPrimary,
     std::shared_ptr<exe4cpp::StrandExecutor> executor,
     const ChannelRetry& channelRetry,
-    ConnectionFailureCallback_t connectionFailureCallback
+    ConnectionFailureCallback_t connectionFailureCallback,
+    TimeDuration holdChannelTimeout
 )
     : close_existing(close_existing)
     , logger(logger)
@@ -48,6 +49,7 @@ IOHandler::IOHandler(
     , parser(logger, isPrimary)
     , _sessionsManager(std::move(sessionsManager))
     , _isPrimary(isPrimary)
+    , _holdChannelTimeout(holdChannelTimeout)
 {}
 
 LinkStatistics IOHandler::Statistics() const
@@ -166,12 +168,21 @@ bool IOHandler::Prepare(const NewChannelOpenedCallback_t& channelOpenedCallback)
     }
     _channelOpenedCallback = channelOpenedCallback;
     this->isShutdown = false;
-    if (!this->channel)
+    if (!this->channel || this->channel->is_on_hold)
     {
         _openingChannel.exchange(true);
         this->UpdateListener(ChannelState::OPENING);
 
-        this->beginChannelAccept();
+        if (this->channel && this->channel->is_on_hold)
+        {
+            // use opened connection
+            this->executor->post([self = shared_from_this()] { self->resumeOnHoldChannel(); });
+        }
+        else
+        {
+            // new connection
+            this->beginChannelAccept();
+        }
 
         return false;
     }
@@ -254,6 +265,29 @@ void IOHandler::onNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel)
     _sessionsManager->LowerLayerUp(_isPrimary ? LinkStateChangeSource::PrimaryChannel : LinkStateChangeSource::BackupChannel);
 
     SIMPLE_LOG_BLOCK(logger, flags::DBG, "IOHandler, new channel opened")
+}
+
+void IOHandler::resumeOnHoldChannel()
+{
+    _openingChannel.exchange(false);
+
+    if (_channelOpenedCallback)
+    {
+        _channelOpenedCallback();
+    }
+
+    this->Reset(false);
+
+    this->channel->is_on_hold = false;
+    this->_onHoldTimer.cancel();
+
+    this->UpdateListener(ChannelState::OPEN);
+
+    this->BeginRead();
+
+    _sessionsManager->LowerLayerUp(_isPrimary ? LinkStateChangeSource::PrimaryChannel : LinkStateChangeSource::BackupChannel);
+
+    SIMPLE_LOG_BLOCK(logger, flags::DBG, "IOHandler, on hold channel resumed");
 }
 
 bool IOHandler::shouldRetry()
@@ -368,6 +402,23 @@ void IOHandler::notifyClosed(bool increment)
     );
 }
 
+void IOHandler::startOnHoldChannelTimer()
+{
+    auto callback = [self = shared_from_this()]
+    {
+        std::lock_guard<std::mutex> lock{ self->_mtx };
+        if (self->isShutdown)
+        {
+            SIMPLE_LOG_BLOCK(self->logger, flags::DBG, "IOHandler, on hold channel keep alive timeout");
+            self->channel->is_on_hold = false;
+            self->channel->Shutdown();
+            self->channel.reset();
+        }
+    };
+    this->_onHoldTimer.cancel();
+    this->_onHoldTimer = this->executor->start(this->_holdChannelTimeout.value, callback);
+}
+
 void IOHandler::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
@@ -392,13 +443,25 @@ void IOHandler::SetChannelRetryCount(const NumRetries& numRetries)
     retry.SetNumRetries(numRetries);
 }
 
+void IOHandler::HoldChannel()
+{
+    std::lock_guard<std::mutex> lock{ _mtx };
+    if (this->channel)
+    {
+        this->channel->is_on_hold = true;
+    }
+}
+
 void IOHandler::Reset(bool onFail, bool doNotNotify)
 {
     if (this->channel)
     {
-        // shutdown the existing channel and drop the reference to it
-        this->channel->Shutdown();
-        this->channel.reset();
+        if (!this->channel->is_on_hold || onFail)
+        {
+            // shutdown the existing channel and drop the reference to it
+            this->channel->Shutdown();
+            this->channel.reset();
+        }
 
         if (onFail)
         {
@@ -412,6 +475,11 @@ void IOHandler::Reset(bool onFail, bool doNotNotify)
             source = LinkStateChangeSource::Ignore;
         }
         _sessionsManager->LowerLayerDown(source);
+
+        if (this->channel && this->channel->is_on_hold && !onFail)
+        {
+            startOnHoldChannelTimer();
+        }
 
         if (!doNotNotify)
         {

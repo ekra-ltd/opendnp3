@@ -33,7 +33,13 @@ UDPSocketChannel::UDPSocketChannel(const std::shared_ptr<exe4cpp::StrandExecutor
 
 void UDPSocketChannel::BeginReadImpl(ser4cpp::wseq_t dest, const Addresses& addresses)
 {
-    auto callback = [this, addresses](const std::error_code& ec, size_t num) {
+    auto callback = [this, dest, addresses](const std::error_code& ec, size_t num) {
+        if (ec && (ec.value() == asio::error::connection_refused || ec.value() == asio::error::connection_reset)) {
+            // Ignore "connection_refused" error only for UDP.
+            // Windows sends error 10061 if the remote endpoint is not bind on specified port.
+            this->BeginReadImpl(dest);
+            return;
+        }
         this->OnReadCallback(ec, num, addresses);
     };
 

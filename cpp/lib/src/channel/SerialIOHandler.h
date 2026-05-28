@@ -42,7 +42,8 @@ public:
                                                    const SerialSettings& settings,
                                                    std::shared_ptr<ISharedChannelData> sessionsManager,
                                                    bool isPrimary,
-                                                   ConnectionFailureCallback_t connectionFailureCallback = []{})
+                                                   ConnectionFailureCallback_t connectionFailureCallback = []{},
+                                                   TimeDuration holdChannelTimeout = {})
     {
         return std::make_shared<SerialIOHandler>(
             logger,
@@ -52,7 +53,8 @@ public:
             settings,
             std::move(sessionsManager),
             isPrimary,
-            std::move(connectionFailureCallback)
+            std::move(connectionFailureCallback),
+            holdChannelTimeout
         );
     }
 
@@ -63,7 +65,8 @@ public:
                     SerialSettings settings,
                     std::shared_ptr<ISharedChannelData> sessionsManager,
                     bool isPrimary,
-                    ConnectionFailureCallback_t connectionFailureCallback = []{});
+                    ConnectionFailureCallback_t connectionFailureCallback = []{},
+                    TimeDuration holdChannelTimeout = {});
 
 protected:
     void shutdownImpl() override;

@@ -262,6 +262,7 @@ void LinkContext::OnResponseTimeout()
 
 void LinkContext::StartResponseTimer()
 {
+    this->rspTimeoutTimer.cancel();
     this->rspTimeoutTimer = executor->start(config.Timeout.value, [self = shared_from_this()]() {
         if (self->isOnline)
         {
@@ -297,7 +298,7 @@ void LinkContext::FailKeepAlive(bool timeout) const
         if (this->linktx) {
             this->linktx->OnKeepAliveTimeout();
         }
-        if ((!this->linktx || !this->linktx->CanSwitchChannel())) {
+        if (!this->linktx || !this->linktx->CanSwitchChannel()) {
             this->listener->OnKeepAliveFailure();
         }
     }

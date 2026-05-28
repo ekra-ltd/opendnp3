@@ -107,6 +107,8 @@ public:
 
     const std::shared_ptr<exe4cpp::StrandExecutor> executor;
 
+    bool is_on_hold = false;
+
 protected:
     inline void OnReadCallback(const std::error_code& ec, size_t num, const Addresses& addresses)
     {

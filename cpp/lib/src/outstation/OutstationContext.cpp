@@ -24,6 +24,7 @@
 #include "app/Functions.h"
 #include "app/parsing/APDUHeaderParser.h"
 #include "app/parsing/APDUParser.h"
+#include "channel/UDPChannelListenerIOHandler.h"
 #include "link/LinkHeader.h"
 #include "logging/LogMacros.h"
 #include "outstation/AssignClassHandler.h"
@@ -146,6 +147,17 @@ bool OContext::OnTxReady()
 
     this->isTransmitting = false;
     this->CheckForTaskStart();
+    if (!this->isTransmitting)
+    {
+        // force close UDP channel after response, so we can take request from any UDP port.
+        // it is what it is...
+        if (auto udpChannel = std::dynamic_pointer_cast<UDPChannelListenerIOHandler>(this->_channel))
+        {
+            udpChannel->Shutdown();
+            udpChannel->Prepare();
+            return false;
+        }
+    }
     return true;
 }
 
