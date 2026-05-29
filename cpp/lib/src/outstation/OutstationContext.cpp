@@ -147,17 +147,10 @@ bool OContext::OnTxReady()
 
     this->isTransmitting = false;
     this->CheckForTaskStart();
-    if (!this->isTransmitting)
-    {
-        // force close UDP channel after response, so we can take request from any UDP port.
-        // it is what it is...
-        if (auto udpChannel = std::dynamic_pointer_cast<UDPChannelListenerIOHandler>(this->_channel))
-        {
-            udpChannel->Shutdown();
-            udpChannel->Prepare();
-            return false;
-        }
-    }
+//    if (!this->isTransmitting && !this->_channel->AfterTransmit())
+//    {
+//        return false;
+//    }
     return true;
 }
 

@@ -86,6 +86,7 @@ public:
     void SetChannelRetryCount(const NumRetries& numRetries);
 
     void HoldChannel();
+    virtual bool AfterTransmit();
 
 protected:
     // ------ Implement IChannelCallbacks -----
@@ -114,6 +115,7 @@ protected:
     void onNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel);
 
     void resumeOnHoldChannel();
+    void restartChannel();
 
     virtual bool tryOpen(const TimeDuration& delay) = 0;
 
@@ -130,6 +132,8 @@ protected:
     ChannelRetry retry;
     exe4cpp::Timer retryTimer; // connection retry timer
     const std::shared_ptr<exe4cpp::StrandExecutor> executor;
+
+    mutable std::mutex _mtx;
 
 private:
 
@@ -158,8 +162,6 @@ private:
     std::shared_ptr<IAsyncChannel> channel;
 
     std::shared_ptr<ISharedChannelData> _sessionsManager;
-
-    mutable std::mutex _mtx;
 
     bool _isPrimary{ true };
 
