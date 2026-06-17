@@ -61,6 +61,7 @@ public:
     ~IOHandler() override = default;
 
     LinkStatistics Statistics() const;
+    void ResetStatisticsCounters();
 
     void Shutdown(bool onFail = false, bool doNotNotify = false);
     bool IsShutdown() const override;
@@ -86,9 +87,9 @@ public:
 protected:
     // ------ Implement IChannelCallbacks -----
 
-    void OnReadComplete(const std::error_code& ec, size_t num) final;
+    void OnReadComplete(const std::error_code& ec, size_t num, const Addresses& addresses) final;
 
-    void OnWriteComplete(const std::error_code& ec, size_t num) final;
+    void OnWriteComplete(const std::error_code& ec, size_t num, const Addresses& addresses) final;
 
     // ------ Super classes will implement these -----
 
@@ -133,10 +134,13 @@ private:
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) final;
 
     void Reset(bool onFail = true, bool doNotNotify = false);
-    void BeginRead();
-    bool CheckForSend();
+    void BeginRead(const Addresses& addresses);
+    bool CheckForSend(const Addresses& addresses);
 
     void logConnectionRetry();
+
+    void notifyOpen(bool increment);
+    void notifyClosed(bool increment);
 
 private:
     bool isShutdown = false;
@@ -151,6 +155,8 @@ private:
     mutable std::mutex _mtx;
 
     bool _isPrimary{ true };
+
+    bool _isOpened{ false };
 };
 
 } // namespace opendnp3

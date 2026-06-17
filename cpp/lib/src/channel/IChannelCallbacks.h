@@ -20,6 +20,7 @@
 #ifndef OPENDNP3_ICHANNELCALLBACKS_H
 #define OPENDNP3_ICHANNELCALLBACKS_H
 
+#include <opendnp3/link/Addresses.h>
 #include <system_error>
 
 namespace opendnp3
@@ -27,10 +28,10 @@ namespace opendnp3
 
 struct IChannelCallbacks
 {
-    virtual ~IChannelCallbacks(){};
+    virtual ~IChannelCallbacks() = default;
 
-    virtual void OnReadComplete(const std::error_code& ec, size_t num) = 0;
-    virtual void OnWriteComplete(const std::error_code& ec, size_t num) = 0;
+    virtual void OnReadComplete(const std::error_code& ec, size_t num, const Addresses& addresses) = 0;
+    virtual void OnWriteComplete(const std::error_code& ec, size_t num, const Addresses& addresses) = 0;
 };
 
 } // namespace opendnp3

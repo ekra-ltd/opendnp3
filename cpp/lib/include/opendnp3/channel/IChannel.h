@@ -52,6 +52,11 @@ public:
     virtual LinkStatistics GetStatistics() = 0;
 
     /**
+     * Reset counters to 0, except connection if it exist
+     */
+    virtual void ResetStatisticsCounters() = 0;
+
+    /**
      *  @return The current logger settings for this channel
      */
     virtual opendnp3::LogLevels GetLogFilters() const = 0;

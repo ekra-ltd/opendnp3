@@ -21,7 +21,8 @@
 #define OPENDNP3_ILINKSESSION_H
 
 #include "IFrameSink.h"
-#include "opendnp3/link/LinkStateChangeSource.h"
+#include <opendnp3/link/Addresses.h>
+#include <opendnp3/link/LinkStateChangeSource.h>
 
 namespace opendnp3
 {
@@ -40,6 +41,8 @@ public:
     virtual bool OnLowerLayerDown(LinkStateChangeSource source) = 0;
 
     virtual void OnResponseTimeout() = 0;
+
+    virtual Addresses GetAddresses() const = 0;
 };
 
 } // namespace opendnp3

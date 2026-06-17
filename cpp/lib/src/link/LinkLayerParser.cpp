@@ -28,8 +28,8 @@
 namespace opendnp3
 {
 
-LinkLayerParser::LinkLayerParser(const Logger& logger)
-    : logger(logger), state(State::FindSync), frameSize(0), buffer(rxBuffer, LPDU_MAX_FRAME_SIZE)
+LinkLayerParser::LinkLayerParser(const Logger& logger, bool isPrimary)
+    : logger(logger), _isPrimary(isPrimary), state(State::FindSync), frameSize(0), buffer(rxBuffer, LPDU_MAX_FRAME_SIZE)
 {
 }
 
@@ -40,19 +40,54 @@ void LinkLayerParser::Reset()
     buffer.Reset();
 }
 
+const LinkStatistics::Parser& LinkLayerParser::Statistics() const
+{
+    return this->statistics;
+}
+
+void LinkLayerParser::ResetStatisticsCounters()
+{
+    const auto old = this->statistics.changeHandler;
+    this->statistics.changeHandler = nullptr;
+    this->statistics.numHeaderCrcError = 0;
+    this->statistics.numBodyCrcError = 0;
+    this->statistics.numLinkFrameRx = 0;
+    this->statistics.numBadLength = 0;
+    this->statistics.numBadFunctionCode = 0;
+    this->statistics.numBadFCV = 0;
+    this->statistics.numBadFCB = 0;
+    this->statistics.changeHandler = old;
+}
+
+void LinkLayerParser::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
+{
+    this->statistics.changeHandler = statisticsChangeHandler;
+}
+
+void LinkLayerParser::RemoveStatisticsHandler()
+{
+    this->statistics.changeHandler = nullptr;
+}
+
+Addresses LinkLayerParser::GetAddresses() const
+{
+    return header.GetAddresses();
+}
+
 ser4cpp::wseq_t LinkLayerParser::WriteBuff() const
 {
     return ser4cpp::wseq_t(buffer.WriteBuff(), buffer.NumWriteBytes());
 }
 
-void LinkLayerParser::OnRead(size_t numBytes, IFrameSink& sink)
+void LinkLayerParser::OnRead(size_t numBytes, IFrameSink& sink, const Addresses& addresses)
 {
     buffer.AdvanceWrite(numBytes);
 
     while (ParseUntilComplete() == State::Complete)
     {
-        ++statistics.numLinkFrameRx;
         this->PushFrame(sink);
+        const auto addr = addresses.IsValid() ? addresses : GetAddresses();
+        statistics.numLinkFrameRx.Increment(!_isPrimary, 1, addr);
         state = State::FindSync;
     }
 
@@ -93,7 +128,7 @@ LinkLayerParser::State LinkLayerParser::ParseSync()
         const auto synced = buffer.Sync(skipCount);
         if (skipCount > 0)
         {
-            FORMAT_LOG_BLOCK(logger, flags::WARN, "Skipped %zu bytes seaching for start bytes", skipCount);
+            FORMAT_LOG_BLOCK(logger, flags::WARN, "Skipped %zu bytes seaching for start bytes", skipCount)
         }
 
         return synced ? State::ReadHeader : State::FindSync;
@@ -163,8 +198,8 @@ bool LinkLayerParser::ReadHeader()
     }
     else
     {
-        ++statistics.numHeaderCrcError;
-        SIMPLE_LOG_BLOCK(logger, flags::WARN, "CRC failure in header");
+        statistics.numHeaderCrcError.Increment(!_isPrimary, 1, header.GetAddresses());
+        SIMPLE_LOG_BLOCK(logger, flags::WARN, "CRC failure in header")
         return false;
     }
 }
@@ -176,15 +211,15 @@ bool LinkLayerParser::ValidateBody()
     {
         FORMAT_LOG_BLOCK(logger, flags::LINK_RX, "Function: %s Dest: %u Source: %u Length: %u",
                          LinkFunctionSpec::to_human_string(header.GetFuncEnum()), header.GetDest(), header.GetSrc(),
-                         header.GetLength());
+                         header.GetLength())
 
-        FORMAT_HEX_BLOCK(logger, flags::LINK_RX_HEX, buffer.ReadBuffer().take(frameSize), 10, 18);
+        FORMAT_HEX_BLOCK(logger, flags::LINK_RX_HEX, buffer.ReadBuffer().take(frameSize), 10, 18)
 
         return true;
     }
 
-    ++this->statistics.numBodyCrcError;
-    SIMPLE_LOG_BLOCK(logger, flags::ERR, "CRC failure in body");
+    this->statistics.numBodyCrcError.Increment(!_isPrimary, 1, header.GetAddresses());
+    SIMPLE_LOG_BLOCK(logger, flags::ERR, "CRC failure in body")
     return false;
 }
 
@@ -192,8 +227,8 @@ bool LinkLayerParser::ValidateHeaderParameters()
 {
     if (!header.ValidLength())
     {
-        ++statistics.numBadLength;
-        FORMAT_LOG_BLOCK(logger, flags::ERR, "LENGTH out of range [5,255]: %i", header.GetLength());
+        statistics.numBadLength.Increment(!_isPrimary, 1, header.GetAddresses());
+        FORMAT_LOG_BLOCK(logger, flags::ERR, "LENGTH out of range [5,255]: %i", header.GetLength())
         return false;
     }
 
@@ -214,17 +249,17 @@ bool LinkLayerParser::ValidateHeaderParameters()
     // make sure that the presence/absence of user data matches the function code
     if (should_have_payload && !has_payload)
     {
-        ++statistics.numBadLength;
+        statistics.numBadLength.Increment(!_isPrimary, 1, header.GetAddresses());
         FORMAT_LOG_BLOCK(logger, flags::ERR, "User data with no payload. FUNCTION: %s",
-                         LinkFunctionSpec::to_human_string(func));
+                         LinkFunctionSpec::to_human_string(func))
         return false;
     }
 
     if (!should_have_payload && has_payload)
     {
-        ++statistics.numBadLength;
+        statistics.numBadLength.Increment(!_isPrimary, 1, header.GetAddresses());
         FORMAT_LOG_BLOCK(logger, flags::ERR, "Unexpected LENGTH in frame: %i with FUNCTION: %s", user_data_length,
-                         LinkFunctionSpec::to_human_string(func));
+                         LinkFunctionSpec::to_human_string(func))
         return false;
     }
 
@@ -259,9 +294,9 @@ bool LinkLayerParser::ValidateFunctionCode()
             break;
         default:
         {
-            ++statistics.numBadFunctionCode;
+            statistics.numBadFunctionCode.Increment(!_isPrimary, 1, header.GetAddresses());
             FORMAT_LOG_BLOCK(logger, flags::WARN, "Unknown PriToSec FUNCTION: %s",
-                             LinkFunctionSpec::to_human_string(header.GetFuncEnum()));
+                             LinkFunctionSpec::to_human_string(header.GetFuncEnum()))
             return false;
         }
         }
@@ -269,9 +304,9 @@ bool LinkLayerParser::ValidateFunctionCode()
         // now check the fcv
         if (fcv_set != header.IsFcvDfcSet())
         {
-            ++statistics.numBadFCV;
+            statistics.numBadFCV.Increment(!_isPrimary, 1, header.GetAddresses());
             FORMAT_LOG_BLOCK(logger, flags::WARN, "Bad FCV for FUNCTION: %s",
-                             LinkFunctionSpec::to_human_string(header.GetFuncEnum()));
+                             LinkFunctionSpec::to_human_string(header.GetFuncEnum()))
             return false;
         }
 
@@ -288,9 +323,9 @@ bool LinkLayerParser::ValidateFunctionCode()
             break;
         default:
         {
-            ++statistics.numBadFunctionCode;
+            statistics.numBadFunctionCode.Increment(!_isPrimary, 1, header.GetAddresses());
             FORMAT_LOG_BLOCK(logger, flags::ERR, "Unknown SecToPri FUNCTION: %s",
-                             LinkFunctionSpec::to_human_string(header.GetFuncEnum()));
+                             LinkFunctionSpec::to_human_string(header.GetFuncEnum()))
             return false;
         }
         }
@@ -298,9 +333,9 @@ bool LinkLayerParser::ValidateFunctionCode()
         // now check the fcb, it should always be zero
         if (header.IsFcbSet())
         {
-            ++statistics.numBadFCB;
+            statistics.numBadFCB.Increment(!_isPrimary, 1, header.GetAddresses());
             FORMAT_LOG_BLOCK(logger, flags::ERR, "FCB set for SecToPri FUNCTION: %s",
-                             LinkFunctionSpec::to_human_string(header.GetFuncEnum()));
+                             LinkFunctionSpec::to_human_string(header.GetFuncEnum()))
             return false;
         }
     }

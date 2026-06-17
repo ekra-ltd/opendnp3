@@ -39,8 +39,8 @@ public:
     UDPSocketChannel(const std::shared_ptr<exe4cpp::StrandExecutor>& executor, const Logger& logger, asio::ip::udp::socket socket);
 
 protected:
-    void BeginReadImpl(ser4cpp::wseq_t dest) override;
-    void BeginWriteImpl(const ser4cpp::rseq_t& buffer) override;
+    void BeginReadImpl(ser4cpp::wseq_t dest, const Addresses& addresses) override;
+    void BeginWriteImpl(const ser4cpp::rseq_t& buffer, const Addresses& addresses) override;
     void ShutdownImpl() override;
 
 private:

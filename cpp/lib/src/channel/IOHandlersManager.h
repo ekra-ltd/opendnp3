@@ -52,6 +52,7 @@ namespace opendnp3
         void NotifyTaskResult(bool complete, bool isDataReading);
 
         LinkStatistics Statistics() const;
+        void ResetStatisticsCounters() const;
 
         void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler) const;
         void RemoveStatisticsHandler() const;

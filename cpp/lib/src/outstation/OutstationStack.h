@@ -126,6 +126,8 @@ public:
 
     void OnResponseTimeout() override;
 
+    Addresses GetAddresses() const override;
+
     // --------- Implement IOutstation ---------
 
     void SetLogFilters(const opendnp3::LogLevels& filters) final;

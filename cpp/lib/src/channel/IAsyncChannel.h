@@ -22,6 +22,7 @@
 
 #include "channel/IChannelCallbacks.h"
 
+#include "opendnp3/link/Addresses.h"
 #include "opendnp3/util/Uncopyable.h"
 
 #include <ser4cpp/container/SequenceTypes.h>
@@ -47,13 +48,13 @@ public:
         this->callbacks = callbacks;
     }
 
-    inline bool BeginRead(const ser4cpp::wseq_t& buffer)
+    inline bool BeginRead(const ser4cpp::wseq_t& buffer, const Addresses& addresses)
     {
         assert(callbacks);
         if (this->CanRead())
         {
             this->reading = true;
-            this->BeginReadImpl(buffer);
+            this->BeginReadImpl(buffer, addresses);
             return true;
         }
         else
@@ -62,13 +63,13 @@ public:
         }
     }
 
-    inline bool BeginWrite(const ser4cpp::rseq_t& buffer)
+    inline bool BeginWrite(const ser4cpp::rseq_t& buffer, const Addresses& addresses)
     {
         assert(callbacks);
         if (this->CanWrite())
         {
             this->writing = true;
-            this->BeginWriteImpl(buffer);
+            this->BeginWriteImpl(buffer, addresses);
             return true;
         }
         else
@@ -107,21 +108,21 @@ public:
     const std::shared_ptr<exe4cpp::StrandExecutor> executor;
 
 protected:
-    inline void OnReadCallback(const std::error_code& ec, size_t num)
+    inline void OnReadCallback(const std::error_code& ec, size_t num, const Addresses& addresses)
     {
         this->reading = false;
         if (this->callbacks && !is_shutting_down)
         {
-            this->callbacks->OnReadComplete(ec, num);
+            this->callbacks->OnReadComplete(ec, num, addresses);
         }
     }
 
-    inline void OnWriteCallback(const std::error_code& ec, size_t num)
+    inline void OnWriteCallback(const std::error_code& ec, size_t num, const Addresses& addresses)
     {
         this->writing = false;
         if (this->callbacks && !is_shutting_down)
         {
-            this->callbacks->OnWriteComplete(ec, num);
+            this->callbacks->OnWriteComplete(ec, num, addresses);
         }
     }
 
@@ -146,8 +147,8 @@ private:
     bool reading = false;
     bool writing = false;
 
-    virtual void BeginReadImpl(ser4cpp::wseq_t buffer) = 0;
-    virtual void BeginWriteImpl(const ser4cpp::rseq_t& buffer) = 0;
+    virtual void BeginReadImpl(ser4cpp::wseq_t buffer, const Addresses& addresses) = 0;
+    virtual void BeginWriteImpl(const ser4cpp::rseq_t& buffer, const Addresses& addresses) = 0;
     virtual void ShutdownImpl() = 0;
 };
 

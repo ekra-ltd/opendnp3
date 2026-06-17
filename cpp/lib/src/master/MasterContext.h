@@ -202,6 +202,7 @@ public:
 
     void AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler);
     void RemoveStatisticsHandler();
+    void ResetStatisticsCounters();
 
     void OnKeepAliveTimeout();
 

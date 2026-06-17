@@ -91,6 +91,11 @@ void OutstationStack::OnResponseTimeout()
     }
 }
 
+Addresses OutstationStack::GetAddresses() const
+{
+    return ocontext.GetAddresses();
+}
+
 void OutstationStack::SetLogFilters(const LogLevels& filters)
 {
     auto set = [self = this->shared_from_this(), filters]() { self->logger.set_levels(filters); };

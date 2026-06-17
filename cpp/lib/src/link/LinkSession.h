@@ -73,9 +73,9 @@ private:
     void ShutdownImpl();
 
     // IChannelCallbacks
-    void OnReadComplete(const std::error_code& ec, size_t num) final;
+    void OnReadComplete(const std::error_code& ec, size_t num, const Addresses& addresses) final;
 
-    void OnWriteComplete(const std::error_code& ec, size_t num) final;
+    void OnWriteComplete(const std::error_code& ec, size_t num, const Addresses& addresses) final;
 
     // ILinkTx
     bool BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& session) final;
@@ -93,7 +93,7 @@ private:
 
     void Start();
 
-    void BeginReceive();
+    void BeginReceive(const Addresses& addresses);
 
     bool is_shutdown = false;
     Logger logger;

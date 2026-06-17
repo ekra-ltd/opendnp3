@@ -67,9 +67,9 @@ struct LinkConfig
     {
     }
 
-    inline Addresses GetAddresses() const
+    Addresses GetAddresses() const
     {
-        return Addresses(this->LocalAddr, this->RemoteAddr);
+        return { this->LocalAddr, this->RemoteAddr };
     }
 
     /// The master/outstation bit set on all messages

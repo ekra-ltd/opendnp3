@@ -23,6 +23,7 @@
 #include "LinkLayerConstants.h"
 
 #include "opendnp3/gen/LinkFunction.h"
+#include "opendnp3/link/Addresses.h"
 
 namespace opendnp3
 {
@@ -59,6 +60,10 @@ struct LinkHeader
     uint16_t GetSrc() const
     {
         return src;
+    }
+    Addresses GetAddresses() const
+    {
+        return { src, dest };
     }
     bool IsFromMaster() const
     {

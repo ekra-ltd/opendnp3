@@ -107,6 +107,8 @@ public:
 
     void OnResponseTimeout() override;
 
+    Addresses GetAddresses() const override;
+
     // --------- Implement IMasterOperations ---------
 
     void SetLogFilters(const opendnp3::LogLevels& filters) override;
@@ -190,6 +192,7 @@ public:
 
     void AddStatisticsHandler(const StatisticsChangeHandler_t& changeHandler) override;
     void RemoveStatisticsHandler() override;
+    void ResetStatisticsCounters() override;
 
 protected:
     std::shared_ptr<MContext> mcontext;

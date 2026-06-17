@@ -49,6 +49,8 @@ public:
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) override;
     void OnResponseTimeout() override;
 
+    Addresses GetAddresses() const override;
+
     // ---- Events from above: ILinkLayer ----
 
     virtual bool Send(ITransportSegment& segments) override;
