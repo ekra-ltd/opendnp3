@@ -283,19 +283,11 @@ void IOHandler::resumeOnHoldChannel()
 
     this->UpdateListener(ChannelState::OPEN);
 
-    this->BeginRead();
+    this->BeginRead(Addresses{ 0, 0 });
 
     _sessionsManager->LowerLayerUp(_isPrimary ? LinkStateChangeSource::PrimaryChannel : LinkStateChangeSource::BackupChannel);
 
     SIMPLE_LOG_BLOCK(logger, flags::DBG, "IOHandler, on hold channel resumed");
-}
-
-void IOHandler::restartChannel()
-{
-    SIMPLE_LOG_BLOCK(this->logger, flags::WARN, "__restart channel");
-    this->Reset(false, true);
-    SIMPLE_LOG_BLOCK(this->logger, flags::WARN, "__onChannelShutdown");
-    this->onChannelShutdown();
 }
 
 bool IOHandler::shouldRetry()
@@ -458,11 +450,6 @@ void IOHandler::HoldChannel()
     {
         this->channel->is_on_hold = true;
     }
-}
-
-bool IOHandler::AfterTransmit()
-{
-    return true;
 }
 
 void IOHandler::Reset(bool onFail, bool doNotNotify)

@@ -37,7 +37,7 @@ void UDPSocketChannel::BeginReadImpl(ser4cpp::wseq_t dest, const Addresses& addr
         if (ec && (ec.value() == asio::error::connection_refused || ec.value() == asio::error::connection_reset)) {
             // Ignore "connection_refused" error only for UDP.
             // Windows sends error 10061 if the remote endpoint is not bind on specified port.
-            this->BeginReadImpl(dest);
+            this->BeginReadImpl(dest, addresses);
             return;
         }
         this->OnReadCallback(ec, num, addresses);

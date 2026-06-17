@@ -105,6 +105,8 @@ public:
 
     void OnKeepAliveTimeout() override;
 
+    bool IgnoreKeepAliveFailure() override;
+
     void OnResponseTimeout() override;
 
     Addresses GetAddresses() const override;

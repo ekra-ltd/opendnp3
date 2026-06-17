@@ -19,6 +19,8 @@
  */
 #include "outstation/OutstationStack.h"
 
+#include "channel/UDPChannelListenerIOHandler.h"
+
 namespace opendnp3
 {
 
@@ -82,6 +84,12 @@ bool OutstationStack::CanSwitchChannel()
 void OutstationStack::OnKeepAliveTimeout()
 {
     // do nothing
+}
+
+bool OutstationStack::IgnoreKeepAliveFailure()
+{
+    // Ignore keep-alive failure for UDP outstation
+    return std::dynamic_pointer_cast<UDPChannelListenerIOHandler>(iohandlersManager->GetCurrent()) != nullptr;
 }
 
 void OutstationStack::OnResponseTimeout()

@@ -32,10 +32,8 @@ public:
                        IPEndpoint localEndpoint,
                        std::shared_ptr<ISharedChannelData> sessionsManager);
 
-    void OnBeginRead(std::shared_ptr<UDPServerSocketChannel> remote, asio::ip::udp::endpoint channelEndpoint, ser4cpp::wseq_t dest);
-    void OnBeginWrite(std::shared_ptr<UDPServerSocketChannel> remote, asio::ip::udp::endpoint channelEndpoint, const ser4cpp::rseq_t& buffer);
-
-    bool AfterTransmit() override;
+    void OnBeginRead(std::shared_ptr<UDPServerSocketChannel> remote, ser4cpp::wseq_t dest, const Addresses& addresses);
+    void OnBeginWrite(std::shared_ptr<UDPServerSocketChannel> remote, const ser4cpp::rseq_t& buffer, const Addresses& addresses);
 
 protected:
     void beginChannelAccept() override;

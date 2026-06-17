@@ -86,7 +86,6 @@ public:
     void SetChannelRetryCount(const NumRetries& numRetries);
 
     void HoldChannel();
-    virtual bool AfterTransmit();
 
 protected:
     // ------ Implement IChannelCallbacks -----
@@ -115,7 +114,6 @@ protected:
     void onNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel);
 
     void resumeOnHoldChannel();
-    void restartChannel();
 
     virtual bool tryOpen(const TimeDuration& delay) = 0;
 

@@ -21,34 +21,28 @@ UDPChannelListenerIOHandler::UDPChannelListenerIOHandler(
     , socket(*executor->get_context())
 {}
 
-void UDPChannelListenerIOHandler::OnBeginRead(std::shared_ptr<UDPServerSocketChannel> remote, asio::ip::udp::endpoint channelEndpoint, ser4cpp::wseq_t dest)
+void UDPChannelListenerIOHandler::OnBeginRead(std::shared_ptr<UDPServerSocketChannel> remote, ser4cpp::wseq_t dest, const Addresses& addresses)
 {
-    auto cb = [=, self = shared_from_this()](const std::error_code& ec, size_t num) {
-        if (remote_endpoint == channelEndpoint) {
-            remote->OnRead(ec, num);
+    auto cb = [=, self = shared_from_this()](const std::error_code& ec, size_t num)
+    {
+        if (ec && (ec.value() == asio::error::connection_refused || ec.value() == asio::error::connection_reset)) {
+            // Ignore "connection_refused" error only for UDP.
+            // Windows sends error 10061 if the remote endpoint is not bind on specified port.
+            this->OnBeginRead(remote, dest, addresses);
+            return;
         }
-        else {
-            readCallback(ec, num);
-        }
+        remote->OnRead(ec, num, addresses);
     };
     socket.async_receive_from(asio::buffer(dest, dest.length()), remote_endpoint, this->executor->wrap(cb));
 }
 
-void UDPChannelListenerIOHandler::OnBeginWrite(std::shared_ptr<UDPServerSocketChannel> remote, asio::ip::udp::endpoint channelEndpoint, const ser4cpp::rseq_t& buffer)
+void UDPChannelListenerIOHandler::OnBeginWrite(std::shared_ptr<UDPServerSocketChannel> remote, const ser4cpp::rseq_t& buffer, const Addresses& addresses)
 {
-    auto cb = [remote](const std::error_code& ec, size_t num) {
-        remote->OnWrite(ec, num);
+    auto cb = [remote, addresses](const std::error_code& ec, size_t num)
+    {
+        remote->OnWrite(ec, num, addresses);
     };
-    socket.async_send_to(asio::buffer(buffer, buffer.length()), channelEndpoint, this->executor->wrap(cb));
-}
-
-bool UDPChannelListenerIOHandler::AfterTransmit()
-{
-    std::lock_guard<std::mutex> lock{ _mtx };
-    // force close UDP channel after response, so we can take request from any UDP port.
-    // it is what it is...
-    restartChannel();
-    return false;
+    socket.async_send_to(asio::buffer(buffer, buffer.length()), remote_endpoint, this->executor->wrap(cb));
 }
 
 void UDPChannelListenerIOHandler::beginChannelAccept()
@@ -68,8 +62,7 @@ void UDPChannelListenerIOHandler::shutdownImpl()
 
 void UDPChannelListenerIOHandler::onChannelShutdown()
 {
-    stopServer();
-    startServer();
+    // do nothing
 }
 
 bool UDPChannelListenerIOHandler::tryOpen(const TimeDuration& /*delay*/)
@@ -82,7 +75,8 @@ bool UDPChannelListenerIOHandler::tryOpen(const TimeDuration& /*delay*/)
                          localEndpoint.address.c_str(), localEndpoint.port, ec.message().c_str());
         throw DNP3Error(Error::UNABLE_TO_BIND_SERVER, ec);
     }
-    if (ec) {
+    if (ec)
+    {
         SIMPLE_LOG_BLOCK(logger, flags::WARN, ec.message().c_str())
         return false;
     }
@@ -98,7 +92,7 @@ void UDPChannelListenerIOHandler::startServer()
 {
     if (socket.is_open())
     {
-        stopServer();
+        return;
     }
     tryOpen(TimeDuration::Max());
 }
@@ -127,12 +121,26 @@ void UDPChannelListenerIOHandler::stopServer()
     }
 }
 
-void UDPChannelListenerIOHandler::readCallback(const std::error_code& ec, size_t num)
+void UDPChannelListenerIOHandler::readCallback(const std::error_code& ec, size_t /*num*/)
 {
-    FORMAT_LOG_BLOCK(this->logger, flags::INFO, "UDP server socket new channel: %s, port %u, sending to %s, port %u",
-                     socket.local_endpoint().address().to_string().c_str(), socket.local_endpoint().port(),
-                     remote_endpoint.address().to_string().c_str(), remote_endpoint.port());
-    onNewChannel(UDPServerSocketChannel::Create(this->executor, this->logger, this, remote_endpoint));
+    if (ec)
+    {
+        if (ec && (ec.value() == asio::error::connection_refused || ec.value() == asio::error::connection_reset))
+        {
+            socket.async_receive_from(asio::buffer(buf, buf.size()), remote_endpoint, asio::ip::udp::socket::message_peek, executor->wrap([self = shared_from_this(), this](const std::error_code& ec, size_t num) {
+                readCallback(ec, num);
+            }));
+            return;
+        }
+        if (ec.value() != asio::error::operation_aborted)
+        {
+            SIMPLE_LOG_BLOCK(logger, flags::WARN, ec.message().c_str());
+        }
+    }
+    else
+    {
+        onNewChannel(UDPServerSocketChannel::Create(this->executor, this->logger, std::dynamic_pointer_cast<UDPChannelListenerIOHandler>(shared_from_this())));
+    }
 }
 
 } // namespace opendnp3

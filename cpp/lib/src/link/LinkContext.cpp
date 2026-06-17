@@ -291,12 +291,17 @@ void LinkContext::CancelTimer()
     rspTimeoutTimer.cancel();
 }
 
-void LinkContext::FailKeepAlive(bool timeout) const
+void LinkContext::FailKeepAlive(bool timeout)
 {
     if (timeout)
     {
         if (this->linktx) {
             this->linktx->OnKeepAliveTimeout();
+            // hack
+            if (this->linktx->IgnoreKeepAliveFailure()) {
+                this->keepAliveTimer.cancel();
+                return;
+            }
         }
         if (!this->linktx || !this->linktx->CanSwitchChannel()) {
             this->listener->OnKeepAliveFailure();

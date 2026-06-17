@@ -81,6 +81,7 @@ private:
     bool BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& session) final;
     bool CanSwitchChannel() final;
     void OnKeepAliveTimeout() final;
+    bool IgnoreKeepAliveFailure() final;
 
     // IFrameSink
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata) final;

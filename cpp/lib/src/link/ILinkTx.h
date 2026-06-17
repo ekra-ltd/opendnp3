@@ -42,6 +42,7 @@ public:
 
     virtual bool CanSwitchChannel() = 0;
     virtual void OnKeepAliveTimeout() = 0;
+    virtual bool IgnoreKeepAliveFailure() = 0;
 };
 
 } // namespace opendnp3
