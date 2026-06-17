@@ -107,7 +107,7 @@ public:
     void StartResponseTimer();
     void RestartKeepAliveTimer();
     void CancelTimer();
-    void FailKeepAlive(bool timeout) const;
+    void FailKeepAlive(bool timeout);
     void CompleteKeepAlive();
     bool OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata);
     bool TryPendingTx(ser4cpp::Settable<ser4cpp::rseq_t>& pending, bool primary);

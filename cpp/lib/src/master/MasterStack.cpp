@@ -113,6 +113,11 @@ void MasterStack::OnKeepAliveTimeout()
     }
 }
 
+bool MasterStack::IgnoreKeepAliveFailure()
+{
+    return false;
+}
+
 void MasterStack::OnResponseTimeout()
 {
     if (this->iohandlersManager) {

@@ -33,7 +33,8 @@ UDPClientIOHandler::UDPClientIOHandler(const Logger& logger,
                                        IPEndpoint remoteEndpoint,
                                        std::shared_ptr<ISharedChannelData> sessionsManager,
                                        bool isPrimary,
-                                       ConnectionFailureCallback_t connectionFailureCallback)
+                                       ConnectionFailureCallback_t connectionFailureCallback,
+                                       TimeDuration holdChannelTimeout)
     : IOHandler(
         logger,
         false,
@@ -42,7 +43,8 @@ UDPClientIOHandler::UDPClientIOHandler(const Logger& logger,
         isPrimary,
         std::move(executor),
         retry,
-        std::move(connectionFailureCallback)
+        std::move(connectionFailureCallback),
+        holdChannelTimeout
     )
     , localEndpoint(std::move(localEndpoint))
     , remoteEndpoint(std::move(remoteEndpoint))

@@ -32,7 +32,8 @@ SerialIOHandler::SerialIOHandler(
     SerialSettings settings,
     std::shared_ptr<ISharedChannelData> sessionsManager,
     bool isPrimary,
-    ConnectionFailureCallback_t connectionFailureCallback
+    ConnectionFailureCallback_t connectionFailureCallback,
+    TimeDuration holdChannelTimeout
 )
     : IOHandler(
         logger,
@@ -42,7 +43,8 @@ SerialIOHandler::SerialIOHandler(
         isPrimary,
         std::move(executor),
         retry,
-        std::move(connectionFailureCallback)
+        std::move(connectionFailureCallback),
+        holdChannelTimeout
     )
     , settings(std::move(settings))
 {}

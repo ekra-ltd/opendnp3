@@ -43,7 +43,8 @@ public:
                                                       const IPEndpoint& remoteEndpoint,
                                                       std::shared_ptr<ISharedChannelData> sessionsManager,
                                                       bool isPrimary,
-                                                      ConnectionFailureCallback_t connectionFailureCallback = []{})
+                                                      ConnectionFailureCallback_t connectionFailureCallback = []{},
+                                                      TimeDuration holdChannelTimeout = {})
     {
         return std::make_shared<UDPClientIOHandler>(
             logger,
@@ -54,7 +55,8 @@ public:
             remoteEndpoint,
             std::move(sessionsManager),
             isPrimary,
-            std::move(connectionFailureCallback)
+            std::move(connectionFailureCallback),
+            holdChannelTimeout
         );
     }
 
@@ -66,7 +68,8 @@ public:
                        IPEndpoint remoteEndpoint,
                        std::shared_ptr<ISharedChannelData> sessionsManager,
                        bool isPrimary,
-                       ConnectionFailureCallback_t connectionFailureCallback = []{});
+                       ConnectionFailureCallback_t connectionFailureCallback = []{},
+                       TimeDuration holdChannelTimeout = {});
 
 protected:
     void shutdownImpl() override;

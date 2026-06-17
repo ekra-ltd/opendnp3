@@ -124,6 +124,8 @@ public:
 
     void OnKeepAliveTimeout() override;
 
+    bool IgnoreKeepAliveFailure() override;
+
     void OnResponseTimeout() override;
 
     Addresses GetAddresses() const override;
@@ -138,6 +140,7 @@ public:
 
 private:
     OContext ocontext;
+    bool ignore_keep_alive_failure;
 };
 
 } // namespace opendnp3

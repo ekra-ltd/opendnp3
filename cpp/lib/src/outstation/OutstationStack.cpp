@@ -19,6 +19,8 @@
  */
 #include "outstation/OutstationStack.h"
 
+#include "channel/UDPChannelListenerIOHandler.h"
+
 namespace opendnp3
 {
 
@@ -49,6 +51,8 @@ OutstationStack::OutstationStack(const Logger& logger,
                iohandlersManager->GetCurrent())
 {
     this->tstack.transport->SetAppLayer(ocontext);
+    // Ignore keep-alive failure for UDP outstation
+    ignore_keep_alive_failure = std::dynamic_pointer_cast<UDPChannelListenerIOHandler>(iohandlersManager->GetCurrent()) != nullptr;
 }
 
 bool OutstationStack::Enable()
@@ -82,6 +86,11 @@ bool OutstationStack::CanSwitchChannel()
 void OutstationStack::OnKeepAliveTimeout()
 {
     // do nothing
+}
+
+bool OutstationStack::IgnoreKeepAliveFailure()
+{
+    return ignore_keep_alive_failure;
 }
 
 void OutstationStack::OnResponseTimeout()

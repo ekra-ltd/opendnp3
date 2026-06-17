@@ -262,6 +262,7 @@ void LinkContext::OnResponseTimeout()
 
 void LinkContext::StartResponseTimer()
 {
+    this->rspTimeoutTimer.cancel();
     this->rspTimeoutTimer = executor->start(config.Timeout.value, [self = shared_from_this()]() {
         if (self->isOnline)
         {
@@ -290,14 +291,19 @@ void LinkContext::CancelTimer()
     rspTimeoutTimer.cancel();
 }
 
-void LinkContext::FailKeepAlive(bool timeout) const
+void LinkContext::FailKeepAlive(bool timeout)
 {
     if (timeout)
     {
         if (this->linktx) {
             this->linktx->OnKeepAliveTimeout();
+            // hack
+            if (this->linktx->IgnoreKeepAliveFailure()) {
+                this->keepAliveTimer.cancel();
+                return;
+            }
         }
-        if ((!this->linktx || !this->linktx->CanSwitchChannel())) {
+        if (!this->linktx || !this->linktx->CanSwitchChannel()) {
             this->listener->OnKeepAliveFailure();
         }
     }

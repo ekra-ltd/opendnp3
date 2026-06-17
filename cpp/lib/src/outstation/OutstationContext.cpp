@@ -24,6 +24,7 @@
 #include "app/Functions.h"
 #include "app/parsing/APDUHeaderParser.h"
 #include "app/parsing/APDUParser.h"
+#include "channel/UDPChannelListenerIOHandler.h"
 #include "link/LinkHeader.h"
 #include "logging/LogMacros.h"
 #include "outstation/AssignClassHandler.h"

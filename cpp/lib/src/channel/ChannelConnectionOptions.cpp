@@ -121,6 +121,16 @@ namespace opendnp3
         _readingCountBeforeReturnToPrimary = value;
     }
 
+    TimeDuration ChannelConnectionOptions::ChannelKeepAliveTimeout() const
+    {
+        return _channelKeepAliveTimeout;
+    }
+
+    void ChannelConnectionOptions::ChannelKeepAliveTimeout(TimeDuration value)
+    {
+        _channelKeepAliveTimeout = value;
+    }
+
     std::string ChannelConnectionOptions::ToString() const
     {
         std::stringstream os;
@@ -134,7 +144,8 @@ namespace opendnp3
             && lhs._enabled == rhs._enabled
             && lhs._channelSettings == rhs._channelSettings
             && lhs._isBackupChannel == rhs._isBackupChannel
-            && lhs._readingCountBeforeReturnToPrimary == rhs._readingCountBeforeReturnToPrimary;
+            && lhs._readingCountBeforeReturnToPrimary == rhs._readingCountBeforeReturnToPrimary
+            && lhs._channelKeepAliveTimeout == rhs._channelKeepAliveTimeout;
     }
 
     bool operator!=(const ChannelConnectionOptions& lhs, const ChannelConnectionOptions& rhs)

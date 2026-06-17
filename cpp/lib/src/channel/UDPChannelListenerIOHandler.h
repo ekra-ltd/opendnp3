@@ -1,7 +1,6 @@
 #pragma once
 
 #include "channel/IOHandler.h"
-#include "channel/UDPChannelListener.h"
 
 #include "opendnp3/channel/IPEndpointsList.h"
 #include "opendnp3/gen/ServerAcceptMode.h"
@@ -11,38 +10,10 @@
 namespace opendnp3
 {
 
+class UDPServerSocketChannel;
+
 class UDPChannelListenerIOHandler final : public IOHandler
 {
-    class Server final : public UDPChannelListener
-    {
-        using callback_t = std::function<void(asio::ip::udp::socket)>;
-
-    public:
-        Server(
-            Logger& logger,
-            std::shared_ptr<exe4cpp::StrandExecutor> executor,
-            callback_t callback
-        )
-            : UDPChannelListener(logger, std::move(executor)),
-              callback(std::move(callback))
-        {
-        }
-
-        void Start(const IPEndpoint& localEndpoint, std::error_code& ec)
-        {
-            Bind(localEndpoint, ec);
-        }
-
-    protected:
-        void OnSocketReady(asio::ip::udp::socket socket) override
-        {
-            callback(std::move(socket));
-        }
-
-    private:
-        callback_t callback;
-    };
-
 public:
     static std::shared_ptr<UDPChannelListenerIOHandler> Create(const Logger& logger,
                                                       ServerAcceptMode mode,
@@ -61,6 +32,9 @@ public:
                        IPEndpoint localEndpoint,
                        std::shared_ptr<ISharedChannelData> sessionsManager);
 
+    void OnBeginRead(std::shared_ptr<UDPServerSocketChannel> remote, ser4cpp::wseq_t dest, const Addresses& addresses);
+    void OnBeginWrite(std::shared_ptr<UDPServerSocketChannel> remote, const ser4cpp::rseq_t& buffer, const Addresses& addresses);
+
 protected:
     void beginChannelAccept() override;
     void suspendChannelAccept() override;
@@ -72,11 +46,14 @@ protected:
 private:
     void startServer();
     void stopServer();
-    void onNewChannelInternal(asio::ip::udp::socket socket);
+
+    void readCallback(const std::error_code& ec, size_t num);
 
 private:
     const IPEndpoint localEndpoint;
-    std::shared_ptr<Server> server;
+    asio::ip::udp::socket socket;
+    asio::ip::udp::endpoint remote_endpoint;
+    std::array<uint8_t, LPDU_MAX_FRAME_SIZE> buf;
 };
 
 } // namespace opendnp3

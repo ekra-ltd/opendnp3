@@ -122,6 +122,11 @@ void LinkSession::OnKeepAliveTimeout()
     // do nothing
 }
 
+bool LinkSession::IgnoreKeepAliveFailure()
+{
+    return false;
+}
+
 bool LinkSession::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& userdata)
 {
     if (this->stack)
