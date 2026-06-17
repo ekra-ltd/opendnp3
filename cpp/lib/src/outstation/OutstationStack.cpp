@@ -51,6 +51,8 @@ OutstationStack::OutstationStack(const Logger& logger,
                iohandlersManager->GetCurrent())
 {
     this->tstack.transport->SetAppLayer(ocontext);
+    // Ignore keep-alive failure for UDP outstation
+    ignore_keep_alive_failure = std::dynamic_pointer_cast<UDPChannelListenerIOHandler>(iohandlersManager->GetCurrent()) != nullptr;
 }
 
 bool OutstationStack::Enable()
@@ -88,8 +90,7 @@ void OutstationStack::OnKeepAliveTimeout()
 
 bool OutstationStack::IgnoreKeepAliveFailure()
 {
-    // Ignore keep-alive failure for UDP outstation
-    return std::dynamic_pointer_cast<UDPChannelListenerIOHandler>(iohandlersManager->GetCurrent()) != nullptr;
+    return ignore_keep_alive_failure;
 }
 
 void OutstationStack::OnResponseTimeout()

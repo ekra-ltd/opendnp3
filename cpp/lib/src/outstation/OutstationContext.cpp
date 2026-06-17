@@ -147,10 +147,6 @@ bool OContext::OnTxReady()
 
     this->isTransmitting = false;
     this->CheckForTaskStart();
-//    if (!this->isTransmitting && !this->_channel->AfterTransmit())
-//    {
-//        return false;
-//    }
     return true;
 }
 

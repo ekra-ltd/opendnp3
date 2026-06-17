@@ -9,8 +9,8 @@ UDPServerSocketChannel::UDPServerSocketChannel(
     std::shared_ptr<UDPChannelListenerIOHandler> listener
 )
     : IAsyncChannel(executor)
-      , logger(logger)
-      , listener(std::move(listener))
+    , logger(logger)
+    , listener(std::move(listener))
 {
 }
 

@@ -140,6 +140,7 @@ public:
 
 private:
     OContext ocontext;
+    bool ignore_keep_alive_failure;
 };
 
 } // namespace opendnp3

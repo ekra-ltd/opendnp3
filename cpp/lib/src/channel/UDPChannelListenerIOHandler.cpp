@@ -71,13 +71,7 @@ bool UDPChannelListenerIOHandler::tryOpen(const TimeDuration& /*delay*/)
     SocketHelpers::BindToLocalAddress<asio::ip::udp>(localEndpoint.address, localEndpoint.port, socket, ec);
     if (ec)
     {
-        FORMAT_LOG_BLOCK(logger, flags::WARN, "Failed to bind UDP socket to address=%s port=%u with error: %s",
-                         localEndpoint.address.c_str(), localEndpoint.port, ec.message().c_str());
-        throw DNP3Error(Error::UNABLE_TO_BIND_SERVER, ec);
-    }
-    if (ec)
-    {
-        SIMPLE_LOG_BLOCK(logger, flags::WARN, ec.message().c_str())
+        SIMPLE_LOG_BLOCK(logger, flags::ERR, ec.message().c_str())
         return false;
     }
 
