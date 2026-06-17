@@ -1,6 +1,10 @@
 #pragma once
-#include <functional>
+
+#include <opendnp3/link/Addresses.h>
+#include <boost/optional/optional.hpp>
 #include <cstdint>
+#include <functional>
+#include <utility>
 
 namespace opendnp3
 {
@@ -17,10 +21,17 @@ namespace opendnp3
         UnexpectedBytesReceived,
         SucceededConnections,
         FailedConnections,
-        LostConnections
+        LostConnections,
+        ConnectionState
     };
 
-    using StatisticsChangeHandler_t = std::function<void(bool, StatisticsValueType, long long)>;
+    enum class StatisticsConnectionStateType
+    {
+        Opened,
+        Closed
+    };
+
+    using StatisticsChangeHandler_t = std::function<void(bool, StatisticsValueType, long long, boost::optional<Addresses>)>;
 
     struct StatisticValueWithEvent
     {
@@ -37,38 +48,12 @@ namespace opendnp3
         int64_t _value;
         StatisticsValueType _valueType;
 
-        int64_t& operator++()
+        void Increment(bool isBackup, int64_t value, boost::optional<Addresses> addresses = boost::none)
         {
-            ++_value;
+            _value += value;
             if (_changeHandler) {
-                _changeHandler(false, _valueType, 1);
+                _changeHandler(isBackup, _valueType, value, std::move(addresses));
             }
-            return _value;
-        }
-
-        int64_t operator++(int /*v*/)
-        {
-            const int64_t old = _value;
-            operator++();
-            if (_changeHandler) {
-                _changeHandler(false, _valueType, 1);
-            }
-            return old;
-        }
-
-        int64_t& operator+=(const int64_t& rhs)
-        {
-            _value += rhs;
-            if (_changeHandler) {
-                _changeHandler(false, _valueType, rhs);
-            }
-            return _value;
-        }
-
-        StatisticValueWithEvent& operator=(const int64_t& other)
-        {
-            _value = other;
-            return *this;
         }
 
         StatisticsChangeHandler_t _changeHandler;

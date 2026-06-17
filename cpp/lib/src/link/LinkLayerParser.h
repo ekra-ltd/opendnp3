@@ -45,14 +45,15 @@ class LinkLayerParser
     };
 
 public:
-    /// @param logger_ Logger that the receiver is to use.
-    /// @param pSink_ Completely parsed frames are sent to this interface
-    LinkLayerParser(const Logger& logger);
+    /// @param logger Logger that the receiver is to use.
+    /// @param isPrimary primary or backup channel parser
+    LinkLayerParser(const Logger& logger, bool isPrimary = true);
 
     /// Called when valid data has been written to the current buffer write position
     /// Parses the new data and calls the specified frame sink
     /// @param numBytes Number of bytes written
-    void OnRead(size_t numBytes, IFrameSink& sink);
+    /// @param sink Completely parsed frames are sent to this interface
+    void OnRead(size_t numBytes, IFrameSink& sink, const Addresses& addresses);
 
     /// @return Buffer that can currently be used for writing
     ser4cpp::wseq_t WriteBuff() const;
@@ -60,20 +61,14 @@ public:
     /// Resets the state of parser
     void Reset();
 
-    const LinkStatistics::Parser& Statistics() const
-    {
-        return this->statistics;
-    }
+    const LinkStatistics::Parser& Statistics() const;
 
-    void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
-    {
-        this->statistics.changeHandler = statisticsChangeHandler;
-    }
+    void ResetStatisticsCounters();
 
-    void RemoveStatisticsHandler()
-    {
-        this->statistics.changeHandler = nullptr;
-    }
+    void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler);
+    void RemoveStatisticsHandler();
+
+    Addresses GetAddresses() const;
 
 private:
     State ParseUntilComplete();
@@ -93,6 +88,7 @@ private:
     void TransferUserData();
 
     Logger logger;
+    bool _isPrimary{ true };
     LinkStatistics::Parser statistics;
 
     LinkHeader header;

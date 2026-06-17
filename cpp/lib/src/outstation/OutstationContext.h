@@ -91,6 +91,8 @@ public:
 
     void SetRestartIIN();
 
+    Addresses GetAddresses() const;
+
 private:
     /// ---- Helper functions that operate on the current state, and may return a new state ----
 

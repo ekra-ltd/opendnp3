@@ -38,9 +38,9 @@ public:
     TCPSocketChannel(const std::shared_ptr<exe4cpp::StrandExecutor>& executor, asio::ip::tcp::socket socket);
 
 protected:
-    void BeginReadImpl(ser4cpp::wseq_t dest) final;
-    void BeginWriteImpl(const ser4cpp::rseq_t& buffer) final;
-    void ShutdownImpl() final;
+    void BeginReadImpl(ser4cpp::wseq_t dest, const Addresses& addresses) override;
+    void BeginWriteImpl(const ser4cpp::rseq_t& buffer, const Addresses& addresses) override;
+    void ShutdownImpl() override;
 
 private:
     asio::ip::tcp::socket socket;

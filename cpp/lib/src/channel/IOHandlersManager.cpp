@@ -317,20 +317,29 @@ namespace opendnp3
         return _currentChannel->Statistics();
     }
 
+    void IOHandlersManager::ResetStatisticsCounters() const
+    {
+        std::lock_guard<std::mutex> lock{ _mtx };
+        if (!_currentChannel) {
+            return;
+        }
+        _currentChannel->ResetStatisticsCounters();
+    }
+
     void IOHandlersManager::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler) const
     {
         std::lock_guard<std::mutex> lock{ _mtx };
-        auto primaryHandler = [statisticsChangeHandler](const bool /*isBackupChannel*/, StatisticsValueType type, int64_t value) {
+        auto primaryHandler = [statisticsChangeHandler](const bool /*isBackupChannel*/, StatisticsValueType type, int64_t value, boost::optional<Addresses> addresses) {
             if (statisticsChangeHandler) {
-                statisticsChangeHandler(false, type, value);
+                statisticsChangeHandler(false, type, value, std::move(addresses));
             }
         };
         _primaryChannel->AddStatisticsHandler(primaryHandler);
         if (_backupChannel)
         {
-            auto backupHandler = [statisticsChangeHandler](const bool /*isBackupChannel*/, StatisticsValueType type, int64_t value) {
+            auto backupHandler = [statisticsChangeHandler](const bool /*isBackupChannel*/, StatisticsValueType type, int64_t value, boost::optional<Addresses> addresses) {
                 if (statisticsChangeHandler) {
-                    statisticsChangeHandler(true, type, value);
+                    statisticsChangeHandler(true, type, value, std::move(addresses));
                 }
             };
             _backupChannel->AddStatisticsHandler(backupHandler);

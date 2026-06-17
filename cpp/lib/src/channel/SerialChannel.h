@@ -41,9 +41,9 @@ public:
     bool Open(const SerialSettings& settings, std::error_code& ec);
 
 private:
-    void BeginReadImpl(ser4cpp::wseq_t buffer) final;
-    void BeginWriteImpl(const ser4cpp::rseq_t& buffer) final;
-    void ShutdownImpl() final;
+    void BeginReadImpl(ser4cpp::wseq_t buffer, const Addresses& addresses) override;
+    void BeginWriteImpl(const ser4cpp::rseq_t& buffer, const Addresses& addresses) override;
+    void ShutdownImpl() override;
 
     asio::serial_port port;
 };

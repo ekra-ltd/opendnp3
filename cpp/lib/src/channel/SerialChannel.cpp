@@ -62,16 +62,16 @@ bool SerialChannel::Open(const SerialSettings& settings, std::error_code& ec)
     return true;
 }
 
-void SerialChannel::BeginReadImpl(ser4cpp::wseq_t buffer)
+void SerialChannel::BeginReadImpl(ser4cpp::wseq_t buffer, const Addresses& addresses)
 {
-    auto callback = [this](const std::error_code& ec, size_t num) { this->OnReadCallback(ec, num); };
+    auto callback = [this, addresses](const std::error_code& ec, size_t num) { this->OnReadCallback(ec, num, addresses); };
 
     port.async_read_some(asio::buffer(buffer, buffer.length()), this->executor->wrap(callback));
 }
 
-void SerialChannel::BeginWriteImpl(const ser4cpp::rseq_t& buffer)
+void SerialChannel::BeginWriteImpl(const ser4cpp::rseq_t& buffer, const Addresses& addresses)
 {
-    auto callback = [this](const std::error_code& ec, size_t num) { this->OnWriteCallback(ec, num); };
+    auto callback = [this, addresses](const std::error_code& ec, size_t num) { this->OnWriteCallback(ec, num, addresses); };
 
     async_write(port, asio::buffer(buffer, buffer.length()), this->executor->wrap(callback));
 }

@@ -80,7 +80,7 @@ void LinkSession::SetLogFilters(const LogLevels& filters)
     this->logger.set_levels(filters);
 }
 
-void LinkSession::OnReadComplete(const std::error_code& ec, size_t num)
+void LinkSession::OnReadComplete(const std::error_code& ec, size_t num, const Addresses& addresses)
 {
     if (ec)
     {
@@ -89,12 +89,12 @@ void LinkSession::OnReadComplete(const std::error_code& ec, size_t num)
     }
     else
     {
-        this->parser.OnRead(num, *this);
-        this->BeginReceive();
+        this->parser.OnRead(num, *this, addresses);
+        this->BeginReceive(addresses);
     }
 }
 
-void LinkSession::OnWriteComplete(const std::error_code& ec, size_t /*num*/)
+void LinkSession::OnWriteComplete(const std::error_code& ec, size_t /*num*/, const Addresses& /*addresses*/)
 {
     if (ec)
     {
@@ -107,9 +107,9 @@ void LinkSession::OnWriteComplete(const std::error_code& ec, size_t /*num*/)
     }
 }
 
-bool LinkSession::BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& /*session*/)
+bool LinkSession::BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& session)
 {
-    return this->channel->BeginWrite(buffer);
+    return this->channel->BeginWrite(buffer, session.GetAddresses());
 }
 
 bool LinkSession::CanSwitchChannel()
@@ -183,13 +183,13 @@ void LinkSession::Start()
 
     this->first_frame_timer = this->channel->executor->start(this->callbacks->GetFirstFrameTimeout().value, timeout);
 
-    this->BeginReceive();
+    this->BeginReceive(parser.GetAddresses());
 }
 
-void LinkSession::BeginReceive()
+void LinkSession::BeginReceive(const Addresses& addresses)
 {
     auto dest = parser.WriteBuff();
-    channel->BeginRead(dest);
+    channel->BeginRead(dest, addresses);
 }
 
 } // namespace opendnp3

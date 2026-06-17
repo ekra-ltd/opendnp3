@@ -48,7 +48,7 @@ void DecoderImpl::DecodeLPDU(const ser4cpp::rseq_t& data)
         const auto NUM = (remaining.length() > dest.length()) ? dest.length() : remaining.length();
 
         dest.copy_from(remaining.take(NUM));
-        link.OnRead(NUM, *this);
+        link.OnRead(NUM, *this, link.GetAddresses());
 
         remaining.advance(NUM);
     }

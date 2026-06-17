@@ -45,7 +45,7 @@ IOHandler::IOHandler(
     , _connectionFailureCallback(std::move(connectionFailureCallback))
     , retry(channelRetry)
     , executor(std::move(executor))
-    , parser(logger)
+    , parser(logger, isPrimary)
     , _sessionsManager(std::move(sessionsManager))
     , _isPrimary(isPrimary)
 {}
@@ -54,6 +54,25 @@ LinkStatistics IOHandler::Statistics() const
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     return { this->statistics, this->parser.Statistics() };
+}
+
+void IOHandler::ResetStatisticsCounters()
+{
+    const auto old = this->statistics.changeHandler;
+    this->statistics.changeHandler = nullptr;
+    this->statistics.numOpen = 0;
+    this->statistics.numOpenFail = 0;
+    this->statistics.numClose = 0;
+    this->statistics.numBytesRx = 0;
+    this->statistics.numBytesTx = 0;
+    this->statistics.numLinkFrameTx = 0;
+    this->statistics.changeHandler = old;
+    if (!IsShutdown())
+    {
+        notifyOpen(true);
+    }
+
+    this->parser.ResetStatisticsCounters();
 }
 
 void IOHandler::Shutdown(bool onFail, bool doNotNotify)
@@ -80,7 +99,7 @@ bool IOHandler::IsShutdown() const
     return this->isShutdown;
 }
 
-void IOHandler::OnReadComplete(const std::error_code& ec, size_t num)
+void IOHandler::OnReadComplete(const std::error_code& ec, size_t num, const Addresses& addresses)
 {
     if (ec)
     {
@@ -94,14 +113,14 @@ void IOHandler::OnReadComplete(const std::error_code& ec, size_t num)
     }
     else
     {
-        this->statistics.numBytesRx += num;
-
-        this->parser.OnRead(num, *this);
-        this->BeginRead();
+        this->parser.OnRead(num, *this, addresses);
+        const auto addr = addresses.IsValid() ? addresses : this->parser.GetAddresses();
+        this->statistics.numBytesRx.Increment(!_isPrimary, static_cast<int64_t>(num), addr);
+        this->BeginRead(addr);
     }
 }
 
-void IOHandler::OnWriteComplete(const std::error_code& ec, size_t num)
+void IOHandler::OnWriteComplete(const std::error_code& ec, size_t num, const Addresses& addresses)
 {
     if (ec)
     {
@@ -113,7 +132,7 @@ void IOHandler::OnWriteComplete(const std::error_code& ec, size_t num)
     }
     else
     {
-        this->statistics.numBytesTx += num;
+        this->statistics.numBytesTx.Increment(!_isPrimary, static_cast<int64_t>(num), addresses);
 
         if (!_sessionsManager->TxQueue().empty())
         {
@@ -122,7 +141,7 @@ void IOHandler::OnWriteComplete(const std::error_code& ec, size_t num)
             session->OnTxReady();
         }
 
-        this->CheckForSend();
+        this->CheckForSend(addresses);
     }
 }
 
@@ -132,7 +151,7 @@ bool IOHandler::BeginTransmit(const std::shared_ptr<ILinkSession>& session, cons
     if (this->channel)
     {
         _sessionsManager->TxQueue().emplace_back(data, session);
-        return this->CheckForSend();
+        return this->CheckForSend(session->GetAddresses());
     }
     SIMPLE_LOG_BLOCK(logger, flags::ERR, "Router received transmit request while offline")
     return false;
@@ -215,7 +234,7 @@ void IOHandler::onNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel)
         return;
     }
 
-    ++this->statistics.numOpen;
+    notifyOpen(true);
 
     if (_channelOpenedCallback)
     {
@@ -230,7 +249,7 @@ void IOHandler::onNewChannel(const std::shared_ptr<IAsyncChannel>& newChannel)
 
     this->UpdateListener(ChannelState::OPEN);
 
-    this->BeginRead();
+    this->BeginRead(Addresses{ 0, 0 });
 
     _sessionsManager->LowerLayerUp(_isPrimary ? LinkStateChangeSource::PrimaryChannel : LinkStateChangeSource::BackupChannel);
 
@@ -245,7 +264,7 @@ bool IOHandler::shouldRetry()
 void IOHandler::performRetry(const std::shared_ptr<IOHandler>& self, const std::error_code& ec, const TimeDuration& delay)
 {
     FORMAT_LOG_BLOCK(this->logger, flags::WARN, "Error Connecting: %s", ec.message().c_str())
-    ++this->statistics.numOpenFail;
+    this->statistics.numOpenFail.Increment(!_isPrimary, 1);
     const auto newDelay = this->retry.NextDelay(delay);
 
     auto retryCallback = [self, newDelay, this] {
@@ -283,23 +302,23 @@ bool IOHandler::OnFrame(const LinkHeaderFields& header, const ser4cpp::rseq_t& u
     return false;
 }
 
-void IOHandler::BeginRead()
+void IOHandler::BeginRead(const Addresses& addresses)
 {
     if (this->channel)
     {
-        this->channel->BeginRead(this->parser.WriteBuff());
+        this->channel->BeginRead(this->parser.WriteBuff(), addresses);
     }
 }
 
-bool IOHandler::CheckForSend()
+bool IOHandler::CheckForSend(const Addresses& addresses)
 {
     if (_sessionsManager->TxQueue().empty() || !this->channel || !this->channel->CanWrite())
     {
         return false;
     }
 
-    ++this->statistics.numLinkFrameTx;
-    return this->channel->BeginWrite(_sessionsManager->TxQueue().front().TxData);
+    this->statistics.numLinkFrameTx.Increment(!_isPrimary, 1, addresses);
+    return this->channel->BeginWrite(_sessionsManager->TxQueue().front().TxData, addresses);
 }
 
 void IOHandler::logConnectionRetry()
@@ -319,11 +338,42 @@ void IOHandler::logConnectionRetry()
     }
 }
 
+void IOHandler::notifyOpen(bool increment)
+{
+    _isOpened = true;
+    if (increment)
+    {
+        this->statistics.numOpen.Increment(!_isPrimary, 1);
+    }
+    this->statistics.changeHandler(
+        !_isPrimary,
+        StatisticsValueType::ConnectionState,
+        static_cast<long long>(StatisticsConnectionStateType::Opened),
+        boost::none
+    );
+}
+
+void IOHandler::notifyClosed(bool increment)
+{
+    _isOpened = false;
+    if (increment)
+    {
+        this->statistics.numClose.Increment(!_isPrimary, 1);
+    }
+    this->statistics.changeHandler(
+        !_isPrimary,
+        StatisticsValueType::ConnectionState,
+        static_cast<long long>(StatisticsConnectionStateType::Closed),
+        boost::none
+    );
+}
+
 void IOHandler::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler)
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     this->statistics.changeHandler = statisticsChangeHandler;
     this->parser.AddStatisticsHandler(statisticsChangeHandler);
+    _isOpened ? notifyOpen(false) : notifyClosed(false);
 }
 
 void IOHandler::RemoveStatisticsHandler()
@@ -352,7 +402,7 @@ void IOHandler::Reset(bool onFail, bool doNotNotify)
 
         if (onFail)
         {
-            ++this->statistics.numClose;
+            notifyClosed(true);
         }
 
         // notify any sessions that are online that this layer is offline

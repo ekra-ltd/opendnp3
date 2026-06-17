@@ -6,7 +6,7 @@
 namespace opendnp3
 {
 
-	class IoSessionDescriptor
+    class IoSessionDescriptor
     {
 
     public:

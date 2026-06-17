@@ -33,7 +33,7 @@ struct Addresses
 
     Addresses Reverse() const
     {
-        return Addresses(this->destination, this->source);
+        return { this->destination, this->source };
     }
 
     inline bool operator==(const Addresses& other) const
@@ -47,6 +47,7 @@ struct Addresses
     }
 
     bool IsBroadcast() const;
+    bool IsValid() const;
 
     uint16_t source = 0;
     uint16_t destination = 0;

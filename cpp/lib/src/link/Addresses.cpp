@@ -31,4 +31,9 @@ bool Addresses::IsBroadcast() const
         || this->destination == LinkBroadcastAddress::OptionalConfirm;
 }
 
+bool Addresses::IsValid() const
+{
+    return source != 0 && destination != 0;
+}
+
 } // namespace opendnp3

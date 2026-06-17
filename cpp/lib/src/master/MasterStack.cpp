@@ -94,6 +94,7 @@ bool MasterStack::BeginTransmit(const ser4cpp::rseq_t& buffer, ILinkSession& /*c
         }
         if (const auto current = this->iohandlersManager->GetCurrent())
         {
+            const auto add = mcontext->addresses;
             return current->BeginTransmit(shared_from_this(), buffer);
         }
     }
@@ -117,6 +118,11 @@ void MasterStack::OnResponseTimeout()
     if (this->iohandlersManager) {
         iohandlersManager->NotifyTaskResult(false, false);
     }
+}
+
+Addresses MasterStack::GetAddresses() const
+{
+    return mcontext->addresses;
 }
 
 void MasterStack::SetLogFilters(const LogLevels& filters)
@@ -348,6 +354,11 @@ void MasterStack::AddStatisticsHandler(const StatisticsChangeHandler_t& changeHa
 void MasterStack::RemoveStatisticsHandler()
 {
     mcontext->RemoveStatisticsHandler();
+}
+
+void MasterStack::ResetStatisticsCounters()
+{
+    mcontext->ResetStatisticsCounters();
 }
 
 } // namespace opendnp3

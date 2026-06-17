@@ -34,9 +34,9 @@ struct LinkStatistics
     {
         Parser()
         {
-            auto handler = [&](const bool isBackupChannel, StatisticsValueType type, int64_t value) {
+            auto handler = [&](const bool isBackupChannel, StatisticsValueType type, int64_t value, boost::optional<Addresses> addresses) {
                 if (changeHandler) {
-                    changeHandler(isBackupChannel, type, value);
+                    changeHandler(isBackupChannel, type, value, std::move(addresses));
                 }
             };
 
@@ -77,9 +77,9 @@ struct LinkStatistics
     {
         Channel()
         {
-            auto handler = [&](const bool isBackupChannel, StatisticsValueType type, int64_t value) {
+            auto handler = [&](const bool isBackupChannel, StatisticsValueType type, int64_t value, boost::optional<Addresses> addresses) {
                 if (changeHandler) {
-                    changeHandler(isBackupChannel, type, value);
+                    changeHandler(isBackupChannel, type, value, std::move(addresses));
                 }
             };
             numOpen        = { 0, StatisticsValueType::SucceededConnections, handler };

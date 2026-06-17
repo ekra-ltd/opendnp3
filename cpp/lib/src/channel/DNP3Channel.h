@@ -51,23 +51,25 @@ public:
 
     // ----------------------- Implement IChannel -----------------------
 
-    void Shutdown() final;
+    void Shutdown() override;
 
-    LinkStatistics GetStatistics() final;
+    LinkStatistics GetStatistics() override;
 
-    opendnp3::LogLevels GetLogFilters() const final;
+    void ResetStatisticsCounters() override;
 
-    void SetLogFilters(const opendnp3::LogLevels& filters) final;
+    opendnp3::LogLevels GetLogFilters() const override;
+
+    void SetLogFilters(const opendnp3::LogLevels& filters) override;
 
     std::shared_ptr<IMaster> AddMaster(const std::string& id,
                                        std::shared_ptr<ISOEHandler> SOEHandler,
                                        std::shared_ptr<IMasterApplication> application,
-                                       const MasterStackConfig& config) final;
+                                       const MasterStackConfig& config) override;
 
     std::shared_ptr<IOutstation> AddOutstation(const std::string& id,
                                                std::shared_ptr<ICommandHandler> commandHandler,
                                                std::shared_ptr<IOutstationApplication> application,
-                                               const OutstationStackConfig& config) final;
+                                               const OutstationStackConfig& config) override;
 
 
     void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler) override;

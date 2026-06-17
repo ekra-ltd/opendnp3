@@ -32,7 +32,9 @@ namespace opendnp3
 class IMaster : public IMasterOperations, public IStack
 {
 public:
-    virtual ~IMaster() = default;
+    ~IMaster() override = default;
+
+    virtual void ResetStatisticsCounters() = 0;
 };
 
 } // namespace opendnp3

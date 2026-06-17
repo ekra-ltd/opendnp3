@@ -573,6 +573,11 @@ void OContext::SetRestartIIN()
     this->staticIIN.SetBit(IINBit::DEVICE_RESTART);
 }
 
+Addresses OContext::GetAddresses() const
+{
+    return addresses;
+}
+
 IUpdateHandler& OContext::GetUpdateHandler()
 {
     return this->database;

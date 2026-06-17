@@ -29,16 +29,16 @@ TCPSocketChannel::TCPSocketChannel(const std::shared_ptr<exe4cpp::StrandExecutor
 {
 }
 
-void TCPSocketChannel::BeginReadImpl(ser4cpp::wseq_t dest)
+void TCPSocketChannel::BeginReadImpl(ser4cpp::wseq_t dest, const Addresses& addresses)
 {
-    auto callback = [this](const std::error_code& ec, size_t num) { this->OnReadCallback(ec, num); };
+    auto callback = [this, addresses](const std::error_code& ec, size_t num) { this->OnReadCallback(ec, num, addresses); };
 
     socket.async_read_some(asio::buffer(dest, dest.length()), this->executor->wrap(callback));
 }
 
-void TCPSocketChannel::BeginWriteImpl(const ser4cpp::rseq_t& buffer)
+void TCPSocketChannel::BeginWriteImpl(const ser4cpp::rseq_t& buffer, const Addresses& addresses)
 {
-    auto callback = [this](const std::error_code& ec, size_t num) { this->OnWriteCallback(ec, num); };
+    auto callback = [this, addresses](const std::error_code& ec, size_t num) { this->OnWriteCallback(ec, num, addresses); };
 
     asio::async_write(socket, asio::buffer(buffer, buffer.length()), this->executor->wrap(callback));
 }

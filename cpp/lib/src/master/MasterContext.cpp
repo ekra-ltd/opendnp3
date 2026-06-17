@@ -424,7 +424,7 @@ bool MContext::CheckConfirmTransmit()
     wrapper.SetFunction(confirm.function);
     wrapper.SetControl(confirm.control);
     if (statisticsChangeHandler) {
-        statisticsChangeHandler(iohandlersManager->IsBackupChannelUsed(), StatisticsValueType::ConfirmationsSent, 1);
+        statisticsChangeHandler(iohandlersManager->IsBackupChannelUsed(), StatisticsValueType::ConfirmationsSent, 1, addresses);
     }
     this->Transmit(wrapper.ToRSeq());
     this->confirmQueue.pop_front();
@@ -560,6 +560,11 @@ void MContext::RemoveStatisticsHandler()
 {
     std::lock_guard<std::mutex> lock{ _mtx };
     statisticsChangeHandler = nullptr;
+}
+
+void MContext::ResetStatisticsCounters()
+{
+
 }
 
 void MContext::OnKeepAliveTimeout()
@@ -902,7 +907,7 @@ MContext::TaskState MContext::OnResponse_WaitForResponse(const APDUResponseHeade
     auto now = Timestamp(this->executor->get_time());
 
     if (header.function == FunctionCode::CONFIRM && statisticsChangeHandler) {
-        statisticsChangeHandler(iohandlersManager->IsBackupChannelUsed(), StatisticsValueType::ConfirmationsReceived, 1);
+        statisticsChangeHandler(iohandlersManager->IsBackupChannelUsed(), StatisticsValueType::ConfirmationsReceived, 1, addresses);
     }
 
     const auto result = this->activeTask->OnResponse(header, objects, now);

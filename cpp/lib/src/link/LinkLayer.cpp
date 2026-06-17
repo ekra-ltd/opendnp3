@@ -111,4 +111,9 @@ void LinkLayer::OnResponseTimeout()
     // do nothing
 }
 
+Addresses LinkLayer::GetAddresses() const
+{
+    return ctx->config.GetAddresses();
+}
+
 } // namespace opendnp3

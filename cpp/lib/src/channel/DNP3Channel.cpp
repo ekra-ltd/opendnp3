@@ -84,6 +84,12 @@ LinkStatistics DNP3Channel::GetStatistics()
     return this->executor->return_from<LinkStatistics>(get);
 }
 
+void DNP3Channel::ResetStatisticsCounters()
+{
+    auto reset = [this] { this->iohandlersManager->ResetStatisticsCounters(); };
+    return this->executor->post(reset);
+}
+
 LogLevels DNP3Channel::GetLogFilters() const
 {
     auto get = [this]() { return this->logger.get_levels(); };

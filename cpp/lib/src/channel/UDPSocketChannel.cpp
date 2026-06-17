@@ -31,18 +31,18 @@ UDPSocketChannel::UDPSocketChannel(const std::shared_ptr<exe4cpp::StrandExecutor
 {
 }
 
-void UDPSocketChannel::BeginReadImpl(ser4cpp::wseq_t dest)
+void UDPSocketChannel::BeginReadImpl(ser4cpp::wseq_t dest, const Addresses& addresses)
 {
-    auto callback = [this](const std::error_code& ec, size_t num) {
-        this->OnReadCallback(ec, num);
+    auto callback = [this, addresses](const std::error_code& ec, size_t num) {
+        this->OnReadCallback(ec, num, addresses);
     };
 
     socket.async_receive(asio::buffer(dest, dest.length()), this->executor->wrap(callback));
 }
 
-void UDPSocketChannel::BeginWriteImpl(const ser4cpp::rseq_t& buffer)
+void UDPSocketChannel::BeginWriteImpl(const ser4cpp::rseq_t& buffer, const Addresses& addresses)
 {
-    auto callback = [this](const std::error_code& ec, size_t num) { this->OnWriteCallback(ec, num); };
+    auto callback = [this, addresses](const std::error_code& ec, size_t num) { this->OnWriteCallback(ec, num, addresses); };
 
     socket.async_send(asio::buffer(buffer, buffer.length()), this->executor->wrap(callback));
 }
