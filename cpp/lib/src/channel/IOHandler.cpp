@@ -379,12 +379,15 @@ void IOHandler::notifyOpen(bool increment)
     {
         this->statistics.numOpen.Increment(!_isPrimary, 1);
     }
-    this->statistics.changeHandler(
-        !_isPrimary,
-        StatisticsValueType::ConnectionState,
-        static_cast<long long>(StatisticsConnectionStateType::Opened),
-        boost::none
-    );
+    if (this->statistics.changeHandler)
+    {
+        this->statistics.changeHandler(
+            !_isPrimary,
+            StatisticsValueType::ConnectionState,
+            static_cast<long long>(StatisticsConnectionStateType::Opened),
+            boost::none
+        );
+    }
 }
 
 void IOHandler::notifyClosed(bool increment)
@@ -394,12 +397,15 @@ void IOHandler::notifyClosed(bool increment)
     {
         this->statistics.numClose.Increment(!_isPrimary, 1);
     }
-    this->statistics.changeHandler(
-        !_isPrimary,
-        StatisticsValueType::ConnectionState,
-        static_cast<long long>(StatisticsConnectionStateType::Closed),
-        boost::none
-    );
+    if (this->statistics.changeHandler)
+    {
+        this->statistics.changeHandler(
+            !_isPrimary,
+            StatisticsValueType::ConnectionState,
+            static_cast<long long>(StatisticsConnectionStateType::Closed),
+            boost::none
+        );
+    }
 }
 
 void IOHandler::startOnHoldChannelTimer()
