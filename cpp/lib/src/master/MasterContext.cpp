@@ -562,9 +562,9 @@ void MContext::RemoveStatisticsHandler()
     statisticsChangeHandler = nullptr;
 }
 
-void MContext::ResetStatisticsCounters()
+void MContext::ResetStatisticsCounters() const
 {
-
+    iohandlersManager->ResetStatisticsCounters(addresses);
 }
 
 void MContext::OnKeepAliveTimeout()

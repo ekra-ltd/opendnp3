@@ -86,7 +86,7 @@ LinkStatistics DNP3Channel::GetStatistics()
 
 void DNP3Channel::ResetStatisticsCounters()
 {
-    auto reset = [this] { this->iohandlersManager->ResetStatisticsCounters(); };
+    auto reset = [this] { this->iohandlersManager->ResetStatisticsCounters(boost::none); };
     return this->executor->post(reset);
 }
 

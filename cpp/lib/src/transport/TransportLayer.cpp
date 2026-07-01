@@ -127,7 +127,7 @@ void TransportLayer::SetLinkLayer(ILinkLayer& linkLayer)
 
 StackStatistics::Transport TransportLayer::GetStatistics() const
 {
-    return StackStatistics::Transport(this->receiver.Statistics(), this->transmitter.Statistics());
+    return { this->receiver.Statistics(), this->transmitter.Statistics() };
 }
 
 bool TransportLayer::OnLowerLayerUp()

@@ -40,13 +40,13 @@ struct LinkStatistics
                 }
             };
 
-            numHeaderCrcError  = { 0, StatisticsValueType::ChecksumErrors,    handler };
-            numBodyCrcError    = { 0, StatisticsValueType::ChecksumErrors,    handler };
-            numLinkFrameRx     = { 0, StatisticsValueType::FramesReceived,    handler };
-            numBadLength       = { 0, StatisticsValueType::FrameFormatErrors, handler };
-            numBadFunctionCode = { 0, StatisticsValueType::FrameFormatErrors, handler };
-            numBadFCV          = { 0, StatisticsValueType::FrameFormatErrors, handler };
-            numBadFCB          = { 0, StatisticsValueType::FrameFormatErrors, handler };
+            numHeaderCrcError  = { StatisticsValueType::ChecksumErrors,    handler };
+            numBodyCrcError    = { StatisticsValueType::ChecksumErrors,    handler };
+            numLinkFrameRx     = { StatisticsValueType::FramesReceived,    handler };
+            numBadLength       = { StatisticsValueType::FrameFormatErrors, handler };
+            numBadFunctionCode = { StatisticsValueType::FrameFormatErrors, handler };
+            numBadFCV          = { StatisticsValueType::FrameFormatErrors, handler };
+            numBadFCB          = { StatisticsValueType::FrameFormatErrors, handler };
         }
 
         StatisticsChangeHandler_t changeHandler = nullptr;
@@ -82,12 +82,12 @@ struct LinkStatistics
                     changeHandler(isBackupChannel, type, value, std::move(addresses));
                 }
             };
-            numOpen        = { 0, StatisticsValueType::SucceededConnections, handler };
-            numOpenFail    = { 0, StatisticsValueType::FailedConnections,    handler };
-            numClose       = { 0, StatisticsValueType::LostConnections,      handler };
-            numBytesRx     = { 0, StatisticsValueType::BytesReceived,        handler };
-            numBytesTx     = { 0, StatisticsValueType::BytesSent,            handler };
-            numLinkFrameTx = { 0, StatisticsValueType::FramesSent,           handler };
+            numOpen        = { StatisticsValueType::SucceededConnections, handler };
+            numOpenFail    = { StatisticsValueType::FailedConnections,    handler };
+            numClose       = { StatisticsValueType::LostConnections,      handler };
+            numBytesRx     = { StatisticsValueType::BytesReceived,        handler };
+            numBytesTx     = { StatisticsValueType::BytesSent,            handler };
+            numLinkFrameTx = { StatisticsValueType::FramesSent,           handler };
         }
 
         StatisticsChangeHandler_t changeHandler = nullptr;

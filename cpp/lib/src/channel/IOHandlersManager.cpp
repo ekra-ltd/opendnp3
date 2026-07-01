@@ -323,13 +323,13 @@ namespace opendnp3
         return _currentChannel->Statistics();
     }
 
-    void IOHandlersManager::ResetStatisticsCounters() const
+    void IOHandlersManager::ResetStatisticsCounters(const AddressesOpt_t& addresses) const
     {
         std::lock_guard<std::mutex> lock{ _mtx };
         if (!_currentChannel) {
             return;
         }
-        _currentChannel->ResetStatisticsCounters();
+        _currentChannel->ResetStatisticsCounters(addresses);
     }
 
     void IOHandlersManager::AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler) const

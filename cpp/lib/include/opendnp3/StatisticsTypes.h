@@ -2,6 +2,7 @@
 
 #include <opendnp3/link/Addresses.h>
 #include <boost/optional/optional.hpp>
+#include <unordered_map>
 #include <cstdint>
 #include <functional>
 #include <utility>
@@ -31,31 +32,46 @@ namespace opendnp3
         Closed
     };
 
-    using StatisticsChangeHandler_t = std::function<void(bool, StatisticsValueType, long long, boost::optional<Addresses>)>;
+    using AddressesKey_t = boost::optional<Addresses>;
+
+    using StatisticsChangeHandler_t = std::function<void(bool, StatisticsValueType, long long, AddressesKey_t)>;
 
     struct StatisticValueWithEvent
     {
         StatisticValueWithEvent(
-            int64_t value = 0,
             StatisticsValueType valueType = StatisticsValueType::None,
             StatisticsChangeHandler_t handler = nullptr
         )
-            : _value(value)
-            , _valueType(valueType)
-            , _changeHandler(std::move(handler))
+            : ValueType(valueType)
+            , ChangeHandler(std::move(handler))
         { }
 
-        int64_t _value;
-        StatisticsValueType _valueType;
 
-        void Increment(bool isBackup, int64_t value, boost::optional<Addresses> addresses = boost::none)
+        void Increment(bool isBackup, int64_t value, AddressesKey_t addresses = boost::none)
         {
-            _value += value;
-            if (_changeHandler) {
-                _changeHandler(isBackup, _valueType, value, std::move(addresses));
+            Values[boost::none] += value;
+            if (addresses) {
+                Values[addresses] += value;
+            }
+            if (ChangeHandler) {
+                ChangeHandler(isBackup, ValueType, value, std::move(addresses));
             }
         }
 
-        StatisticsChangeHandler_t _changeHandler;
+        void Clear(const AddressesKey_t& addresses = boost::none)
+        {
+            if (!addresses) {
+                Values.clear();
+            }
+            else {
+                Values[addresses] = 0;
+            }
+        }
+
+        StatisticValueWithEvent& operator=(const int64_t& other) = delete;
+
+        std::unordered_map<AddressesKey_t, int64_t> Values;
+        StatisticsValueType ValueType;
+        StatisticsChangeHandler_t ChangeHandler;
     };
 }
