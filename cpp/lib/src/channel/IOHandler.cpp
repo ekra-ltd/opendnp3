@@ -58,23 +58,23 @@ LinkStatistics IOHandler::Statistics() const
     return { this->statistics, this->parser.Statistics() };
 }
 
-void IOHandler::ResetStatisticsCounters()
+void IOHandler::ResetStatisticsCounters(const AddressesOpt_t& addresses)
 {
     const auto old = this->statistics.changeHandler;
     this->statistics.changeHandler = nullptr;
-    this->statistics.numOpen = 0;
-    this->statistics.numOpenFail = 0;
-    this->statistics.numClose = 0;
-    this->statistics.numBytesRx = 0;
-    this->statistics.numBytesTx = 0;
-    this->statistics.numLinkFrameTx = 0;
+    this->statistics.numOpen.Clear(addresses);
+    this->statistics.numOpenFail.Clear(addresses);
+    this->statistics.numClose.Clear(addresses);
+    this->statistics.numBytesRx.Clear(addresses);
+    this->statistics.numBytesTx.Clear(addresses);
+    this->statistics.numLinkFrameTx.Clear(addresses);
     this->statistics.changeHandler = old;
     if (!IsShutdown())
     {
         notifyOpen(true);
     }
 
-    this->parser.ResetStatisticsCounters();
+    this->parser.ResetStatisticsCounters(addresses);
 }
 
 void IOHandler::Shutdown(bool onFail, bool doNotNotify)

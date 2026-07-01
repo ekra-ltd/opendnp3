@@ -63,7 +63,7 @@ public:
 
     const LinkStatistics::Parser& Statistics() const;
 
-    void ResetStatisticsCounters();
+    void ResetStatisticsCounters(const AddressesOpt_t& addresses);
 
     void AddStatisticsHandler(const StatisticsChangeHandler_t& statisticsChangeHandler);
     void RemoveStatisticsHandler();

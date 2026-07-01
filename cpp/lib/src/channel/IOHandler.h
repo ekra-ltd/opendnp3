@@ -62,7 +62,7 @@ public:
     ~IOHandler() override = default;
 
     LinkStatistics Statistics() const;
-    void ResetStatisticsCounters();
+    void ResetStatisticsCounters(const AddressesOpt_t& addresses);
 
     void Shutdown(bool onFail = false, bool doNotNotify = false);
     bool IsShutdown() const override;

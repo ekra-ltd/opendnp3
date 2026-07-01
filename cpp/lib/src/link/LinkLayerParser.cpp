@@ -45,17 +45,17 @@ const LinkStatistics::Parser& LinkLayerParser::Statistics() const
     return this->statistics;
 }
 
-void LinkLayerParser::ResetStatisticsCounters()
+void LinkLayerParser::ResetStatisticsCounters(const AddressesOpt_t& addresses)
 {
     const auto old = this->statistics.changeHandler;
     this->statistics.changeHandler = nullptr;
-    this->statistics.numHeaderCrcError = 0;
-    this->statistics.numBodyCrcError = 0;
-    this->statistics.numLinkFrameRx = 0;
-    this->statistics.numBadLength = 0;
-    this->statistics.numBadFunctionCode = 0;
-    this->statistics.numBadFCV = 0;
-    this->statistics.numBadFCB = 0;
+    this->statistics.numHeaderCrcError.Clear(addresses);
+    this->statistics.numBodyCrcError.Clear(addresses);
+    this->statistics.numLinkFrameRx.Clear(addresses);
+    this->statistics.numBadLength.Clear(addresses);
+    this->statistics.numBadFunctionCode.Clear(addresses);
+    this->statistics.numBadFCV.Clear(addresses);
+    this->statistics.numBadFCB.Clear(addresses);
     this->statistics.changeHandler = old;
 }
 

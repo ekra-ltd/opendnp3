@@ -20,7 +20,9 @@
 #ifndef OPENDNP3_ADDRESSES_H
 #define OPENDNP3_ADDRESSES_H
 
+#include <boost/optional/optional.hpp>
 #include <cstdint>
+#include <utility>
 
 namespace opendnp3
 {
@@ -54,5 +56,24 @@ struct Addresses
 };
 
 } // namespace opendnp3
+
+using AddressesOpt_t = boost::optional<opendnp3::Addresses>;
+
+template<>
+struct std::hash<opendnp3::Addresses> {
+    size_t operator()(const opendnp3::Addresses& addresses) const noexcept {
+        return std::hash<uint16_t>()(addresses.source) ^ std::hash<uint16_t>()(addresses.destination);
+    }
+};
+
+template<>
+struct std::hash<AddressesOpt_t> {
+    size_t operator()(const AddressesOpt_t& addresses) const noexcept {
+        if (!addresses) {
+            return 0;
+        }
+        return std::hash<opendnp3::Addresses>()(*addresses);
+    }
+};
 
 #endif
