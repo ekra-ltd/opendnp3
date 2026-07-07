@@ -189,6 +189,8 @@ bool IMasterTask::OnStart(Timestamp now)
         config.pCallback->OnStart(Name());
     }
 
+    this->_startTimestamp = now;
+
     const bool isTaskStarted = this->application->OnTaskStart(this->GetTaskType(), config.taskId);
     if (isTaskStarted)
     {
@@ -224,6 +226,11 @@ bool IMasterTask::OutOfRetries() const
 void IMasterTask::DelayByPeriod(const Timestamp& now)
 {
     this->behavior.DelayByPeriod(now);
+}
+
+Timestamp IMasterTask::StartTimestamp() const
+{
+    return this->_startTimestamp;
 }
 
 bool IMasterTask::ValidateSingleResponse(const APDUResponseHeader& header)

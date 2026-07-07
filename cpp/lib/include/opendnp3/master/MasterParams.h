@@ -99,6 +99,9 @@ struct MasterParams
 
     /// if false, content will be appended to files
     bool shouldOverrideFiles = true;
+
+    /// if true, expiration time of a task calculated from the moment the task starts
+    bool useTaskStartTimeForExpirationTime = false;
 };
 
 } // namespace opendnp3
