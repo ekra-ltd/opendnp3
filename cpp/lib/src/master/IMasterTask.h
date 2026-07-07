@@ -156,6 +156,8 @@ public:
 
     void DelayByPeriod(const Timestamp& now);
 
+    Timestamp StartTimestamp() const;
+
 protected:
     // called during OnStart() to initialize any state for a new run
     virtual void Initialize() {}
@@ -188,6 +190,7 @@ private:
 
     TaskBehavior behavior;
     bool _retriesFinished{ false };
+    Timestamp _startTimestamp;
 };
 
 } // namespace opendnp3

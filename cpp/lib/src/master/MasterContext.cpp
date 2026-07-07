@@ -773,7 +773,9 @@ bool MContext::Run(const std::shared_ptr<IMasterTask>& task)
             )
             if (this->iohandlersManager->IsBackupChannelUsed() && !task->CanBeExecutedOnBackupChannel())
             {
-                const auto now = Timestamp(this->executor->get_time());
+                const auto now = this->params.useTaskStartTimeForExpirationTime
+                    ? this->activeTask->StartTimestamp()
+                    : Timestamp(this->executor->get_time());
                 this->activeTask->DelayByPeriod(now);
             }
             this->CompleteActiveTask();
@@ -904,7 +906,9 @@ MContext::TaskState MContext::OnResponse_WaitForResponse(const APDUResponseHeade
 
     this->solSeq.Increment();
 
-    auto now = Timestamp(this->executor->get_time());
+    auto now = this->params.useTaskStartTimeForExpirationTime
+        ? this->activeTask->StartTimestamp()
+        : Timestamp(this->executor->get_time());
 
     if (header.function == FunctionCode::CONFIRM && statisticsChangeHandler) {
         statisticsChangeHandler(iohandlersManager->IsBackupChannelUsed(), StatisticsValueType::ConfirmationsReceived, 1, addresses);
@@ -941,7 +945,9 @@ MContext::TaskState MContext::OnResponseTimeout_WaitForResponse()
 {
     FORMAT_LOG_BLOCK(logger, flags::WARN, "Timeout waiting for response, task - %s", this->activeTask->Name())
 
-    const auto now = Timestamp(this->executor->get_time());
+    const auto now = this->params.useTaskStartTimeForExpirationTime
+        ? this->activeTask->StartTimestamp()
+        : Timestamp(this->executor->get_time());
     this->activeTask->OnResponseTimeout(now);
     this->solSeq.Increment();
     if (this->activeTask->OutOfRetries() && this->iohandlersManager)
